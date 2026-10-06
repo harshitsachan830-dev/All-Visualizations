@@ -38,7 +38,12 @@ A state-of-the-art, interactive 2D and 3D Principal Component Analysis (PCA) exp
    - Step 3: Eigen-decomposition (Eigenvalues & Eigenvectors)
    - Step 4: Projection into Principal Component subspace
 
-6. **Curated Benchmark Datasets**:
+6. **About PCA Quick Guide**:
+   - Plain-language explanations of PCA, principal components, and explained variance.
+   - Practical advice on choosing how many components to retain.
+   - Explains how increasing or decreasing K affects retained/lost variance and data size.
+
+7. **Curated Benchmark Datasets**:
    - Iris Flower Dataset (150 samples, 4 features, 3 species)
    - Wine Cultivars Dataset (178 samples, 13 chemical features, 3 classes)
    - Breast Cancer Wisconsin (569 samples, 30 features, Malignant / Benign)

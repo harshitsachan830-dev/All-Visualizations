@@ -10,6 +10,7 @@ import { ScreePlot } from './components/ScreePlot';
 import { BiplotView } from './components/BiplotView';
 import { StepByStepEducator } from './components/StepByStepEducator';
 import { MessyDataStudio } from './components/MessyDataStudio';
+import { AboutGuide } from './components/AboutGuide';
 import { CSVUploadModal } from './components/CSVUploadModal';
 import {
   DatasetInfo,
@@ -188,6 +189,8 @@ export function App() {
             onExportCleanedCsv={handleExportCleanedCsv}
           />
         )}
+
+        {activeTab === 'about' && <AboutGuide />}
       </main>
 
       {/* CSV Upload Modal */}

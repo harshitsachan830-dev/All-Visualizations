@@ -10,11 +10,12 @@ import {
   CheckCircle,
   AlertTriangle,
   Rotate3d,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { DatasetInfo, MissingValueStrategy, ScalingStrategy } from '../types/pca';
 
-export type ActiveTab = '2d' | '3d' | 'scree' | 'biplot' | 'educator' | 'cleaner';
+export type ActiveTab = '2d' | '3d' | 'scree' | 'biplot' | 'educator' | 'cleaner' | 'about';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -298,6 +299,14 @@ export const Header: React.FC<HeaderProps> = ({
               {missingCellsCount}
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('about')}
+          className={`tab-btn ${activeTab === 'about' ? 'active' : ''}`}
+        >
+          <Info size={15} />
+          <span>About PCA</span>
         </button>
       </div>
     </header>
