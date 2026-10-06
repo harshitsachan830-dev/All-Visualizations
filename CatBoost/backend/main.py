@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import math
+import os
 import time
 from typing import Any, Literal
 
@@ -24,9 +25,22 @@ MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_ROWS = 500_000
 MAX_COLUMNS = 500
 app = FastAPI(title="CatBoost Visualizer API", version="1.0.0")
+frontend_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
+]
+frontend_origins = [
+    origin if origin.startswith(("http://", "https://")) else f"https://{origin}"
+    for origin in frontend_origins
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        *frontend_origins,
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from './api'
 import './TreeInspector.css'
 
 type TreeResult = { tree_id: number; depth: number; split_conditions: string[]; leaf_values: number[]; note: string }
@@ -9,7 +10,7 @@ export function TreeInspector({ treeId, trained }: { treeId: number; trained: bo
   useEffect(() => {
     if (!trained) return
     const controller = new AbortController()
-    fetch(`/api/tree/${treeId}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/tree/${treeId}`), { signal: controller.signal })
       .then(async (response) => { const payload = await response.json(); if (!response.ok) throw new Error(payload.detail || 'Tree data is unavailable.'); return payload as TreeResult })
       .then((result) => { setTree(result); setMessage('') })
       .catch((error: unknown) => { if (!controller.signal.aborted) { setTree(null); setMessage(error instanceof Error ? error.message : 'Tree data is unavailable.') } })

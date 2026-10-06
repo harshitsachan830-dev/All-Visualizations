@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from './api'
 import './BoundaryExplorer.css'
 
 type Feature = { name: string; type: string }
@@ -18,7 +19,7 @@ export function BoundaryExplorer({ features, target, iteration, setIteration, ta
   useEffect(() => {
     if (!activeX || !activeY || activeX === activeY) return
     const controller = new AbortController()
-    fetch(`/api/boundary?feature_x=${encodeURIComponent(activeX)}&feature_y=${encodeURIComponent(activeY)}&iteration=${iteration}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/boundary?feature_x=${encodeURIComponent(activeX)}&feature_y=${encodeURIComponent(activeY)}&iteration=${iteration}`), { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json()
         if (!response.ok) throw new Error(payload.detail || 'Train a model to render its boundary.')

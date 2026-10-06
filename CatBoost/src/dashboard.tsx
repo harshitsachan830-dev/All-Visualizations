@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Activity, BarChart3, BookOpen, BrainCircuit, ChartNoAxesCombined, ChevronDown, CircleHelp, Database, FileSpreadsheet, FlaskConical, GitBranch, Gauge, Layers3, Menu, Pause, Play, RotateCcw, Settings2, SlidersHorizontal, Sparkles, Upload, X } from 'lucide-react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { apiUrl } from './api'
 import { ExplanationView, OrderedBoostingView } from './ModelInsights'
 import { AboutCatBoost } from './AboutCatBoost'
 import { BoundaryExplorer } from './BoundaryExplorer'
@@ -60,7 +61,7 @@ export default function Dashboard() {
     let active = true
     const refreshHealth = async () => {
       try {
-        const response = await fetch('/api/health')
+        const response = await fetch(apiUrl('/api/health'))
         if (!response.ok) throw new Error('API health check failed')
         const health = await response.json()
         if (!active) return
@@ -80,7 +81,7 @@ export default function Dashboard() {
     if (data.name === demo.name || !apiDatasetLoaded) return
     const controller = new AbortController()
     const row = Math.min(Math.max(sample - 1, 0), data.rows - 1)
-    fetch(`/api/ordered-step?iteration=${iteration}&selected_row=${row}&feature=${encodeURIComponent(selectedFeature)}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/ordered-step?iteration=${iteration}&selected_row=${row}&feature=${encodeURIComponent(selectedFeature)}`), { signal: controller.signal })
       .then((response) => response.ok ? response.json() as Promise<OrderedInfo> : null)
       .then((result) => { if (result) setOrderedInfo(result) }).catch(() => {})
     return () => controller.abort()
@@ -91,8 +92,8 @@ export default function Dashboard() {
     const row = data.preview[sampleIndex]
     const controller = new AbortController()
     Promise.all([
-      fetch(`/api/shap?sample=${sampleIndex}`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<ShapResult> : null),
-      fetch('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ row }), signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<PredictionResult> : null),
+      fetch(apiUrl(`/api/shap?sample=${sampleIndex}`), { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<ShapResult> : null),
+      fetch(apiUrl('/api/predict'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ row }), signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<PredictionResult> : null),
     ]).then(([shap, prediction]) => { if (shap) setShapResult(shap); if (prediction) setPredictionResult(prediction) }).catch(() => {})
     return () => controller.abort()
   }, [trained, sample, data, apiDatasetLoaded])
@@ -101,7 +102,7 @@ export default function Dashboard() {
     setBusy(true)
     try {
       const form = new FormData(); form.append('file', file)
-      const response = await fetch('/api/dataset/upload', { method: 'POST', body: form })
+      const response = await fetch(apiUrl('/api/dataset/upload'), { method: 'POST', body: form })
       const result = await response.json(); if (!response.ok) throw new Error(result.detail || 'Upload failed')
       setData(result); setApiDatasetLoaded(true); setTarget(result.target); setTask(result.task); setSelectedFeature(result.features.find((item: Dataset['features'][number]) => item.missing)?.name ?? result.features[0]?.name ?? ''); setTrained(null); setPage('Dataset'); setDialog(false); setMessage(`${file.name} loaded · ${result.rows.toLocaleString()} rows`)
     } catch (error) { setMessage(`${error instanceof Error ? error.message : 'Upload failed'}. Start the API to upload a CSV.`) } finally { setBusy(false) }
@@ -120,14 +121,14 @@ export default function Dashboard() {
   async function impute() {
     setBusy(true)
     try {
-      const response = await fetch('/api/dataset/impute', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method, columns: [selectedFeature] }) }); const result = await response.json()
+      const response = await fetch(apiUrl('/api/dataset/impute'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method, columns: [selectedFeature] }) }); const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Imputation failed'); setData(result); setTrained(null); setPredictionResult(null); setShapResult(null); setMessage(`${selectedFeature} missing values filled with ${method}`)
     } catch (error) { setMessage(`${error instanceof Error ? error.message : 'Imputation failed'}. Upload a CSV first.`) } finally { setBusy(false) }
   }
   async function train() {
     setBusy(true)
     try {
-      const response = await fetch('/api/train', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, task, iterations: 200, depth, learning_rate: rate }) }); const result = await response.json()
+      const response = await fetch(apiUrl('/api/train'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, task, iterations: 200, depth, learning_rate: rate }) }); const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Training failed'); setTrained(result); setIteration(result.iterations); setMessage(`Model trained in ${result.training_time.toFixed(1)} seconds`)
     } catch (error) { setMessage(`${error instanceof Error ? error.message : 'Training failed'}. Start the API to train a model.`) } finally { setBusy(false) }
   }

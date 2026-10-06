@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Maximize2, RotateCcw } from 'lucide-react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { apiUrl } from './api'
 import './ModelSurface3D.css'
 
 type NumericFeature = { name: string; type: string }
@@ -81,7 +82,7 @@ export function ModelSurface3D({
   useEffect(() => {
     if (!activeX || !activeY || trainedIterations < 1) return
     const controller = new AbortController()
-    fetch(`/api/boundary?feature_x=${encodeURIComponent(activeX)}&feature_y=${encodeURIComponent(activeY)}&iteration=${selectedTrees}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/boundary?feature_x=${encodeURIComponent(activeX)}&feature_y=${encodeURIComponent(activeY)}&iteration=${selectedTrees}`), { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json()
         if (!response.ok) throw new Error(payload.detail || 'Could not calculate the model surface.')

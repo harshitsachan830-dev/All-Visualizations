@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: catboost-api
+    runtime: python
+    rootDir: CatBoost
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: FRONTEND_ORIGINS
+        fromService:
+          type: web
+          name: catboost-frontend
+          property: host
+
+  - type: web
+    name: catboost-frontend
+    runtime: static
+    rootDir: CatBoost
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: catboost-api
+          property: host

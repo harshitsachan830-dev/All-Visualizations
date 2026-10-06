@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FlaskConical } from 'lucide-react'
+import { apiUrl } from './api'
 import './ExperimentRunner.css'
 
 type Experiment = { run_id: number; configuration: { iterations: number; depth: number; learning_rate: number }; metrics: Record<string, number>; training_time: number; iterations: number }
@@ -13,14 +14,14 @@ export function ExperimentRunner({ target, task, depth, setDepth, rate, setRate 
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    fetch('/api/experiments').then((response) => response.json()).then((result) => setRuns(result.experiments ?? [])).catch(() => {})
+    fetch(apiUrl('/api/experiments')).then((response) => response.json()).then((result) => setRuns(result.experiments ?? [])).catch(() => {})
   }, [])
 
   async function runExperiment() {
     setBusy(true)
     setMessage('')
     try {
-      const response = await fetch('/api/experiments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, task, iterations, depth, learning_rate: rate, l2_leaf_reg: l2, random_strength: randomStrength }) })
+      const response = await fetch(apiUrl('/api/experiments'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, task, iterations, depth, learning_rate: rate, l2_leaf_reg: l2, random_strength: randomStrength }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Experiment failed')
       setRuns((current) => [...current, result])

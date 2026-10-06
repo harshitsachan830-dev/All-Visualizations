@@ -31,6 +31,12 @@ Open the Vite URL printed in the terminal (normally `http://localhost:5173`). Th
 
 Run backend workflow tests with `python -m pip install -r requirements-dev.txt` followed by `python -m unittest discover -s tests -v`.
 
+## Deploy on Render
+
+The repository includes a Blueprint at `CatBoost/render.yaml` that defines a static frontend and a Python API service. In Render, choose **New + → Blueprint**, connect `harshitsachan830-dev/All-Visualizations`, and set the Blueprint file path to `CatBoost/render.yaml`. Render builds both services and wires the frontend API URL and backend CORS origin automatically. When deployment finishes, open the `catboost-frontend` static-site URL.
+
+Uploads, trained models, and experiment history are held in API process memory; they are cleared whenever the API restarts or its free instance spins down. Use a paid Render web-service instance for a more reliable training experience. Do not treat the service's temporary filesystem as permanent dataset storage.
+
 ## CSV upload and missing values
 
 Open **Dataset** and choose a `.csv` file (maximum 20 MB, 500,000 rows, and 500 columns). The API returns column types, unique counts, missing-cell counts, and the first 100 records. The final CSV column is selected as the initial target; change it before training if needed.
