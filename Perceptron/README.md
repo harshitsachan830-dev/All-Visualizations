@@ -27,7 +27,7 @@ An interactive single-layer Perceptron visualizer built around one idea: **every
 - Expanded comparison table with F1 column and current-config highlight
 
 ### Advanced — Phase 3
-- **Interactive 3D decision plane** — canvas-based perspective projection (no external library). Shows score surface z = w·x + b. Data points float at their score height. Decision boundary rendered at z = 0. **Drag to rotate.**
+- **Interactive 3D decision plane** — resize-aware canvas perspective projection (no external library). Shows the score surface z = w·x + b with a uniform vertical fit scale so large scores stay in frame. Data points float at their score height, and the decision boundary is clipped to the visible feature grid. **Drag or touch to rotate.**
 - **Drag existing playground points** — mousedown on any point to reposition; model retrains live
 - **Shareable replay link** — the `Share` button encodes current step, learning rate, and epoch count in the URL hash; paste the link to open the exact replay state
 - **Training report export** — `Export report` downloads a .txt file with dataset summary, hyperparameters, final weights/bias, all metrics, and a per-step accuracy log
@@ -43,7 +43,7 @@ Open the local Vite address shown in the terminal.
 
 ## CSV format
 
-After upload, select any two numeric columns as plotted features and a binary target column.
+After upload, select any two numeric columns as plotted features and a target column with exactly two classes. The importer recognizes numeric values with simple units (for example, `65 kg` or `175 cm`), common missing-value markers (`NaN`, `N/A`, `unknown`), and common binary labels (`Male`/`Female`, `M`/`F`, `Yes`/`No`, `Y`/`N`). It suggests numeric features and a binary target when it can identify them; target options marked “2 classes” are valid Perceptron targets.
 
 ```csv
 feature_1,feature_2,label
@@ -77,4 +77,4 @@ Training uses the classic Perceptron rule:
 
 The app intentionally presents a 2D linear decision boundary and a linear 3D score *plane*. It does not imply that a single Perceptron learns nonlinear surfaces — that requires multiple layers (MLP).
 
-The 3D view uses the browser's Canvas 2D API with a hand-written perspective projection. No Three.js or Plotly dependency is required.
+The 3D view uses the browser's Canvas 2D API with a hand-written perspective projection, high-DPI scaling, and resize observation. No Three.js or Plotly dependency is required.

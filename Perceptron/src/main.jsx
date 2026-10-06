@@ -8,7 +8,24 @@ const seed=[[-2.8,-1.6,0],[-2.2,-.8,0],[-1.4,-1.9,0],[-.8,-.9,0],[-1.7,.1,0],[-.
 const noisy=[[-2.5,-1.4,0],[-1.9,.5,0],[-.8,-.4,0],[-.2,.3,0],[.1,-.4,0],[.4,.4,1],[.8,.1,1],[1.4,.8,1],[2.2,1.3,1],[1.5,-.3,1],[-.1,.8,1]].map(([x,y,label],id)=>({id,x,y,label}));
 
 /* ─── helpers ───────────────────────────────────────────────────── */
-const absent=v=>!v||String(v).trim().toLowerCase()==='na'||String(v).trim().toLowerCase()==='null';
+const absent=v=>v==null||!String(v).trim()||['na','n/a','null','nan','unknown','not available'].includes(String(v).trim().toLowerCase());
+const numericValue=v=>{
+  if(absent(v))return null;
+  const match=String(v).trim().replace(/,/g,'').match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(?:\s*[a-z%]+)?$/i);
+  if(!match)return null;
+  const value=Number(match[1]);
+  return Number.isFinite(value)?value:null;
+};
+const classKey=(header,value)=>{
+  const key=String(value).trim().toLowerCase();
+  if(/gender|sex/i.test(header)){
+    if(['m','male','man','boy'].includes(key))return'male';
+    if(['f','female','woman','girl'].includes(key))return'female';
+  }
+  if(['yes','y','true','t','1'].includes(key))return'yes';
+  if(['no','n','false','0'].includes(key))return'no';
+  return key;
+};
 function csv(t){let rows=[],row=[],v='',q=false;for(let i=0;i<t.length;i++){let c=t[i],n=t[i+1];if(c==='"'&&q&&n==='"'){v+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(v.trim());if(row.some(Boolean))rows.push(row);row=[];v=''}else v+=c}row.push(v.trim());if(row.some(Boolean))rows.push(row);return rows}
 
 /* ─── perceptron ────────────────────────────────────────────────── */
@@ -113,12 +130,13 @@ function Snapshots({model,data,names,onJump}){
 /* ─── 3D Decision Plane (Interactive perspective projection) ─────── */
 function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSelectPoint,height=340}){
   const canvasRef=useRef(null);
-  const wrapRef=useRef(null);
-  const [drag,setDrag]=useState(null);
+  const dragRef=useRef(null);
+  const [dragging,setDragging]=useState(false);
   const [rot,setRot]=useState({pitch:0.42,yaw:0.58});
   const [zoom,setZoom]=useState(1.0);
   const [autoRotate,setAutoRotate]=useState(false);
   const [hovered,setHovered]=useState(null);
+  const [canvasSize,setCanvasSize]=useState({width:0,height});
   const projectedPointsRef=useRef([]);
 
   // Auto-rotation animation loop
@@ -146,35 +164,52 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
     return()=>cv.removeEventListener('wheel',handleWheel);
   },[]);
 
+  useEffect(()=>{
+    const cv=canvasRef.current;
+    if(!cv)return;
+    const observer=new ResizeObserver(([entry])=>{
+      setCanvasSize({width:entry.contentRect.width,height:entry.contentRect.height});
+    });
+    observer.observe(cv);
+    return()=>observer.disconnect();
+  },[]);
+
   const draw=useCallback((rx,ry,zFactor)=>{
     const cv=canvasRef.current;if(!cv)return;
     const ctx=cv.getContext('2d');
     const dpr=window.devicePixelRatio||1;
     const rect=cv.getBoundingClientRect();
-    const W=rect.width||560;
-    const H=height;
+    const W=canvasSize.width||rect.width||560;
+    const H=canvasSize.height||height;
 
     if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){
       cv.width=Math.round(W*dpr);
       cv.height=Math.round(H*dpr);
     }
-    ctx.resetTransform?.();
-    ctx.scale(dpr,dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,H);
 
-    const cx=W/2,cy=H/2+20,fov=480;
+    const cx=W/2,cy=H*0.53;
+    const baseScale=Math.min(W/7,H/5.4)*zFactor;
     // World coordinates: X = feat1, Y = score (vertical), Z = feat2 (depth)
     const project=([X,Y,Z])=>{
       const cosY=Math.cos(ry),sinY=Math.sin(ry);
       const x1=X*cosY-Z*sinY,z1=X*sinY+Z*cosY;
       const cosX=Math.cos(rx),sinX=Math.sin(rx);
       const y1=Y*cosX-z1*sinX,z2=Y*sinX+z1*cosX;
-      const scale=(fov/(fov+z2*35*zFactor+160))*zFactor;
-      return[cx+x1*54*scale,cy-y1*54*scale,scale,z2];
+      const perspective=8/Math.max(4,12+z2);
+      const pixelScale=baseScale*perspective;
+      return[cx+x1*pixelScale,cy-y1*pixelScale,perspective,z2];
     };
 
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
     const w=state.weights,b=state.bias;
+
+    const backdrop=ctx.createLinearGradient(0,0,0,H);
+    backdrop.addColorStop(0,isDark?'#202039':'#fafaff');
+    backdrop.addColorStop(1,isDark?'#19182b':'#f1f0fb');
+    ctx.fillStyle=backdrop;
+    ctx.fillRect(0,0,W,H);
 
     // 1. Grid plane on the floor Y = 0 (decision threshold plane)
     ctx.save();
@@ -190,40 +225,60 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
 
     // 2. Decision Surface mesh: Y = w0*X + w1*Z + b
     const steps=16,span=6;
+    let scoreRange=2.4;
+    const includeScore=(x,z)=>{scoreRange=Math.max(scoreRange,Math.abs(w[0]*x+w[1]*z+b))};
+    [[-3,-3],[-3,3],[3,-3],[3,3]].forEach(([x,z])=>includeScore(x,z));
+    data.forEach(p=>includeScore(p.x,p.y));
+    if(pred)includeScore(pred.x,pred.y);
+    const scoreScale=2.4/scoreRange;
+    const faces=[];
     for(let i=0;i<steps;i++){
       for(let j=0;j<steps;j++){
         const x0=-3+i*span/steps,x1=-3+(i+1)*span/steps;
         const z0=-3+j*span/steps,z1=-3+(j+1)*span/steps;
-        const y00=Math.max(-2.4,Math.min(2.4,(w[0]*x0+w[1]*z0+b)*0.8));
-        const y10=Math.max(-2.4,Math.min(2.4,(w[0]*x1+w[1]*z0+b)*0.8));
-        const y11=Math.max(-2.4,Math.min(2.4,(w[0]*x1+w[1]*z1+b)*0.8));
-        const y01=Math.max(-2.4,Math.min(2.4,(w[0]*x0+w[1]*z1+b)*0.8));
+        const y00=(w[0]*x0+w[1]*z0+b)*scoreScale;
+        const y10=(w[0]*x1+w[1]*z0+b)*scoreScale;
+        const y11=(w[0]*x1+w[1]*z1+b)*scoreScale;
+        const y01=(w[0]*x0+w[1]*z1+b)*scoreScale;
         const p0=project([x0,y00,z0]),p1=project([x1,y10,z0]),p2=project([x1,y11,z1]),p3=project([x0,y01,z1]);
         const avgY=(y00+y10+y11+y01)/4;
-
+        const depth=(p0[3]+p1[3]+p2[3]+p3[3])/4;
+        faces.push({p0,p1,p2,p3,avgY,depth});
+      }
+    }
+    faces.sort((a,b)=>b.depth-a.depth);
+    faces.forEach(({p0,p1,p2,p3,avgY})=>{
         ctx.beginPath();
         ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(p2[0],p2[1]);ctx.lineTo(p3[0],p3[1]);
         ctx.closePath();
 
         if(avgY>=0){
-          const intensity=Math.min(0.42,0.12+avgY*0.12);
+          const intensity=Math.min(0.25,0.1+avgY*0.06);
           ctx.fillStyle=`rgba(91,91,214,${intensity})`;
         }else{
-          const intensity=Math.min(0.42,0.12+Math.abs(avgY)*0.12);
+          const intensity=Math.min(0.25,0.1+Math.abs(avgY)*0.06);
           ctx.fillStyle=`rgba(240,113,103,${intensity})`;
         }
         ctx.fill();
         ctx.strokeStyle=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';
         ctx.lineWidth=0.5;
         ctx.stroke();
-      }
-    }
+    });
 
     // 3. Highlight decision boundary intersection line where plane cuts Y = 0 floor
-    if(Math.abs(w[1])>0.0001){
-      const xA=-3.2,xB=3.2;
-      const zA=-(w[0]*xA+b)/w[1],zB=-(w[0]*xB+b)/w[1];
-      const [ax,ay]=project([xA,0,zA]),[bx,by]=project([xB,0,zB]);
+    const boundary=[];
+    const addBoundaryPoint=(x,z)=>{
+      if(x>=-3&&x<=3&&z>=-3&&z<=3&&!boundary.some(p=>Math.hypot(p[0]-x,p[1]-z)<1e-6))boundary.push([x,z]);
+    };
+    if(Math.abs(w[1])>1e-8){
+      [-3,3].forEach(x=>addBoundaryPoint(x,-(w[0]*x+b)/w[1]));
+    }
+    if(Math.abs(w[0])>1e-8){
+      [-3,3].forEach(z=>addBoundaryPoint(-(w[1]*z+b)/w[0],z));
+    }
+    if(boundary.length>=2){
+      const [ax,ay]=project([boundary[0][0],0,boundary[0][1]]);
+      const [bx,by]=project([boundary[1][0],0,boundary[1][1]]);
       ctx.save();
       ctx.strokeStyle='#4f46e5';ctx.lineWidth=2.8;
       ctx.shadowColor='#6366f1';ctx.shadowBlur=8;
@@ -235,7 +290,7 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
     const axes=[
       {from:[0,0,0],to:[3.3,0,0],label:`${names[0]||'X₁'}`,color:'#f07167'},
       {from:[0,0,0],to:[0,0,3.3],label:`${names[1]||'X₂'}`,color:'#5b5bd6'},
-      {from:[0,-2.4,0],to:[0,2.5,0],label:'Score (z)',color:'#24a57a'}
+      {from:[0,-2.4,0],to:[0,2.5,0],label:'Score (scaled)',color:'#24a57a'}
     ];
     axes.forEach(({from,to,label,color})=>{
       const [fx,fy]=project(from),[tx,ty]=project(to);
@@ -254,9 +309,9 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
     const projected=[];
     data.forEach(p=>{
       const rawScore=w[0]*p.x+w[1]*p.y+b;
-      const clampedY=Math.max(-2.4,Math.min(2.4,rawScore*0.8));
+      const scoreY=rawScore*scoreScale;
       const [fx,fy]=project([p.x,0,p.y]);
-      const [px,py,sc,depth]=project([p.x,clampedY,p.y]);
+      const [px,py,sc,depth]=project([p.x,scoreY,p.y]);
       const predClass=rawScore>=0?1:0;
       const isError=predClass!==p.label;
       const r=Math.max(3.5,6*sc);
@@ -300,9 +355,9 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
     // 6. Draw Prediction Probe Point if defined
     if(pred){
       const probeScore=w[0]*pred.x+w[1]*pred.y+b;
-      const clampedY=Math.max(-2.4,Math.min(2.4,probeScore*0.8));
+      const scoreY=probeScore*scoreScale;
       const [pfx,pfy]=project([pred.x,0,pred.y]);
-      const [ppx,ppy,psc]=project([pred.x,clampedY,pred.y]);
+      const [ppx,ppy,psc]=project([pred.x,scoreY,pred.y]);
 
       ctx.save();
       ctx.setLineDash([3,3]);ctx.lineWidth=1.5;ctx.strokeStyle='#06b6d4';
@@ -314,33 +369,37 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
 
       ctx.font='700 10px DM Mono,monospace';
       ctx.fillStyle=isDark?'#67e8f9':'#0891b2';
-      ctx.fillText(`Probe: ${probeScore.toFixed(2)}`,ppx+8,ppy-4);
+      ctx.fillText(`Probe: ${probeScore.toFixed(2)}`,ppx+8,ppy+16);
       ctx.restore();
     }
 
-    // 7. Formula display in bottom corner
+    // 7. Formula display in the upper-left corner
     ctx.fillStyle=isDark?'#94a3b8':'#64748b';
     ctx.font='600 11px DM Mono,monospace';
-    ctx.fillText(`z = ${w[0]>=0?'+':''}${w[0].toFixed(2)}x₁ ${w[1]>=0?'+':''}${w[1].toFixed(2)}x₂ ${b>=0?'+':''}${b.toFixed(2)}`,14,H-14);
+    ctx.fillText(`z = ${w[0]>=0?'+':''}${w[0].toFixed(2)}x₁ ${w[1]>=0?'+':''}${w[1].toFixed(2)}x₂ ${b>=0?'+':''}${b.toFixed(2)}`,14,22);
 
-  },[state,data,names,pred,height]);
+  },[state,data,names,pred,height,canvasSize]);
 
   useEffect(()=>{draw(rot.pitch,rot.yaw,zoom)},[draw,rot,zoom]);
 
-  const onMouseDown=e=>{
-    setDrag({
+  const onPointerDown=e=>{
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current={
+      pointerId:e.pointerId,
       startX:e.clientX,
       startY:e.clientY,
       startPitch:rot.pitch,
       startYaw:rot.yaw,
       moved:false
-    });
+    };
+    setDragging(true);
   };
 
-  const onMouseMove=e=>{
+  const onPointerMove=e=>{
     const cv=canvasRef.current;if(!cv)return;
     const rect=cv.getBoundingClientRect();
     const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    const drag=dragRef.current;
 
     if(drag){
       const dx=(e.clientX-drag.startX)/95,dy=(e.clientY-drag.startY)/95;
@@ -348,17 +407,25 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
       const newPitch=Math.max(-0.9,Math.min(1.2,drag.startPitch+dy));
       const newYaw=drag.startYaw+dx;
       setRot({pitch:newPitch,yaw:newYaw});
-    }else{
-      const hit=projectedPointsRef.current.find(pt=>Math.hypot(pt.screenX-mx,pt.screenY-my)<=Math.max(12,pt.radius+6));
-      setHovered(hit||null);
     }
+    const hit=[...projectedPointsRef.current].reverse().find(pt=>Math.hypot(pt.screenX-mx,pt.screenY-my)<=Math.max(12,pt.radius+6));
+    setHovered(hit||null);
   };
 
-  const onMouseUp=()=>{
-    if(drag&&!drag.moved&&hovered&&onSelectPoint){
-      onSelectPoint({x:hovered.point.x,y:hovered.point.y});
+  const onPointerUp=e=>{
+    const drag=dragRef.current;
+    if(drag&&drag.pointerId===e.pointerId){
+      const rect=e.currentTarget.getBoundingClientRect();
+      const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      const hit=[...projectedPointsRef.current].reverse().find(pt=>Math.hypot(pt.screenX-mx,pt.screenY-my)<=Math.max(12,pt.radius+6));
+      if(!drag.moved&&hit&&onSelectPoint){
+        onSelectPoint({x:hit.point.x,y:hit.point.y});
+      }
+      dragRef.current=null;
+      setDragging(false);
+      if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
+      setHovered(hit||null);
     }
-    setDrag(null);
   };
 
   const resetView=()=>{
@@ -368,13 +435,17 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
   };
 
   return(
-    <div ref={wrapRef} className="canvas3d-wrap" onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+    <div className="canvas3d-wrap">
       <canvas
         ref={canvasRef}
         height={height}
         className="canvas3d"
-        onMouseDown={onMouseDown}
-        style={{cursor:drag?'grabbing':hovered?'pointer':'grab',height:`${height}px`}}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={()=>{if(!dragRef.current)setHovered(null)}}
+        style={{cursor:dragging?'grabbing':hovered?'pointer':'grab',height:`${height}px`}}
       />
       <div className="canvas3d-toolbar">
         <button
@@ -400,8 +471,8 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
         <div
           className="canvas3d-tooltip"
           style={{
-            left:`${Math.min(500,Math.max(120,hovered.screenX))}px`,
-            top:`${Math.max(65,hovered.screenY-10)}px`
+            left:`${Math.max(10,Math.min((canvasSize.width||560)-150,hovered.screenX))}px`,
+            top:`${Math.max(10,Math.min((canvasSize.height||height)-95,hovered.screenY-10))}px`
           }}
         >
           <h4>
@@ -528,33 +599,91 @@ function Import({close,load}){
   const [file,setFile]=useState(null),[rows,setRows]=useState([]),[method,setMethod]=useState('mean');
   const [x,setX]=useState(''),[y,setY]=useState(''),[target,setTarget]=useState(''),[error,setError]=useState('');
   const h=rows[0]||[],raw=rows.slice(1);
-  const numeric=h.map((_,i)=>raw.every(r=>absent(r[i])||!isNaN(Number(r[i]))));
+  const numeric=h.map((_,i)=>{
+    const values=raw.map(r=>r[i]);
+    return values.filter(v=>numericValue(v)!==null).length>=2&&values.every(v=>absent(v)||numericValue(v)!==null);
+  });
+  const classValues=target?new Set(raw.filter(r=>!absent(r[h.indexOf(target)])).map(r=>classKey(target,r[h.indexOf(target)]))):new Set();
+  const binaryTargets=h.map((column,index)=>{
+    const values=new Set(raw.filter(r=>!absent(r[index])).map(r=>classKey(column,r[index])));
+    return values.size===2;
+  });
+  const numericColumns=h.filter((_,i)=>numeric[i]);
+  const numericCount=column=>numericColumns.indexOf(column);
+  const validMapping=numeric[x? h.indexOf(x):-1]&&numeric[y? h.indexOf(y):-1]&&x!==y&&classValues.size===2;
   const miss=raw.flat().filter(absent).length;
 
   async function read(f){
-    setFile(f);const r=csv(await f.text());
-    if(r.length<3){setError('Use a CSV with a header and two or more rows.');return}
-    setRows(r);
-    const ns=r[0].filter((_,i)=>r.slice(1).every(a=>absent(a[i])||!isNaN(Number(a[i]))));
-    setX(ns[0]||'');setY(ns[1]||'');
-    setTarget(r[0].find(z=>/label|target|class|^y$/i.test(z))||'');
+    setFile(f);setError('');
+    try{
+      const parsed=csv(await f.text());
+      if(parsed.length<3){setRows([]);setError('Use a CSV with a header and at least two data rows.');return}
+      const headers=parsed[0],dataRows=parsed.slice(1);
+      if(headers.length<3||headers.some(name=>!name)){setRows([]);setError('The CSV needs named columns for two numeric features and a target.');return}
+      setRows(parsed);
+      const numericIndexes=headers.map((_,i)=>{
+        const values=dataRows.map(r=>r[i]);
+        return values.filter(v=>numericValue(v)!==null).length>=2&&values.every(v=>absent(v)||numericValue(v)!==null);
+      });
+      const featureIndexes=numericIndexes.map((isNumeric,i)=>isNumeric?i:-1).filter(i=>i>=0);
+      const featureCandidates=featureIndexes.filter(i=>!/(^id$|_id$|\bid\b|index|serial|number)/i.test(headers[i]));
+      const chosenFeatures=featureCandidates.length>=2?featureCandidates:featureIndexes;
+      setX(headers[chosenFeatures[0]]||'');
+      setY(headers[chosenFeatures[1]]||'');
+      const candidates=headers.map((column,index)=>{
+        const values=new Set(dataRows.filter(r=>!absent(r[index])).map(r=>classKey(column,r[index])));
+        return values.size===2?index:-1;
+      }).filter(i=>i>=0);
+      const preferred=candidates.find(i=>/label|target|class|outcome/i.test(headers[i]))??
+        candidates.find(i=>/gender|sex/i.test(headers[i]))??candidates[0];
+      setTarget(headers[preferred]||'');
+    }catch(cause){
+      setRows([]);
+      setError(`Could not read this CSV: ${cause instanceof Error?cause.message:'unknown file error'}`);
+    }
   }
 
   function apply(){
-    const clean=raw.map(r=>r.map((v,i)=>{
-      if(!absent(v))return v;
-      const nums=raw.map(a=>Number(a[i])).filter(Number.isFinite);
-      if(!numeric[i]||!nums.length){
-        const a=raw.map(z=>z[i]).filter(z=>!absent(z)),counts=a.reduce((o,z)=>({...o,[z]:(o[z]||0)+1}),{});
-        return Object.keys(counts).sort((u,v)=>counts[v]-counts[u])[0]||'Unknown';
-      }
-      if(method==='median'){nums.sort((a,b)=>a-b);return String(nums[Math.floor(nums.length/2)])}
-      return String(nums.reduce((a,b)=>a+b,0)/nums.length);
-    }));
     const xi=h.indexOf(x),yi=h.indexOf(y),ti=h.indexOf(target);
-    const labels=[...new Set(clean.map(r=>r[ti]))];
-    if(xi<0||yi<0||xi===yi||ti<0||labels.length!==2){setError('Select two distinct numeric features and a target with exactly two classes.');return}
-    load(clean.map((r,id)=>({id,x:+r[xi],y:+r[yi],label:r[ti]===labels[0]?0:1})),[x,y],file.name);
+    if(xi<0||yi<0||!numeric[xi]||!numeric[yi]||xi===yi){setError('Choose two distinct numeric feature columns.');return}
+    if(ti<0||classValues.size!==2){setError(`Target "${target||'column'}" must contain exactly two classes. Choose a binary target such as gender, or prepare a two-class label column.`);return}
+
+    const targetKeys=[...classValues];
+    const usableRows=raw.filter(r=>!absent(r[ti]));
+    if(usableRows.length<2){setError('The selected target needs at least two rows with class values.');return}
+    const imputed=numeric.map((isNumeric,i)=>{
+      const values=raw.map(r=>numericValue(r[i])).filter(v=>v!==null);
+      if(!values.length)return null;
+      if(!isNumeric)return null;
+      if(method==='median'){
+        values.sort((a,b)=>a-b);
+        const mid=Math.floor(values.length/2);
+        return values.length%2?values[mid]:(values[mid-1]+values[mid])/2;
+      }
+      if(method==='mode'){
+        const counts=new Map();
+        values.forEach(value=>counts.set(value,(counts.get(value)||0)+1));
+        return [...counts].sort((a,b)=>b[1]-a[1])[0][0];
+      }
+      return values.reduce((sum,value)=>sum+value,0)/values.length;
+    });
+    const categoryModes=h.map((_,i)=>{
+      if(numeric[i])return null;
+      const counts=new Map();
+      raw.map(r=>r[i]).filter(v=>!absent(v)).forEach(value=>{
+        const key=String(value).trim();
+        counts.set(key,(counts.get(key)||0)+1);
+      });
+      return [...counts].sort((a,b)=>b[1]-a[1])[0]?.[0]||'Unknown';
+    });
+    const cleaned=usableRows.map(r=>r.map((value,i)=>{
+      if(!absent(value))return numeric[i]?numericValue(value):String(value).trim();
+      return numeric[i]?imputed[i]:categoryModes[i];
+    }));
+    load(cleaned.map((r,id)=>{
+      const key=classKey(target,r[ti]);
+      return{id,x:r[xi],y:r[yi],label:key===targetKeys[0]?0:1};
+    }),[x,y],file.name);
     close();
   }
 
@@ -576,14 +705,18 @@ function Import({close,load}){
             <span><Check size={16}/>{h.length} columns</span>
           </div>
           {miss>0&&<div className="impute">
-            <div><h3>{miss} missing values found</h3><p>Numeric values are filled with your selected strategy.</p></div>
+            <div><h3>{miss} missing or non-numeric values found</h3><p>Numeric values are filled with your selected strategy.</p></div>
             <div className="strategy">{['mean','median','mode'].map(m=><button key={m} className={method===m?'selected':''} onClick={()=>setMethod(m)}>{m}</button>)}</div>
           </div>}
           <div className="mapping">
-            <label>X feature<select value={x} onChange={e=>setX(e.target.value)}>{h.filter((_,i)=>numeric[i]).map(z=><option key={z}>{z}</option>)}</select></label>
-            <label>Y feature<select value={y} onChange={e=>setY(e.target.value)}>{h.filter((_,i)=>numeric[i]).map(z=><option key={z}>{z}</option>)}</select></label>
-            <label>Target<select value={target} onChange={e=>setTarget(e.target.value)}><option value="">Select target</option>{h.map(z=><option key={z}>{z}</option>)}</select></label>
+            <label>X feature<select value={x} onChange={e=>{setX(e.target.value);setError('')}}>{numericColumns.map(z=><option key={z}>{z}</option>)}</select></label>
+            <label>Y feature<select value={y} onChange={e=>{setY(e.target.value);setError('')}}>{numericColumns.map(z=><option key={z}>{z}</option>)}</select></label>
+            <label>Target<select value={target} onChange={e=>{setTarget(e.target.value);setError('')}}><option value="">Select target</option>{h.map((z,i)=><option key={z} value={z}>{z}{binaryTargets[i]?' · 2 classes':''}</option>)}</select></label>
           </div>
+          <p className={`mapping-hint${classValues.size===2?' valid':''}`}>
+            {classValues.size===2?`Target "${target}" has 2 classes. ${numericCount(x)>=0&&numericCount(y)>=0&&x!==y?'':'Choose two different numeric features.'}`:
+              target?`Target "${target}" has ${classValues.size} classes. Choose a target marked “2 classes”.`:'Choose a target marked “2 classes”.'}
+          </p>
           <div className="table-preview">
             <table><thead><tr>{h.slice(0,5).map(z=><th key={z}>{z}</th>)}</tr></thead>
             <tbody>{raw.slice(0,4).map((r,i)=><tr key={i}>{r.slice(0,5).map((z,j)=><td key={j}>{absent(z)?<em>missing</em>:z}</td>)}</tr>)}</tbody></table>
@@ -592,7 +725,7 @@ function Import({close,load}){
         {error&&<p className="form-error"><AlertTriangle size={15}/>{error}</p>}
         <div className="modal-actions">
           <button className="text-btn" onClick={close}>Cancel</button>
-          <button className="primary-button" disabled={!rows.length} onClick={apply}>Use this dataset <ChevronRight size={17}/></button>
+          <button className="primary-button" disabled={!rows.length||!validMapping} onClick={apply}>Use this dataset <ChevronRight size={17}/></button>
         </div>
       </div>
     </div>
@@ -1098,7 +1231,7 @@ function App(){
             <div>
               <p className="eyebrow">PERSPECTIVE DECISION SURFACE</p>
               <h3>Live Score Surface &amp; Data Margins</h3>
-              <p className="muted">Stems display signed distance from the decision boundary. Click any 3D point to test in the Prediction Explorer.</p>
+              <p className="muted">Stems show each sample's signed score, scaled vertically to fit the current view. Click any point to probe it.</p>
             </div>
             <div className="stats-inline" style={{display:'flex',gap:10,flexWrap:'wrap'}}>
               <span className="badge">w₁: {state.weights[0].toFixed(2)}</span>

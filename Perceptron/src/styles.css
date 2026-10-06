@@ -233,7 +233,7 @@ main { margin-left: 260px; width: calc(100% - 260px); padding: 34px 42px 42px; m
 
 /* ─── 3D canvas & toolbar ─────────────────────────────────────────── */
 .canvas3d-wrap { position: relative; margin-top: 10px; border-radius: 12px; overflow: hidden; background: var(--surface2); border: 1px solid var(--border); user-select: none; }
-.canvas3d { display: block; width: 100%; border-radius: 10px; background: transparent; }
+.canvas3d { display: block; width: 100%; border-radius: 10px; background: transparent; touch-action: none; }
 .canvas3d-toolbar { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 5; }
 .canvas3d-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; font-size: 11px; font-weight: 600; padding: 5px 9px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all .15s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .canvas3d-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface2); }
@@ -286,6 +286,8 @@ td em { color: #de8879; }
 .mapping { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-top: 13px; }
 .mapping label { font-size: 9px; font-weight: 800; color: var(--text-muted); display: grid; gap: 5px; }
 .mapping select { border: 1px solid var(--border); background: var(--surface2); border-radius: 6px; padding: 8px; font: 600 10px Manrope; color: var(--text); }
+.mapping-hint { color: #c85e4e; font-size: 9px; margin: 7px 0 0; }
+.mapping-hint.valid { color: var(--green); }
 
 /* ─── Comparison table ────────────────────────────────────────────── */
 .comparison-table { margin-top: 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
