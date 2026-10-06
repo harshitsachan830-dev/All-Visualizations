@@ -28,7 +28,8 @@ type View =
   | "paths"
   | "importance"
   | "quality"
-  | "insights";
+  | "insights"
+  | "about";
 
 function format(value: number) {
   return value.toFixed(1);
@@ -760,10 +761,17 @@ function App() {
           <div className="sidebar-group-label">VISUALIZATIONS</div>
           <button
             type="button"
-            className={`sidebar-link sidebar-link--nested ${view !== "datasets" ? "is-current" : ""}`}
+            className={`sidebar-link sidebar-link--nested ${view !== "datasets" && view !== "about" ? "is-current" : ""}`}
             onClick={() => setView("forest")}
           >
             <span>♣</span> Random Forest
+          </button>
+          <button
+            type="button"
+            className={`sidebar-link sidebar-link--nested ${view === "about" ? "is-current" : ""}`}
+            onClick={() => setView("about")}
+          >
+            <span>ⓘ</span> About Random Forest
           </button>
           <div className="sidebar-divider" />
           {[
@@ -1842,6 +1850,80 @@ function App() {
                   </div>;
                 })}
               </div>
+            </section>
+          </div>
+        </section>
+      )}
+
+      {view === "about" && (
+        <section id="about-view" className="model-view about-view" role="tabpanel" aria-label="About Random Forest">
+          <div className="view-heading">
+            <div>
+              <p className="eyebrow">PROJECT GUIDE / RANDOM FOREST</p>
+              <h2>About Random Forest</h2>
+            </div>
+            <button className="train-button" type="button" onClick={() => setView("forest")}>
+              Explore the model
+            </button>
+          </div>
+          <section className="about-intro-card">
+            <span className="about-mark" aria-hidden="true">♣</span>
+            <div>
+              <h3>A forest of decision trees, working together</h3>
+              <p>
+                This project is an interactive Random Forest classification explorer. It lets you prepare a CSV,
+                fit a forest, inspect how individual trees reach their decisions, and evaluate predictions on
+                examples kept out of training.
+              </p>
+            </div>
+          </section>
+
+          <div className="about-section-heading">
+            <p className="eyebrow">FROM CSV TO PREDICTION</p>
+            <h3>How a model run works</h3>
+          </div>
+          <div className="about-flow">
+            {[
+              ["01", "Choose data", "Use a bundled sample or upload a classification CSV. Select the target column and the features the model can use."],
+              ["02", "Prepare inputs", "Review missing values, then impute numeric features with mean, median, or mode, or drop incomplete rows. Categorical features are encoded for the model."],
+              ["03", "Fit the forest", "A stratified portion of rows is held out. The remaining training rows fit multiple bootstrapped decision trees using the selected settings."],
+              ["04", "Explore and evaluate", "Trees vote for a class. Follow an individual tree's actual path, inspect feature importance, and evaluate results on held-out rows."],
+            ].map(([number, title, description]) => (
+              <article className="about-flow-card" key={number}>
+                <span>{number}</span>
+                <h4>{title}</h4>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="about-details-grid">
+            <section className="quality-section about-detail-card">
+              <p className="eyebrow">WHAT YOU CAN EXPLORE</p>
+              <h3>Inside this project</h3>
+              <ul className="about-feature-list">
+                <li><strong>Forest overview</strong><span>See class votes, predictions, data distribution, model settings, and a tree preview.</span></li>
+                <li><strong>Prediction explorer</strong><span>Inspect a dataset row or enter feature values to see the forest's class vote.</span></li>
+                <li><strong>Trees and decision paths</strong><span>Inspect fitted splits and follow the selected observation through a tree to its leaf.</span></li>
+                <li><strong>Feature importance</strong><span>Compare forest-wide Gini importance with held-out permutation importance.</span></li>
+                <li><strong>Evaluation and data insights</strong><span>Review held-out accuracy, precision, recall, F1, confusion counts, and dataset quality.</span></li>
+                <li><strong>Reproducibility and export</strong><span>Adjust tree settings and seed; export the active dataset's configuration and metrics.</span></li>
+              </ul>
+            </section>
+            <section className="quality-section about-detail-card">
+              <p className="eyebrow">SCOPE &amp; INTERPRETATION</p>
+              <h3>What to keep in mind</h3>
+              <ul className="about-note-list">
+                <li>This app supports classification. It does not train regression models.</li>
+                <li>Targets must contain 2–30 classes and datasets need at least 8 usable rows.</li>
+                <li>Missing target labels are dropped, never imputed. Missing-value statistics are learned from training rows.</li>
+                <li>Evaluation metrics are calculated from held-out rows, not the rows used to fit the forest.</li>
+                <li>Very small test sets can make scores unstable; the app shows a warning when there are fewer than 10 test examples.</li>
+                <li>Tree vote share is not a calibrated probability. Feature importance describes model behavior, not cause and effect.</li>
+              </ul>
+              <button className="about-link-button" type="button" onClick={() => setView("datasets")}>
+                Upload or manage a dataset →
+              </button>
             </section>
           </div>
         </section>

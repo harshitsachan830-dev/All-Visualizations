@@ -7,7 +7,7 @@ Build a visual-first, beginner-friendly random forest explorer. Keep theory mini
 ## Current State
 
 - Vite + React + TypeScript app using `ml-random-forest`; verified dev server is `http://127.0.0.1:5177/`.
-- Main workspace has a ModelMind-style persistent sidebar with Random Forest as its only listed visualization, a search toolbar, dataset actions, model summary cards, and seven model views: Overview, Prediction, Trees, Decision Paths, Feature Importance, Evaluation, and Data Insights.
+- Main workspace has a ModelMind-style persistent sidebar with Random Forest as its only listed visualization and an About Random Forest section. The About section explains the project workflow, CSV preparation, forest fitting, available exploration tools, evaluation, and scope/interpretation limits. The dashboard also has seven model views: Overview, Prediction, Trees, Decision Paths, Feature Importance, Evaluation, and Data Insights.
 - Forest, Prediction, and Model quality tabs share one fitted classification model, selected observation, and selected tree.
 - Two bundled CSVs: Garden bed and Greenhouse trials. Each has 40 rows and the shared schema `petal_length_cm,petal_width_cm,flower_class`; each selection uses 30 training rows and 10 held-out test rows. (Wildflower survey removed; only 2 sample CSVs retained as requested.)
 - **Datasets tab**: Users can upload CSVs with their own column names, select a categorical classification target, and choose input columns. Numeric features are used directly; low-cardinality categorical features are one-hot encoded. ID/name/email/date and high-cardinality categorical columns are excluded from automatic input selection.
@@ -47,6 +47,7 @@ Build a visual-first, beginner-friendly random forest explorer. Keep theory mini
 
 - `npm run build` and `npm run lint` pass after the ModelMind dashboard and report-driven feature updates.
 - Browser smoke checks passed for all seven view tabs, model configuration visibility, dark theme toggle, permutation importance, held-out evaluation metrics, CSV report export, and dashboard link copy.
+- About Random Forest sidebar navigation and project guide verified in the browser; its four-step workflow, feature list, scope notes, and dataset link render without horizontal page overflow.
 - Upload smoke test used the messy sample: median imputation, duplicate removal, cleaned preview, activation, and propagation into the model views all worked (13 usable rows, 2 imputed values, 1 duplicate removed).
 - Checked dashboard layout at desktop and narrow mobile widths; Evaluation and Overview fit without document-level horizontal overflow. Mobile Evaluation badge wrapping was adjusted for long dataset labels.
 - Dev server verified at `http://127.0.0.1:5177/`.
