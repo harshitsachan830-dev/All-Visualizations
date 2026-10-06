@@ -191,9 +191,21 @@ main { margin-left: 260px; width: calc(100% - 260px); padding: 34px 42px 42px; m
 .math-steps code { display: block; color: var(--text-muted); font: 9px 'DM Mono'; margin-top: 3px; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .math-steps b { font-size: 10px; color: var(--text); }
 .math-steps .changed > span { background: #fff0ed; border-color: #ffd7ce; color: #d76a54; }
-.equation { margin-top: 16px; background: #f3f2ff; border-radius: 8px; padding: 11px; font-family: 'DM Mono'; font-size: 10px; color: #5a55b6; }
+.weight-update { margin-top: 12px; }
+.weight-update-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.weight-update-heading b { font-size: 10px; color: var(--text); }
+.weight-update-heading code { color: var(--text-muted); font: 8px 'DM Mono'; }
+.update-table { width: 100%; border-collapse: collapse; font: 9px 'DM Mono'; text-align: right; }
+.update-table th, .update-table td { padding: 5px 4px; border-bottom: 1px solid var(--border2); }
+.update-table thead th { color: var(--text-muted); font: 700 8px Manrope; }
+.update-table th:first-child { text-align: left; }
+.update-table tbody th { color: var(--text); font-weight: 700; }
+.update-table td { color: var(--text-muted); }
+.update-table .delta-positive { color: #21875f; font-weight: 700; }
+.update-table .delta-negative { color: #c45f50; font-weight: 700; }
+.equation { display: grid; gap: 5px; margin-top: 16px; background: #f3f2ff; border-radius: 8px; padding: 11px; font-family: 'DM Mono'; font-size: 10px; color: #5a55b6; }
 [data-theme="dark"] .equation { background: #25244a; color: #9b96f5; }
-.equation span { color: #8b88b5; margin-right: 7px; }
+.equation span { color: #8b88b5; }
 
 /* ─── Charts ──────────────────────────────────────────────────────── */
 .chart-title { display: flex; justify-content: space-between; align-items: flex-start; }

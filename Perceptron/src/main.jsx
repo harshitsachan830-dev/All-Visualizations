@@ -872,6 +872,12 @@ function App(){
   const hist=model.states.slice(0,step+1);
   const m=metrics(data,state);
   const score=state.weights[0]*pred.x+state.weights[1]*pred.y+state.bias;
+  const deltas=[
+    state.weights[0]-state.before[0],
+    state.weights[1]-state.before[1],
+    state.bias-state.before[2],
+  ];
+  const formatDelta=value=>`${value>=0?'+':''}${value.toFixed(3)}`;
 
   useEffect(()=>{setStep(0);setPlaying(false)},[model]);
 
@@ -943,7 +949,7 @@ function App(){
         {/* What just happened */}
         <article className="card update-card">
           <div className="card-heading small">
-            <div><p className="eyebrow">WHAT JUST HAPPENED</p><h2>One learning update</h2></div>
+            <div><p className="eyebrow">SAMPLE-BY-SAMPLE LEARNING</p><h2>How this sample was processed</h2></div>
             <span className={`event-chip${state.error?' error':''}`}>{state.error?'Correcting error':'Correct prediction'}</span>
           </div>
           <div className="sample-focus">
@@ -957,23 +963,46 @@ function App(){
           <div className="math-steps">
             <div>
               <span>1</span>
-              <p>Score <code>{state.weights[0].toFixed(2)}×{state.point.x.toFixed(2)} + {state.weights[1].toFixed(2)}×{state.point.y.toFixed(2)} + {state.bias.toFixed(2)}</code></p>
+              <p>Score before update <code>{state.before[0].toFixed(3)}×{state.point.x.toFixed(3)} + {state.before[1].toFixed(3)}×{state.point.y.toFixed(3)} + {state.before[2].toFixed(3)}</code></p>
               <b>{state.score.toFixed(3)}</b>
             </div>
             <div>
               <span>2</span>
-              <p>Prediction <code>score ≥ 0</code></p>
+              <p>Prediction before update <code>score ≥ 0</code></p>
               <b>Class {state.prediction}</b>
             </div>
             <div className={state.error?'changed':''}>
               <span>3</span>
-              <p>{state.error?'Update applied':'No update needed'} <code>{state.error?'w ← w + η(y − ŷ)x':'prediction matched label'}</code></p>
+              <p>{state.error?'Update applied':'No update needed'} <code>{state.error?`η=${rate} · y=${state.point.label} · ŷ=${state.prediction}`:'prediction matched label'}</code></p>
               <b>{state.error?'Boundary shifted':'Stable'}</b>
             </div>
           </div>
+          <div className="weight-update">
+            <div className="weight-update-heading">
+              <b>What changed</b>
+              <code>Δw = η(y − ŷ)x · Δb = η(y − ŷ)</code>
+            </div>
+            <table className="update-table">
+              <thead><tr><th>Parameter</th><th>Before</th><th>Change</th><th>After</th></tr></thead>
+              <tbody>
+                {[
+                  ['w₁',state.before[0],deltas[0],state.weights[0]],
+                  ['w₂',state.before[1],deltas[1],state.weights[1]],
+                  ['b',state.before[2],deltas[2],state.bias],
+                ].map(([label,before,delta,after])=>(
+                  <tr key={label}>
+                    <th scope="row">{label}</th>
+                    <td>{before.toFixed(3)}</td>
+                    <td className={delta>0?'delta-positive':delta<0?'delta-negative':''}>{formatDelta(delta)}</td>
+                    <td>{after.toFixed(3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div className="equation">
-            <span>f(x) =</span>
-            <b>{state.weights[0].toFixed(2)}x₁ {state.weights[1]>=0?'+':''}{state.weights[1].toFixed(2)}x₂ {state.bias>=0?'+':''}{state.bias.toFixed(2)}</b>
+            <span>Decision function after sample · boundary where f(x) = 0</span>
+            <b>f(x) = {state.weights[0].toFixed(3)}x₁ {state.weights[1]>=0?'+':''}{state.weights[1].toFixed(3)}x₂ {state.bias>=0?'+':''}{state.bias.toFixed(3)}</b>
           </div>
         </article>
 

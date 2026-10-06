@@ -6,7 +6,7 @@ An interactive single-layer Perceptron visualizer built around one idea: **every
 
 ### Core — Phase 1
 - Animated, replayable 2D decision boundary with current-sample pulsing highlight
-- Step-by-step breakdown: score → threshold decision → weight/bias update rule
+- Step-by-step breakdown: pre-update score and prediction, exact weight/bias changes, and resulting decision function
 - Synchronized charts: misclassified samples trend, weight/bias history
 - Confusion matrix, accuracy, precision, recall, and F1 score
 - CSV upload with quoted-field parsing, feature/target mapping, and missing-value imputation (mean, median, or mode)
