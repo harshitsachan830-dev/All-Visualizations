@@ -11,10 +11,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.11
       - key: FRONTEND_ORIGINS
-        fromService:
-          type: web
-          name: catboost-frontend
-          property: host
+        value: https://catboost-frontend.onrender.com
 
   - type: web
     name: catboost-frontend
