@@ -1,0 +1,13 @@
+sepal_length,sepal_width,species,label
+5.1,3.5,setosa,low
+5.0,3.4,setosa,low
+4.9,3.1,setosa,low
+5.2,3.6,setosa,low
+5.4,3.9,setosa,low
+5.0,3.2,setosa,low
+6.1,2.8,versicolor,high
+6.3,,versicolor,high
+6.2,2.9,,high
+5.9,3.0,versicolor,high
+6.0,2.7,versicolor,high
+6.4,3.2,versicolor,high

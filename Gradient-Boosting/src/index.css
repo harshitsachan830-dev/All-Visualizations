@@ -1,0 +1,18 @@
+:root {
+  font-family: 'DM Sans', 'Avenir Next', sans-serif;
+  color: #eaf0ee;
+  background: #080d0f;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: #080d0f; }
+body { min-height: 100vh; margin: 0; }
+button { -webkit-tap-highlight-color: transparent; }
+#root { min-height: 100vh; }
