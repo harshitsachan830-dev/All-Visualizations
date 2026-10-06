@@ -41,6 +41,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         *frontend_origins,
     ],
+    allow_origin_regex=r"https://catboost-frontend\.onrender\.com",
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

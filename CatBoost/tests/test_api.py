@@ -26,6 +26,21 @@ class ApiWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200, response.text)
 
+    def test_render_frontend_can_call_api(self) -> None:
+        response = self.client.options(
+            "/api/dataset/upload",
+            headers={
+                "Origin": "https://catboost-frontend.onrender.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(
+            response.headers["access-control-allow-origin"],
+            "https://catboost-frontend.onrender.com",
+        )
+
     def test_upload_profiles_missingness_and_filename(self) -> None:
         result = self.client.get("/api/dataset").json()
         self.assertEqual(result["name"], "sample.csv")
