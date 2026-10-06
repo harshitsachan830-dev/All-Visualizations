@@ -54,6 +54,14 @@ import {
   Zap,
 } from 'lucide-react';
 
+const getSuggestedFeatures = (data: DataPoint[], columns: string[]): string[] => {
+  const numericColumns = columns.filter((column) =>
+    data.some((row) => typeof row[column] === 'number' && !isNaN(row[column]))
+  );
+  const featureColumns = numericColumns.filter((column) => !/(?:^|[_\s-])id$/i.test(column));
+  return featureColumns.length >= 3 ? featureColumns : numericColumns;
+};
+
 // Default embedded Iris CSV for guaranteed zero-delay load
 const EMBEDDED_IRIS_CSV = `sepal_length,sepal_width,petal_length,petal_width
 5.1,3.5,1.4,0.2
@@ -242,7 +250,7 @@ export default function App() {
   }, [cleanData, rawDataset.columns]);
 
   const numericColumns = useMemo(() => {
-    return columnProfiles.filter((c) => c.isNumeric).map((c) => c.name);
+    return columnProfiles.filter((column) => column.isNumeric).map((column) => column.name);
   }, [columnProfiles]);
 
   // Selected 3D Features (X, Y, Z)
@@ -253,12 +261,13 @@ export default function App() {
 
   // Keep 3D features valid when columns change
   useEffect(() => {
-    if (numericColumns.length >= 3) {
-      if (!numericColumns.includes(features[0]) || !numericColumns.includes(features[1]) || !numericColumns.includes(features[2])) {
-        setFeatures([numericColumns[0], numericColumns[1], numericColumns[2]]);
+    const suggestedFeatures = getSuggestedFeatures(cleanData, rawDataset.columns);
+    if (suggestedFeatures.length >= 3) {
+      if (!suggestedFeatures.includes(features[0]) || !suggestedFeatures.includes(features[1]) || !suggestedFeatures.includes(features[2])) {
+        setFeatures([suggestedFeatures[0], suggestedFeatures[1], suggestedFeatures[2]]);
       }
     }
-  }, [numericColumns, features]);
+  }, [cleanData, rawDataset.columns, features]);
 
   // Model Hyperparameters
   const [runConfig, setRunConfig] = useState<KMeansRunConfig>({
@@ -353,12 +362,9 @@ export default function App() {
       (data, columns, raw) => {
         setRawDataset({ data, columns, rawData: raw });
         setActiveDatasetName(file.name.replace(/\.[^/.]+$/, ''));
-        const numCols = columns.filter((col) => {
-          const val = data[0]?.[col];
-          return typeof val === 'number' && !isNaN(val);
-        });
-        if (numCols.length >= 3) {
-          setFeatures([numCols[0], numCols[1], numCols[2]]);
+        const suggestedFeatures = getSuggestedFeatures(data, columns);
+        if (suggestedFeatures.length >= 3) {
+          setFeatures([suggestedFeatures[0], suggestedFeatures[1], suggestedFeatures[2]]);
         }
       },
       (err) => alert(`Error reading CSV: ${err}`)
@@ -378,12 +384,9 @@ export default function App() {
           blobs: 'Gaussian Blobs (3 Clusters)',
         };
         setActiveDatasetName(nameMap[sampleKey]);
-        const numCols = parsed.columns.filter((c) => {
-          const val = parsed.data[0]?.[c];
-          return typeof val === 'number' && !isNaN(val);
-        });
-        if (numCols.length >= 3) {
-          setFeatures([numCols[0], numCols[1], numCols[2]]);
+        const suggestedFeatures = getSuggestedFeatures(parsed.data, parsed.columns);
+        if (suggestedFeatures.length >= 3) {
+          setFeatures([suggestedFeatures[0], suggestedFeatures[1], suggestedFeatures[2]]);
         }
       })
       .catch(() => {

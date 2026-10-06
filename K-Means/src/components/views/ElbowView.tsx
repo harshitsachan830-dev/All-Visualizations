@@ -64,6 +64,7 @@ export const ElbowView: React.FC<ElbowViewProps> = ({
           </div>
           <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
             Inspect diminishing returns in Within-Cluster Sum of Squares (Inertia) as K increases.
+            {' '}For datasets over 2,000 rows, inertia is estimated from a deterministic 2,000-row sample.
           </p>
         </div>
 

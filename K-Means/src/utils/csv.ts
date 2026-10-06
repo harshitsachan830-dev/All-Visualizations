@@ -83,8 +83,12 @@ export const parseCSVString = (csvText: string): { data: DataPoint[]; columns: s
 
 export const countMissing = (data: DataPoint[], columns: string[]): number => {
   let count = 0;
+  const numericColumns = columns.filter((col) =>
+    data.some((row) => typeof row[col] === 'number' && !isNaN(row[col]))
+  );
+
   for (const row of data) {
-    for (const col of columns) {
+    for (const col of numericColumns) {
       if (isNaN(row[col])) count++;
     }
   }
@@ -105,13 +109,17 @@ export const computeColumnProfiles = (data: DataPoint[], columns: string[]): Col
         max: 0,
         mean: 0,
         std: 0,
-        missingCount,
+        missingCount: 0,
         totalCount: data.length,
       };
     }
 
-    const min = Math.min(...valid);
-    const max = Math.max(...valid);
+    let min = Infinity;
+    let max = -Infinity;
+    for (const value of valid) {
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
     const sum = valid.reduce((a, b) => a + b, 0);
     const mean = sum / valid.length;
     const variance = valid.reduce((acc, v) => acc + (v - mean) ** 2, 0) / (valid.length || 1);
@@ -135,16 +143,19 @@ export const imputeMissingValues = (
   columns: string[],
   method: ImputationMethod
 ): DataPoint[] => {
+  const numericColumns = columns.filter((col) =>
+    data.some((row) => typeof row[col] === 'number' && !isNaN(row[col]))
+  );
+
   if (method === 'drop') {
-    return data.filter(row => columns.every(col => !isNaN(row[col])));
+    return data.filter(row => numericColumns.every(col => !isNaN(row[col])));
   }
 
   const columnStats: Record<string, number> = {};
 
-  for (const col of columns) {
+  for (const col of numericColumns) {
     const validValues = data.map(row => row[col]).filter(val => !isNaN(val));
     if (validValues.length === 0) {
-      columnStats[col] = 0;
       continue;
     }
 
@@ -174,8 +185,8 @@ export const imputeMissingValues = (
 
   return data.map(row => {
     const newRow: DataPoint = { ...row };
-    for (const col of columns) {
-      if (isNaN(newRow[col])) {
+    for (const col of numericColumns) {
+      if (isNaN(newRow[col]) && columnStats[col] !== undefined) {
         newRow[col] = parseFloat(columnStats[col].toFixed(4));
       }
     }

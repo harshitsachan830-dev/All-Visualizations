@@ -133,10 +133,13 @@ export const DatasetView: React.FC<DatasetViewProps> = ({
             type="file"
             accept=".csv"
             style={{ display: 'none' }}
+            onClick={(e) => e.stopPropagation()}
             onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                onFileUpload(e.target.files[0]);
+              const file = e.target.files?.[0];
+              if (file) {
+                onFileUpload(file);
               }
+              e.currentTarget.value = '';
             }}
           />
           <Upload size={32} color="#7c3aed" style={{ marginBottom: '10px' }} />

@@ -394,7 +394,7 @@ export function runKMeans(
 }
 
 /**
- * Exact Silhouette Score Analysis: s(i) = (b(i) - a(i)) / max(a(i), b(i))
+ * Silhouette score analysis using all points up to 500 rows and a deterministic sample above that.
  */
 export function computeSilhouette(
   rawPoints: number[][],
@@ -410,10 +410,17 @@ export function computeSilhouette(
     return { average: 0, clusterScores: {}, sampleScores: [] };
   }
 
+  const maxSamples = 500;
+  const sampledIndices = n <= maxSamples
+    ? Array.from({ length: n }, (_, i) => i)
+    : Array.from({ length: maxSamples }, (_, i) => Math.floor(i * n / maxSamples));
+  const points = sampledIndices.map((index) => rawPoints[index]);
+  const sampledLabels = sampledIndices.map((index) => labels[index]);
+
   // Pre-group indices by cluster
   const clusters: number[][] = Array.from({ length: k }, () => []);
-  for (let i = 0; i < n; i++) {
-    const c = labels[i];
+  for (let i = 0; i < points.length; i++) {
+    const c = sampledLabels[i];
     if (c >= 0 && c < k) {
       clusters[c].push(i);
     }
@@ -424,12 +431,12 @@ export function computeSilhouette(
   const clusterCounts: number[] = new Array(k).fill(0);
   let totalSum = 0;
 
-  for (let i = 0; i < n; i++) {
-    const myCluster = labels[i];
+  for (let i = 0; i < points.length; i++) {
+    const myCluster = sampledLabels[i];
     const myClusterPoints = clusters[myCluster];
 
     if (!myClusterPoints || myClusterPoints.length <= 1) {
-      sampleScores.push({ id: i, cluster: myCluster, score: 0 });
+      sampleScores.push({ id: sampledIndices[i], cluster: myCluster, score: 0 });
       continue;
     }
 
@@ -437,7 +444,7 @@ export function computeSilhouette(
     let aSum = 0;
     for (const otherIdx of myClusterPoints) {
       if (i !== otherIdx) {
-        aSum += euclideanDistance(rawPoints[i], rawPoints[otherIdx]);
+        aSum += euclideanDistance(points[i], points[otherIdx]);
       }
     }
     const a = aSum / (myClusterPoints.length - 1);
@@ -448,14 +455,14 @@ export function computeSilhouette(
       if (c === myCluster || clusters[c].length === 0) continue;
       let otherSum = 0;
       for (const otherIdx of clusters[c]) {
-        otherSum += euclideanDistance(rawPoints[i], rawPoints[otherIdx]);
+        otherSum += euclideanDistance(points[i], points[otherIdx]);
       }
       const meanDist = otherSum / clusters[c].length;
       if (meanDist < b) b = meanDist;
     }
 
     const s = Math.max(a, b) === 0 ? 0 : (b - a) / Math.max(a, b);
-    sampleScores.push({ id: i, cluster: myCluster, score: parseFloat(s.toFixed(4)) });
+    sampleScores.push({ id: sampledIndices[i], cluster: myCluster, score: parseFloat(s.toFixed(4)) });
 
     clusterSums[myCluster] += s;
     clusterCounts[myCluster]++;
@@ -469,7 +476,7 @@ export function computeSilhouette(
       : 0;
   }
 
-  const average = parseFloat((totalSum / Math.max(n, 1)).toFixed(4));
+  const average = parseFloat((totalSum / Math.max(points.length, 1)).toFixed(4));
 
   return { average, clusterScores, sampleScores };
 }
@@ -484,17 +491,52 @@ export function computeElbowCurve(
   seed = 42
 ): { k: number; inertia: number }[] {
   const result: { k: number; inertia: number }[] = [];
-  const limit = Math.min(maxK, data.length);
+  const maxSampleSize = 2000;
+  const sample = data.length <= maxSampleSize
+    ? data
+    : Array.from({ length: maxSampleSize }, (_, i) => data[Math.floor(i * data.length / maxSampleSize)]);
+  const rawPoints = sample.map((row) => features.map((feature) => row[feature] ?? 0));
+  const limit = Math.min(maxK, rawPoints.length);
 
   for (let k = 1; k <= limit; k++) {
-    const run = runKMeans(data, features, {
-      k,
-      initMethod: 'k-means++',
-      maxIterations: 30,
-      tolerance: 1e-4,
-      seed,
-    });
-    result.push({ k, inertia: Math.round(run.finalInertia) });
+    const rng = createRNG(seed);
+    let centroids = initCentroids(rawPoints, k, 'k-means++', rng);
+    let inertia = 0;
+
+    for (let iteration = 0; iteration < 30; iteration++) {
+      const sums = Array.from({ length: k }, () => new Array(features.length).fill(0));
+      const counts = new Array(k).fill(0);
+      inertia = 0;
+
+      for (const point of rawPoints) {
+        let nearest = 0;
+        let minDistance = Infinity;
+        for (let c = 0; c < k; c++) {
+          const distance = euclideanDistance(point, centroids[c]);
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearest = c;
+          }
+        }
+        counts[nearest]++;
+        inertia += minDistance * minDistance;
+        for (let feature = 0; feature < features.length; feature++) {
+          sums[nearest][feature] += point[feature];
+        }
+      }
+
+      let maxShift = 0;
+      const nextCentroids = centroids.map((centroid, c) => {
+        if (counts[c] === 0) return centroid;
+        const mean = sums[c].map((sum: number) => sum / counts[c]);
+        maxShift = Math.max(maxShift, euclideanDistance(centroid, mean));
+        return mean;
+      });
+      centroids = nextCentroids;
+      if (maxShift < 1e-4) break;
+    }
+
+    result.push({ k, inertia: Math.round(inertia) });
   }
 
   return result;

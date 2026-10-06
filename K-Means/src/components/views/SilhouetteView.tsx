@@ -60,6 +60,8 @@ export const SilhouetteView: React.FC<SilhouetteViewProps> = ({ runResult }) => 
           </div>
           <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
             Measures how well each point fits within its cluster compared to neighboring clusters (-1 to +1).
+            {runResult.finalIteration.labels.length > 500 &&
+              ' Score estimated from a deterministic sample of up to 500 points for large datasets.'}
           </p>
         </div>
 
