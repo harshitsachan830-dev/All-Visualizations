@@ -117,6 +117,8 @@ type TrainedDataset = {
   warnings: { level: "warning" | "info"; message: string }[];
 };
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+
 const learningRate = 0.3;
 const featureInfo: Record<FeatureKey, { label: string; unit: string }> = {
   tenure: { label: "Tenure", unit: "months" },
@@ -359,7 +361,7 @@ function App() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const response = await fetch("/api/profile", {
+      const response = await fetch(`${apiBaseUrl}/api/profile`, {
         method: "POST",
         body: form,
       });
@@ -432,7 +434,7 @@ function App() {
       form.append("categorical_missing", categoricalMissing);
       form.append("duplicate_rows", duplicatePolicy);
       form.append("excluded_columns", JSON.stringify(excludedColumns));
-      const response = await fetch("/api/train", {
+      const response = await fetch(`${apiBaseUrl}/api/train`, {
         method: "POST",
         body: form,
       });

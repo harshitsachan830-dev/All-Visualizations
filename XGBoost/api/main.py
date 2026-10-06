@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import re
 import warnings
 from pathlib import Path
@@ -37,9 +38,17 @@ PREVIEW_ROWS = 8
 TARGET_NAMES = {"target", "label", "class", "outcome", "churn", "attrition", "y"}
 
 app = FastAPI(title="BoostLab CSV model API", version="1.0.0")
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

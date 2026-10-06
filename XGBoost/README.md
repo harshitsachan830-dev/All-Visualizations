@@ -1,5 +1,31 @@
 # React + TypeScript + Vite
 
+## Deploying to Render
+
+This application uses separate frontend and API services. In the Render
+repository, set each service's root directory to `XGBoost`.
+
+### API web service
+
+- Runtime: Python
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+- Health check path: `/api/health`
+- Environment variable: `CORS_ORIGINS=https://<your-static-site>.onrender.com`
+
+Keep local development working by leaving `CORS_ORIGINS` unset locally; the API
+defaults to the Vite localhost origins.
+
+### Frontend static site
+
+- Build command: `npm ci && npm run build`
+- Publish directory: `dist`
+- Environment variable: `VITE_API_URL=https://<your-api-service>.onrender.com`
+
+Set the frontend URL in the API's `CORS_ORIGINS` variable after creating the
+static site. Set `VITE_API_URL` to the API's public URL, without a trailing
+slash, then trigger a new frontend deploy so Vite embeds the value.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
