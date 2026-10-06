@@ -1,0 +1,83 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap");
+
+:root {
+  --ink: #1d2b45;
+  --ink-dim: #60738f;
+  --muted: #8191a8;
+  --line: #e7ecf4;
+  --line2: #dce4f0;
+  --bg: #f3f6fb;
+  --surface: #ffffff;
+  --surface2: #f5f7fb;
+  --glass: #ffffff;
+  --paper: #ffffff;
+  --leaf: #5263e8;
+  --leaf-glow: rgba(82, 99, 232, 0.14);
+  --coral: #df4f50;
+  --coral-glow: rgba(223, 79, 80, 0.14);
+  --gold: #a96b15;
+  --cyan: #3b7ca8;
+  --green: #17835f;
+  --grad-brand: linear-gradient(135deg, #5263e8, #7184ee);
+  --grad-green: linear-gradient(135deg, #17835f, #36a783);
+  --grad-warm: linear-gradient(135deg, #df4f50, #ec8b63);
+  --grad-card: #ffffff;
+  --sans: "DM Sans", sans-serif;
+  --display: "Manrope", sans-serif;
+  --mono: "IBM Plex Mono", monospace;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--bg);
+}
+
+button, input { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 2px;
+}
+::selection { color: #203052; background: #dfe5ff; }
+
+#root { min-height: 100vh; }
+
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd4e2; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #aebbd0; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 var(--leaf-glow); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+@keyframes marker-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
