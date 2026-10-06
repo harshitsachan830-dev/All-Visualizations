@@ -41,6 +41,7 @@ const pageCopy: Record<View, { title: string; subtitle: string }> = {
 }
 
 const defaultParameters = { n_estimators: 80, learning_rate: 0.08, max_depth: 2, subsample: 0.85, loss: 'log_loss' }
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 function App() {
   const [view, setView] = useState<View>('overview')
@@ -61,7 +62,7 @@ function App() {
     const loadDefault = async () => {
       setBusy(true)
       try {
-        const response = await fetch('/api/train', {
+        const response = await fetch(`${apiBaseUrl}/api/train`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dataset: 'iris', task: 'classification', ...defaultParameters }),
@@ -103,7 +104,7 @@ function App() {
           : parameters.loss,
     }
     try {
-      const response = await fetch('/api/train', {
+      const response = await fetch(`${apiBaseUrl}/api/train`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
