@@ -111,10 +111,6 @@ a:focus-visible {
 .comparison-table>div { color: #514d59; font-size: 10px; }
 .comparison-table>div:first-child { color: #5f5c69; font-size: 9px; }
 .comparison-table b { color: #34313d; }
-.tree-api-view>p, .tree-api-heading { color: #514d59; font-size: 10px; }
-.tree-api-splits>div, .tree-api-leaves>span { color: #45424f; font-size: 9px; }
-.tree-api-splits>div>b, .tree-api-leaves>b { color: #5f5c69; font-size: 8px; }
-.tree-api-leaves strong { color: #4934b2; }
 .experiment-history .panel-head p, .experiment-empty,
 .experiment-message { color: #514d59; font-size: 10px; }
 .insight-summary>span, .insight-local>span { color: #514d59; font-size: 9px; }
@@ -346,12 +342,6 @@ input[type=range] { accent-color: #8b5cf6 !important; }
 .tree-notes span { color: #a7afbc; }
 .surface { background: radial-gradient(ellipse,#1e1930,transparent 65%); }
 .surface i { background: #6f4ab8; }
-.tree-api-view { border-color: #303641; background: #11141a; }
-.tree-api-heading, .tree-api-splits>div>b, .tree-api-leaves>b { color: #a7afbc; }
-.tree-api-splits>div { color: #e0e3eb; background: #191d26; }
-.tree-api-leaves>span { color: #c5cad4; background: #252a34; }
-.tree-api-leaves strong { color: #d2c4ff; }
-.tree-api-view>p { color: #a7afbc; }
 .experiment-controls, .experiment-history { border-color: #272c36; background: #151922; }
 .experiment-controls .setting-fields label { color: #b7bfcc; }
 .experiment-controls .setting-fields input[type=number] { color: #f0f2f6; border-color: #3a414d; background: #11141a; }
@@ -430,8 +420,6 @@ input[type=range] { accent-color: #8b5cf6 !important; }
 .boundary-controls select { font-size: 12px; }
 .impute p, .small-note, .api-hint, .stat-detail p { font-size: 11px; }
 .stat-detail>small { font-size: 10px; }
-.tree-api-splits>div, .tree-api-leaves>span { font-size: 10px; }
-.tree-api-view>p { font-size: 10px; }
 .insight-summary>div, .insight-contribution { font-size: 11px; }
 .insight-summary>div>small, .insight-local>label,
 .insight-summary>p, .insight-local>p { font-size: 11px; }

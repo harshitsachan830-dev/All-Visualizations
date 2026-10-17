@@ -2,39 +2,34 @@
 
 ## Product intent
 
-Teach CatBoost's model story through connected views: categorical features, ordered target statistics, sequential tree growth, improving predictions, and local/global explanations. The default workspace is an overview dashboard with a premium charcoal interface, restrained purple/indigo accent, compact metric cards, and responsive analytics panels.
+Help users understand CatBoost through a calm, section-based workflow: dataset profiling, model training, task-appropriate evaluation, explainability, response-surface exploration, and controlled tuning. Charts must use active dataset/model responses. When real results are unavailable, show an actionable empty state rather than illustrative values.
 
 ## Navigation
 
-About CatBoost, Overview, Dataset, Ordered Boosting, Tree Visualization, Training Progress, Decision Boundary, Feature Importance, SHAP Analysis, Prediction Explorer, 3D Visualization, Hyperparameter Tuning, Model Comparison, and Settings. The About CatBoost page introduces the model concepts, guides users through loading data and running experiments, and links to the relevant lab views.
+The main sections are Dataset, Training, Evaluation, Explain AI, 3D Explorer, Tuning, and CatBoost Guide. Dataset and training setup stay separate from evaluation and explanation so the first screen does not overload users. Advanced ordered-statistic details are tucked into the Training section; the guide explains the full workflow and what training controls change.
 
-## Shared interaction state
+## CSV and dataset profile contract
 
-- Iteration is shared between ordered boosting, training progress, boundary snapshots, and selected tree context.
-- Selected sample is shared between ordered rows, tree path, prediction details, and local SHAP presentation.
-- Feature selection links dataset inspection to feature importance and SHAP views.
-- Animation supports play, pause, step, scrub, and reset.
-- Dataset upload changes the active schema and resets the previous model.
+`POST /api/dataset/upload` accepts multipart field `file` containing a CSV. Limits: 20 MiB, 500,000 rows, and 500 columns. It returns `{name, rows, columns, target, task, missing, target_distribution, features, preview}`; the last CSV column is the initial target.
 
-## CSV and imputation contract
-
-`POST /api/dataset/upload` accepts multipart field `file` containing a CSV. Limits: 20 MiB, 500,000 rows, and 500 columns. It returns `{name, rows, columns, target, task, missing, features, preview}`; the last CSV column is the initial target. Missing tokens include empty cells, `NA`, `N/A`, `null`, `None`, and `?`.
+Each feature includes type, unique and missing counts, missing percentage, and a distribution. Numerical columns return histogram bins, min/max, mean, median, and quartiles. Categorical columns return the top ten counts and remainder count. `GET /api/dataset?target=...&task=...` recalculates the target profile for the requested target/task.
 
 `POST /api/dataset/impute` accepts `{method: "mean" | "median" | "mode", columns?: string[]}`. Mean/median are restricted to numeric fields; mode supports either type. Empty columns without observed values are rejected. The imputed frame remains active in the API process and subsequent training uses it.
 
-## Model/API contracts
+## Model and evaluation contracts
 
-- `POST /api/train`: task, target, iterations, depth, learning rate, regularization, and seed in; validation metrics, feature metadata, training history, importance, duration, settings, and fitted iteration count out.
+- `POST /api/train`: returns fitted task/target, validation metrics, actual training history, best iteration, CatBoost feature importance, and task-specific evaluation data.
+- Classification metrics include accuracy, weighted precision/recall/F1, log loss, and ROC-AUC when defined. The evaluation payload includes held-out labels, confusion counts, and class probabilities.
+- Regression metrics include R², MAE, and RMSE. The evaluation payload includes held-out actual and predicted values for actual-vs-predicted, residual, and residual-distribution plots.
 - `GET /api/ordered-step`: seeded permutation, selected row/category, eligible prior count/sum, and ordered statistic.
-- `GET /api/tree/{tree_id}`: split conditions and leaf values. Exact sample counts/gains are not promised because CatBoost does not consistently expose them.
-- `GET /api/boundary`: grid predictions over two numeric model features.
-- `GET /api/importance`, `GET /api/shap`, `POST /api/predict`: global importance, row SHAP/baseline, and prediction with probability/contributions.
+- `GET /api/boundary`: model predictions across a 41 × 41 robust-range grid for two numeric features, plus up to 500 evenly sampled observed rows and target values. Other inputs use the training reference profile.
+- `GET /api/importance`, `GET /api/shap`, `POST /api/predict`: CatBoost feature importance, local/global SHAP data, and prediction with probabilities/contributions.
 - `GET|POST /api/experiments`: in-memory run history and experiment results.
 
-API data is session-scoped process memory, not durable storage. Vite proxies `/api` to `127.0.0.1:8000` in development. CatBoost training requires a Python runtime with a compatible CatBoost wheel; README currently recommends Python 3.10–3.13.
+SHAP values explain model behavior, not real-world causation. Classification and regression use distinct evaluation views. The 2D response heatmap remains available alongside four interactive 3D regression presentation modes: a prediction overview, polynomial-style surface, observed scatter plus response surface, and a CatBoost nonlinear view with actual/predicted connectors. The polynomial-style view is still CatBoost output, not a separately trained polynomial model.
 
-## Stack and current boundary
+API data is process memory, not durable storage. Vite proxies `/api` to `127.0.0.1:8000` in development. CatBoost training requires a Python runtime with a compatible wheel; README recommends Python 3.10–3.13.
 
-React 19 + TypeScript + Vite; Recharts; lucide-react; Three.js; FastAPI; pandas; scikit-learn; CatBoost. Upload, schema inspection, mean/median/mode imputation, classification/regression training, metrics/history, feature importance, ordered statistics, SHAP/prediction explanation, 2D and 3D numeric response surfaces, fitted-tree split/leaf details, and experiment runs/history use real API responses.
+## Stack
 
-The 3D view is a separate lazy-loaded page. It plots model probability (binary/multiclass confidence) or regression output as a height/color surface, overlays dataset observations, and supports X/Y feature selection, tree-count checkpoints, slider updates, orbit, pan, zoom, and camera reset. It requires a trained model and two numeric features. The overview opens with clearly labeled illustrative sample metrics; its compact tree drawing and categorical distribution are examples, not active-model output. Comparison metrics, editable prediction inputs, and settings remain demo UI. The dedicated tree page adds actual split/leaf data below its sketch, while the SHAP page contains the live prediction and contribution breakdown.
+React 19 + TypeScript + Vite; Recharts; lucide-react; Three.js; FastAPI; pandas; scikit-learn; CatBoost.

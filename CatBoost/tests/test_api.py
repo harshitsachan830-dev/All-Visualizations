@@ -48,7 +48,17 @@ class ApiWorkflowTests(unittest.TestCase):
         self.assertEqual(result["target"], "churn")
         self.assertEqual(result["missing"], 3)
         self.assertEqual(result["features"][0]["type"], "Numerical")
+        self.assertAlmostEqual(result["features"][0]["missing_percent"], 100 / 48)
+        self.assertEqual(result["features"][0]["distribution"]["kind"], "histogram")
         self.assertEqual(result["features"][2]["type"], "Categorical")
+        self.assertEqual(result["features"][2]["distribution"]["kind"], "categories")
+        self.assertEqual(result["target_distribution"]["kind"], "categories")
+
+    def test_dataset_profile_can_change_target_column(self) -> None:
+        result = self.client.get("/api/dataset", params={"target": "plan"})
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["target"], "plan")
+        self.assertEqual(result.json()["target_distribution"]["kind"], "categories")
 
     def test_mean_median_and_mode_imputation(self) -> None:
         for method, column in [("mean", "tenure"), ("median", "spend"), ("mode", "plan")]:
@@ -101,12 +111,24 @@ class ApiWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(trained.status_code, 200, trained.text)
         self.assertIn("rmse", trained.json()["metrics"])
+        self.assertIn("mae", trained.json()["metrics"])
         self.assertIn("r2", trained.json()["metrics"])
+        self.assertTrue(trained.json()["evaluation"]["actual"])
+        self.assertEqual(
+            len(trained.json()["evaluation"]["actual"]),
+            len(trained.json()["evaluation"]["predicted"]),
+        )
         boundary = self.client.get(
             "/api/boundary", params={"feature_x": "size", "feature_y": "rooms", "iteration": 10}
         )
         self.assertEqual(boundary.status_code, 200, boundary.text)
         self.assertTrue(all(isinstance(value, float) for value in boundary.json()["predictions"]))
+        self.assertEqual(len(boundary.json()["predictions"]), 1681)
+        samples = boundary.json()["samples"]
+        self.assertEqual(len(samples), 48)
+        self.assertIsInstance(samples[0]["row"], int)
+        self.assertEqual(samples[-1]["target"], 120.5)
+        self.assertIsInstance(samples[0]["prediction"], float)
 
     def test_multiclass_boundary_returns_confidence_values(self) -> None:
         rows = ["size,rooms,zone,kind"]
@@ -130,6 +152,12 @@ class ApiWorkflowTests(unittest.TestCase):
         self.assertEqual(boundary.status_code, 200, boundary.text)
         values = boundary.json()["predictions"]
         self.assertTrue(all(0 <= value <= 1 for value in values))
+        self.assertEqual(boundary.json()["classes"], ["cedar", "maple", "pine"])
+        self.assertIn(boundary.json()["samples"][0]["target"], boundary.json()["classes"])
+        row = self.client.get("/api/dataset").json()["preview"][0]
+        prediction = self.client.post("/api/predict", json={"row": row})
+        self.assertEqual(prediction.status_code, 200, prediction.text)
+        self.assertEqual(prediction.json()["raw_output_class"], prediction.json()["prediction"])
 
     def test_experiment_run_is_recorded(self) -> None:
         response = self.client.post(
@@ -138,11 +166,12 @@ class ApiWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["run_id"], 1)
+        self.assertIn("training_result", response.json())
         history = self.client.get("/api/experiments").json()["experiments"]
         self.assertEqual(len(history), 1)
         self.assertIn("accuracy", history[0]["metrics"])
 
-    def test_training_tree_shap_prediction_and_boundary(self) -> None:
+    def test_training_shap_prediction_and_boundary(self) -> None:
         trained = self.client.post(
             "/api/train",
             json={"target": "churn", "task": "classification", "iterations": 20, "depth": 4},
@@ -150,16 +179,20 @@ class ApiWorkflowTests(unittest.TestCase):
         self.assertEqual(trained.status_code, 200, trained.text)
         result = trained.json()
         self.assertIn("accuracy", result["metrics"])
+        self.assertIn("precision", result["metrics"])
+        self.assertIn("recall", result["metrics"])
+        self.assertIn("f1", result["metrics"])
         self.assertTrue(result["train_history"])
         self.assertTrue(result["importance"])
-
-        tree = self.client.get("/api/tree/0")
-        self.assertEqual(tree.status_code, 200, tree.text)
-        self.assertTrue(tree.json()["leaf_values"])
+        self.assertEqual(len(result["evaluation"]["labels"]), 2)
+        self.assertEqual(len(result["evaluation"]["confusion_matrix"]), 2)
 
         shap = self.client.get("/api/shap", params={"sample": 0})
         self.assertEqual(shap.status_code, 200, shap.text)
         self.assertEqual(len(shap.json()["shap_values"]), 3)
+        self.assertTrue(shap.json()["summary"])
+        summary_by_name = {item["feature"]: item for item in shap.json()["summary"]}
+        self.assertEqual(summary_by_name["plan"]["feature_type"], "Categorical")
 
         prediction = self.client.post(
             "/api/predict",
@@ -173,7 +206,7 @@ class ApiWorkflowTests(unittest.TestCase):
             "/api/boundary", params={"feature_x": "tenure", "feature_y": "spend", "iteration": 10}
         )
         self.assertEqual(boundary.status_code, 200, boundary.text)
-        self.assertEqual(len(boundary.json()["predictions"]), 625)
+        self.assertEqual(len(boundary.json()["predictions"]), 1681)
         self.assertEqual(boundary.json()["iteration"], 10)
 
 

@@ -11,7 +11,18 @@ import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sklearn.metrics import accuracy_score, log_loss, mean_squared_error, r2_score
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    mean_absolute_error,
+    mean_squared_error,
+    precision_score,
+    r2_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 
 try:
@@ -55,6 +66,8 @@ feature_names: list[str] = []
 categorical_names: list[str] = []
 training_defaults: dict[str, Any] = {}
 validation_pool: Any = None
+validation_features: pd.DataFrame | None = None
+validation_targets: pd.Series | None = None
 experiments: list[dict[str, Any]] = []
 
 
@@ -110,24 +123,66 @@ def json_value(value: Any) -> Any:
     return value.item() if isinstance(value, np.generic) else value
 
 
-def dataset_payload(data: pd.DataFrame) -> dict[str, Any]:
+def dataset_payload(
+    data: pd.DataFrame,
+    selected_target: str | None = None,
+    selected_task: Literal["classification", "regression"] | None = None,
+) -> dict[str, Any]:
+    def category_profile(series: pd.Series) -> dict[str, Any]:
+        counts = series.dropna().astype(str).value_counts()
+        top_values = counts.head(10)
+        return {
+            "kind": "categories",
+            "values": [
+                {"value": str(value), "count": int(count)}
+                for value, count in top_values.items()
+            ],
+            "other_count": int(counts.iloc[10:].sum()),
+        }
+
     features = []
     for name in data.columns:
         column = data[name]
         numeric = pd.api.types.is_numeric_dtype(column)
+        observed = column.dropna()
+        if numeric and not observed.empty:
+            counts, edges = np.histogram(observed.to_numpy(dtype=float), bins=min(20, max(1, observed.nunique())))
+            distribution = {
+                "kind": "histogram",
+                "bins": [
+                    {
+                        "lower": float(edges[index]),
+                        "upper": float(edges[index + 1]),
+                        "count": int(count),
+                    }
+                    for index, count in enumerate(counts)
+                ],
+                "minimum": float(observed.min()),
+                "maximum": float(observed.max()),
+                "mean": float(observed.mean()),
+                "median": float(observed.median()),
+                "q1": float(observed.quantile(0.25)),
+                "q3": float(observed.quantile(0.75)),
+            }
+        else:
+            distribution = category_profile(column)
         features.append(
             {
                 "name": str(name),
                 "type": "Numerical" if numeric else "Categorical",
                 "missing": int(column.isna().sum()),
+                "missing_percent": float(column.isna().mean() * 100),
                 "unique": int(column.nunique(dropna=True)),
+                "distribution": distribution,
             }
         )
     preview = [
         {str(key): json_value(value) for key, value in record.items()}
         for record in data.head(100).astype(object).to_dict(orient="records")
     ]
-    target = target_name if target_name in data.columns else str(data.columns[-1])
+    target = selected_target if selected_target in data.columns else (
+        target_name if target_name in data.columns else str(data.columns[-1])
+    )
     target_values = data[target].dropna()
     inferred_task = (
         "regression"
@@ -135,13 +190,18 @@ def dataset_payload(data: pd.DataFrame) -> dict[str, Any]:
         and target_values.nunique() > 20
         else "classification"
     )
+    task = selected_task or inferred_task
+    target_profile = category_profile(data[target]) if task == "classification" else next(
+        item["distribution"] for item in features if item["name"] == target
+    )
     return {
         "name": dataset_name,
         "rows": len(data),
         "columns": len(data.columns),
         "target": target,
-        "task": inferred_task,
+        "task": task,
         "missing": int(data.isna().sum().sum()),
+        "target_distribution": target_profile,
         "features": features,
         "preview": preview,
     }
@@ -196,7 +256,7 @@ def history_payload(metric_history: dict[str, dict[str, list[float]]], iteration
 
 def train(request: TrainRequest) -> dict[str, Any]:
     global model, model_task, target_name, feature_names, categorical_names
-    global training_defaults, validation_pool
+    global training_defaults, validation_pool, validation_features, validation_targets
     data = require_dataset()
     if CatBoostClassifier is None:
         raise HTTPException(
@@ -258,23 +318,60 @@ def train(request: TrainRequest) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=f"CatBoost could not train this dataset: {error}") from error
     elapsed = time.perf_counter() - start
     prediction = candidate.predict(x_valid).reshape(-1)
+    evaluation: dict[str, Any]
     if request.task == "regression":
         metrics = {
             "rmse": float(math.sqrt(mean_squared_error(y_valid, prediction))),
+            "mae": float(mean_absolute_error(y_valid, prediction)),
             "r2": float(r2_score(y_valid, prediction)),
         }
+        evaluation = {
+            "actual": [float(value) for value in y_valid.iloc[:500]],
+            "predicted": [float(value) for value in prediction[:500]],
+        }
     else:
+        evaluation_notes: dict[str, str] = {}
         probabilities = candidate.predict_proba(x_valid)
-        metrics = {"accuracy": float(accuracy_score(y_valid, prediction))}
+        metrics = {
+            "accuracy": float(accuracy_score(y_valid, prediction)),
+            "precision": float(precision_score(y_valid, prediction, average="weighted", zero_division=0)),
+            "recall": float(recall_score(y_valid, prediction, average="weighted", zero_division=0)),
+            "f1": float(f1_score(y_valid, prediction, average="weighted", zero_division=0)),
+        }
         try:
             metrics["log_loss"] = float(log_loss(y_valid, probabilities, labels=candidate.classes_))
-        except ValueError:
-            metrics["log_loss"] = float("nan")
+        except ValueError as error:
+            evaluation_notes["log_loss_unavailable_reason"] = str(error)
+        try:
+            if len(candidate.classes_) == 2:
+                metrics["roc_auc"] = float(roc_auc_score(y_valid, probabilities[:, 1]))
+            else:
+                metrics["roc_auc"] = float(
+                    roc_auc_score(
+                        y_valid,
+                        probabilities,
+                        labels=candidate.classes_,
+                        multi_class="ovr",
+                        average="weighted",
+                    )
+                )
+        except ValueError as error:
+            evaluation_notes["roc_auc_unavailable_reason"] = str(error)
+        evaluation = {
+            **evaluation_notes,
+            "labels": [json_value(label) for label in candidate.classes_],
+            "confusion_matrix": confusion_matrix(y_valid, prediction, labels=candidate.classes_).tolist(),
+            "actual": [json_value(value) for value in y_valid.iloc[:1000]],
+            "predicted": [json_value(value) for value in prediction[:1000]],
+            "probabilities": probabilities[:1000].tolist(),
+        }
 
     model = candidate
     model_task = request.task
     target_name = selected_target
     validation_pool = make_pool(x_valid)
+    validation_features = x_valid.copy()
+    validation_targets = y_valid.copy()
     scores = candidate.get_feature_importance(type="PredictionValuesChange")
     ranked = sorted(
         ({"feature": name, "score": float(score)} for name, score in zip(feature_names, scores)),
@@ -282,14 +379,20 @@ def train(request: TrainRequest) -> dict[str, Any]:
         reverse=True,
     )
     history = history_payload(candidate.get_evals_result(), request.iterations)
+    history_metrics = candidate.get_evals_result()
+    history_metric = next(iter(history_metrics.get("learn", {})), loss)
+    best_iteration = candidate.get_best_iteration()
     return {
         "task": request.task,
         "target": selected_target,
         "metrics": metrics,
         "iterations": int(candidate.tree_count_),
         "train_history": history,
+        "history_metric": history_metric,
+        "best_iteration": int(best_iteration + 1) if best_iteration >= 0 else None,
         "training_time": elapsed,
         "importance": ranked,
+        "evaluation": evaluation,
         "feature_metadata": dataset_payload(data)["features"],
         "settings": request.model_dump(),
     }
@@ -301,13 +404,17 @@ def health() -> dict[str, Any]:
 
 
 @app.get("/api/dataset")
-def get_dataset() -> dict[str, Any]:
-    return dataset_payload(require_dataset())
+def get_dataset(
+    target: str | None = None,
+    task: Literal["classification", "regression"] | None = None,
+) -> dict[str, Any]:
+    return dataset_payload(require_dataset(), target, task)
 
 
 @app.post("/api/dataset/upload")
 async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
     global frame, dataset_name, model, model_task, target_name, feature_names, categorical_names, experiments
+    global validation_pool, validation_features, validation_targets
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=415, detail="Upload a .csv file")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
@@ -336,13 +443,14 @@ async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
     target_name = str(data.columns[-1])
     model = model_task = None
     feature_names = categorical_names = []
+    validation_pool = validation_features = validation_targets = None
     experiments = []
     return dataset_payload(data)
 
 
 @app.post("/api/dataset/impute")
 def impute_dataset(request: ImputeRequest) -> dict[str, Any]:
-    global frame, model, model_task
+    global frame, model, model_task, validation_pool, validation_features, validation_targets
     data = require_dataset()
     columns = request.columns or [name for name in data if data[name].isna().any()]
     if not columns:
@@ -369,6 +477,7 @@ def impute_dataset(request: ImputeRequest) -> dict[str, Any]:
     frame = updated
     model = None
     model_task = None
+    validation_pool = validation_features = validation_targets = None
     return dataset_payload(updated)
 
 
@@ -426,28 +535,6 @@ def ordered_step(
     }
 
 
-@app.get("/api/tree/{tree_id}")
-def get_tree(tree_id: int) -> dict[str, Any]:
-    fitted = require_model()
-    if tree_id < 0 or tree_id >= fitted.tree_count_:
-        raise HTTPException(status_code=404, detail="Tree index is outside the trained model")
-    splits: list[str] = []
-    if validation_pool is not None and hasattr(fitted, "_get_tree_splits"):
-        splits = fitted._get_tree_splits(tree_id, validation_pool)
-    leaves = fitted.get_leaf_values()
-    counts = fitted.get_tree_leaf_counts()
-    start = int(sum(counts[:tree_id]))
-    leaf_values = [float(value) for value in leaves[start : start + counts[tree_id]]]
-    return {
-        "tree_id": tree_id,
-        "depth": int(round(math.log2(max(1, int(counts[tree_id]))))),
-        "split_conditions": splits,
-        "nodes": [{"id": index, "split": split} for index, split in enumerate(splits)],
-        "leaf_values": leaf_values,
-        "note": "CatBoost exposes exact leaf values and split conditions; per-node sample counts and gains are not public for every model type.",
-    }
-
-
 @app.get("/api/boundary")
 def get_boundary(feature_x: str, feature_y: str, iteration: int | None = None) -> dict[str, Any]:
     fitted = require_model()
@@ -460,8 +547,8 @@ def get_boundary(feature_x: str, feature_y: str, iteration: int | None = None) -
     y_values = data[feature_y].dropna()
     if x_values.empty or y_values.empty:
         raise HTTPException(status_code=422, detail="Selected features do not have numeric values")
-    x_axis = np.linspace(float(x_values.quantile(0.02)), float(x_values.quantile(0.98)), 25)
-    y_axis = np.linspace(float(y_values.quantile(0.02)), float(y_values.quantile(0.98)), 25)
+    x_axis = np.linspace(float(x_values.quantile(0.02)), float(x_values.quantile(0.98)), 41)
+    y_axis = np.linspace(float(y_values.quantile(0.02)), float(y_values.quantile(0.98)), 41)
     base = {name: training_defaults[name] for name in feature_names}
     points = pd.DataFrame([{**base, feature_x: x, feature_y: y} for y in y_axis for x in x_axis], columns=feature_names)
     tree_limit = max(1, min(iteration or fitted.tree_count_, fitted.tree_count_))
@@ -475,11 +562,33 @@ def get_boundary(feature_x: str, feature_y: str, iteration: int | None = None) -
             json_value(value)
             for value in fitted.predict(boundary_pool, ntree_end=tree_limit).reshape(-1)
         ]
+    sample_columns = [*feature_names]
+    if target_name in data.columns:
+        sample_columns.append(target_name)
+    sample_indices = np.linspace(0, len(data) - 1, min(len(data), 500), dtype=int)
+    sampled_data = data.iloc[sample_indices]
+    sampled_features, _ = normalized_features(sampled_data[feature_names], feature_names)
+    sampled_predictions = fitted.predict(make_pool(sampled_features), ntree_end=tree_limit).reshape(-1)
     samples = [
-        {feature_x: json_value(row[feature_x]), feature_y: json_value(row[feature_y])}
-        for _, row in data[[feature_x, feature_y]].head(500).iterrows()
+        {
+            **{feature_x: json_value(row[feature_x]), feature_y: json_value(row[feature_y])},
+            "target": json_value(row[target_name]) if target_name in data.columns else None,
+            "prediction": json_value(sampled_predictions[position]),
+            "row": int(index),
+        }
+        for position, (index, row) in enumerate(sampled_data[sample_columns].iterrows())
     ]
-    return {"feature_x": feature_x, "feature_y": feature_y, "iteration": tree_limit, "x": x_axis.tolist(), "y": y_axis.tolist(), "predictions": predictions, "samples": samples}
+    classes = [json_value(label) for label in fitted.classes_] if model_task == "classification" else []
+    return {
+        "feature_x": feature_x,
+        "feature_y": feature_y,
+        "iteration": tree_limit,
+        "x": x_axis.tolist(),
+        "y": y_axis.tolist(),
+        "predictions": predictions,
+        "samples": samples,
+        "classes": classes,
+    }
 
 
 @app.get("/api/shap")
@@ -488,16 +597,41 @@ def get_shap(sample: int = 0, limit: int = 200) -> dict[str, Any]:
     data = require_dataset()
     if sample < 0 or sample >= len(data):
         raise HTTPException(status_code=422, detail="Sample index is out of range")
-    features = data.drop(columns=[target_name]).iloc[: max(1, min(limit, 500))].copy()
+    summary_count = max(1, min(limit, 500))
+    sample_indices = list(range(min(len(data), summary_count)))
+    if sample not in sample_indices:
+        sample_indices.append(sample)
+    features = data.drop(columns=[target_name]).iloc[sample_indices].copy()
     features, _ = normalized_features(features, feature_names)
     values = np.asarray(fitted.get_feature_importance(make_pool(features), type="ShapValues"))
-    local = values[sample] if sample < len(values) else values[0]
+    local = values[sample_indices.index(sample)]
     if local.ndim > 1:
-        local = local[0]
-    global_values = np.abs(values)
+        sample_row = features.iloc[[sample_indices.index(sample)]]
+        sample_prediction = fitted.predict(make_pool(sample_row)).reshape(-1)[0]
+        class_index = int(np.where(fitted.classes_ == sample_prediction)[0][0])
+        local = local[class_index]
+    global_values = np.abs(values[:summary_count])
+    summary_values = values[:summary_count]
     if global_values.ndim == 3:
         global_values = global_values.mean(axis=1)
+        summary_values = summary_values.mean(axis=1)
     mean_abs = global_values[:, :-1].mean(axis=0)
+    ranked_indices = np.argsort(mean_abs)[::-1][: min(12, len(feature_names))]
+    summary = [
+        {
+            "feature": feature_names[index],
+            "feature_type": "Categorical" if feature_names[index] in categorical_names else "Numerical",
+            "mean_abs_shap": float(mean_abs[index]),
+            "points": [
+                {
+                    "feature_value": json_value(data.iloc[row][feature_names[index]]),
+                    "shap_value": float(summary_values[row, index]),
+                }
+                for row in range(len(summary_values))
+            ],
+        }
+        for index in ranked_indices
+    ]
     return {
         "feature_names": feature_names,
         "feature_values": [json_value(data.iloc[sample][name]) for name in feature_names],
@@ -507,6 +641,7 @@ def get_shap(sample: int = 0, limit: int = 200) -> dict[str, Any]:
             {"feature": name, "mean_abs_shap": float(value)}
             for name, value in zip(feature_names, mean_abs)
         ],
+        "summary": summary,
         "output": model_task,
     }
 
@@ -526,14 +661,21 @@ def predict(request: PredictionRequest) -> dict[str, Any]:
     explanation = np.asarray(fitted.get_feature_importance(pool, type="ShapValues"))
     local = explanation[0]
     if local.ndim > 1:
-        local = local[0]
+        class_index = int(np.where(fitted.classes_ == prediction)[0][0])
+        local = local[class_index]
     contributions = sorted(
         ({"feature": name, "value": json_value(values[name]), "shap_value": float(value)} for name, value in zip(feature_names, local[:-1])),
         key=lambda item: abs(item["shap_value"]),
         reverse=True,
     )
-    result: dict[str, Any] = {"input": values, "prediction": json_value(prediction), "contributions": contributions, "base_value": float(local[-1])}
+    result: dict[str, Any] = {
+        "input": values,
+        "prediction": json_value(prediction),
+        "contributions": contributions,
+        "base_value": float(local[-1]),
+    }
     if model_task == "classification":
+        result["raw_output_class"] = json_value(prediction)
         result["probabilities"] = {str(label): float(probability) for label, probability in zip(fitted.classes_, fitted.predict_proba(pool)[0])}
     return result
 
@@ -548,4 +690,4 @@ def run_experiment(request: TrainRequest) -> dict[str, Any]:
     result = train(request)
     record = {"run_id": len(experiments) + 1, "configuration": request.model_dump(), "metrics": result["metrics"], "training_time": result["training_time"], "iterations": result["iterations"]}
     experiments.append(record)
-    return record
+    return {**record, "training_result": result}

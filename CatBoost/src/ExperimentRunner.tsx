@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { FlaskConical } from 'lucide-react'
 import { apiUrl } from './api'
+import type { TrainingResult } from './visualizationTypes'
 import './ExperimentRunner.css'
 
-type Experiment = { run_id: number; configuration: { iterations: number; depth: number; learning_rate: number }; metrics: Record<string, number>; training_time: number; iterations: number }
+type Experiment = { run_id: number; configuration: { iterations: number; depth: number; learning_rate: number }; metrics: Record<string, number>; training_time: number; iterations: number; training_result?: TrainingResult }
 
-export function ExperimentRunner({ target, task, depth, setDepth, rate, setRate }: { target: string; task: string; depth: number; setDepth: (value: number) => void; rate: number; setRate: (value: number) => void }) {
+export function ExperimentRunner({ target, task, depth, setDepth, rate, setRate, onTrainingComplete }: { target: string; task: string; depth: number; setDepth: (value: number) => void; rate: number; setRate: (value: number) => void; onTrainingComplete: (result: TrainingResult) => void }) {
   const [iterations, setIterations] = useState(200)
   const [l2, setL2] = useState(3)
   const [randomStrength, setRandomStrength] = useState(1)
@@ -14,7 +15,18 @@ export function ExperimentRunner({ target, task, depth, setDepth, rate, setRate 
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    fetch(apiUrl('/api/experiments')).then((response) => response.json()).then((result) => setRuns(result.experiments ?? [])).catch(() => {})
+    const controller = new AbortController()
+    fetch(apiUrl('/api/experiments'), { signal: controller.signal })
+      .then(async (response) => {
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.detail || 'Could not load experiment history.')
+        return result as { experiments: Experiment[] }
+      })
+      .then((result) => setRuns(result.experiments))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : 'Could not load experiment history.')
+      })
+    return () => controller.abort()
   }, [])
 
   async function runExperiment() {
@@ -25,6 +37,7 @@ export function ExperimentRunner({ target, task, depth, setDepth, rate, setRate 
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Experiment failed')
       setRuns((current) => [...current, result])
+      if (result.training_result) onTrainingComplete(result.training_result)
       setMessage(`Run ${result.run_id} completed in ${result.training_time.toFixed(2)} seconds.`)
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Experiment failed') }
     finally { setBusy(false) }
