@@ -43,6 +43,44 @@ type Page = typeof pages[number]['name']
 type Health = { status: string; catboost_available: boolean; dataset_loaded: boolean }
 type OrderedStep = { category: unknown; prior_count: number; prior_target_sum: number; statistic: number }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isDistribution(value: unknown): boolean {
+  return isRecord(value) && (value.kind === 'histogram' || value.kind === 'categories')
+}
+
+function isDatasetProfile(value: unknown): value is DatasetProfile {
+  if (!isRecord(value)
+    || typeof value.name !== 'string'
+    || typeof value.rows !== 'number'
+    || typeof value.columns !== 'number'
+    || typeof value.target !== 'string'
+    || (value.task !== 'classification' && value.task !== 'regression')
+    || typeof value.missing !== 'number'
+    || !isDistribution(value.target_distribution)
+    || !Array.isArray(value.preview)
+    || !Array.isArray(value.features)) return false
+
+  return value.features.every((feature: unknown) =>
+    isRecord(feature)
+    && typeof feature.name === 'string'
+    && (feature.type === 'Numerical' || feature.type === 'Categorical')
+    && typeof feature.missing === 'number'
+    && typeof feature.missing_percent === 'number'
+    && typeof feature.unique === 'number'
+    && isDistribution(feature.distribution),
+  )
+}
+
+function requireDatasetProfile(value: unknown): DatasetProfile {
+  if (!isDatasetProfile(value)) {
+    throw new Error('The connected API is outdated and returned an incomplete dataset profile. Redeploy the catboost-api service from the latest GitHub commit.')
+  }
+  return value
+}
+
 const descriptions: Record<Page, string> = {
   Dataset: 'Profile your target and features before training.',
   Training: 'Track the fitted model’s learning curve and training settings.',
@@ -91,7 +129,15 @@ export default function Dashboard() {
         if (status.dataset_loaded && !loaded) {
           const datasetResponse = await fetch(apiUrl('/api/dataset'))
           if (!datasetResponse.ok) throw new Error('Could not restore the active dataset.')
-          const restored = await datasetResponse.json() as DatasetProfile
+          const payload: unknown = await datasetResponse.json()
+          if (!isDatasetProfile(payload)) {
+            loaded = true
+            setData(null)
+            setTrained(null)
+            setMessage('The connected API is outdated and returned an incomplete dataset profile. Redeploy the catboost-api service from the latest GitHub commit.')
+            return
+          }
+          const restored = payload
           if (!active) return
           loaded = true
           applyDataset(restored)
@@ -180,7 +226,7 @@ export default function Dashboard() {
       const response = await fetch(apiUrl('/api/dataset/upload'), { method: 'POST', body: form })
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Upload failed.')
-      const profile = result as DatasetProfile
+      const profile = requireDatasetProfile(result)
       const firstMissing = profile.features.find((feature) => feature.missing > 0 && feature.type === 'Numerical')
         ?? profile.features.find((feature) => feature.missing > 0)
       setData(profile)
@@ -233,7 +279,7 @@ export default function Dashboard() {
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Imputation failed.')
-      setData(result as DatasetProfile)
+      setData(requireDatasetProfile(result))
       setTrained(null)
       setShap(null)
       setPrediction(null)
@@ -257,7 +303,7 @@ export default function Dashboard() {
       const response = await fetch(apiUrl(`/api/dataset?target=${encodeURIComponent(value)}&task=${task}`))
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Could not profile the selected target.')
-      const profile = result as DatasetProfile
+      const profile = requireDatasetProfile(result)
       setData(profile)
       setTask(profile.task)
     } catch (error) {
@@ -275,7 +321,7 @@ export default function Dashboard() {
       const response = await fetch(apiUrl(`/api/dataset?target=${encodeURIComponent(target)}&task=${value}`))
       const result = await response.json()
       if (!response.ok) throw new Error(result.detail || 'Could not profile the selected task.')
-      setData(result as DatasetProfile)
+      setData(requireDatasetProfile(result))
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not profile the selected task.')
     }
