@@ -26,17 +26,32 @@ const classKey=(header,value)=>{
   if(['no','n','false','0'].includes(key))return'no';
   return key;
 };
+const classColors=['#f07167','#5b5bd6','#06b6d4','#e67e22','#24a57a','#9b59b6'];
+const classColor=index=>classColors[index%classColors.length];
 function csv(t){let rows=[],row=[],v='',q=false;for(let i=0;i<t.length;i++){let c=t[i],n=t[i+1];if(c==='"'&&q&&n==='"'){v+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(v.trim());if(row.some(Boolean))rows.push(row);row=[];v=''}else v+=c}row.push(v.trim());if(row.some(Boolean))rows.push(row);return rows}
 
 /* ─── perceptron ────────────────────────────────────────────────── */
-function fit(data,rate,epochs){
-  let w=[0,0],b=0,states=[],step=0,converged=false;
+const argMax=values=>values.reduce((best,value,index)=>value>values[best]?index:best,0);
+const classScores=(state,point)=>state.classWeights
+  ? state.classWeights.map((w,index)=>w[0]*point.x+w[1]*point.y+state.classBiases[index])
+  : [state.weights[0]*point.x+state.weights[1]*point.y+state.bias];
+const predictState=(state,point)=>argMax(classScores(state,point));
+
+function fit(data,rate,epochs,classCount=2){
+  let classWeights=Array.from({length:classCount},()=>[0,0]),classBiases=Array(classCount).fill(0),states=[],step=0,converged=false;
   for(let e=0;e<epochs;e++){
     let errors=0;
     data.forEach((p,sampleIndex)=>{
-      let score=w[0]*p.x+w[1]*p.y+b,prediction=score>=0?1:0,error=p.label-prediction,before=[...w,b];
-      if(error){w[0]+=rate*error*p.x;w[1]+=rate*error*p.y;b+=rate*error;errors++}
-      states.push({step:++step,epoch:e,sampleIndex,point:p,score,prediction,error,before,weights:[...w],bias:b,errors});
+      const scores=classWeights.map((w,index)=>w[0]*p.x+w[1]*p.y+classBiases[index]);
+      const prediction=argMax(scores),error=prediction!==p.label;
+      const beforeWeights=classWeights.map(w=>[...w]),beforeBiases=[...classBiases];
+      if(error){
+        classWeights[p.label][0]+=rate*p.x; classWeights[p.label][1]+=rate*p.y; classBiases[p.label]+=rate;
+        classWeights[prediction][0]-=rate*p.x; classWeights[prediction][1]-=rate*p.y; classBiases[prediction]-=rate;
+        errors++;
+      }
+      const displayClass=Math.min(1,classCount-1);
+      states.push({step:++step,epoch:e,sampleIndex,point:p,score:scores[prediction],scores,prediction,error,before:[...beforeWeights[displayClass],beforeBiases[displayClass]],weights:[...classWeights[displayClass]],bias:classBiases[displayClass],classWeights:classWeights.map(w=>[...w]),classBiases:[...classBiases],beforeClassWeights:beforeWeights,beforeClassBiases:beforeBiases,errors});
     });
     if(!errors){converged=true;break}
   }
@@ -44,10 +59,19 @@ function fit(data,rate,epochs){
 }
 
 function metrics(data,s){
-  let tp=0,tn=0,fp=0,fn=0;
-  data.forEach(p=>{let y=s.weights[0]*p.x+s.weights[1]*p.y+s.bias>=0?1:0;if(p.label&&y)tp++;else if(!p.label&&!y)tn++;else if(!p.label&&y)fp++;else fn++});
-  let precision=tp/(tp+fp)||0,recall=tp/(tp+fn)||0;
-  return{tp,tn,fp,fn,accuracy:(tp+tn)/data.length,precision,recall,f1:2*precision*recall/(precision+recall)||0};
+  const classCount=Math.max(2,s.classWeights?.length??2);
+  const matrix=Array.from({length:classCount},()=>Array(classCount).fill(0));
+  data.forEach(p=>matrix[p.label][predictState(s,p)]++);
+  let correct=0;matrix.forEach((row,index)=>{correct+=row[index]||0});
+  const perClass=matrix.map((row,index)=>{
+    const tp=row[index]||0,fp=matrix.reduce((sum,current)=>sum+(current[index]||0),0)-tp,fn=row.reduce((sum,value)=>sum+value,0)-tp;
+    const precision=tp/(tp+fp)||0,recall=tp/(tp+fn)||0;
+    return{precision,recall,f1:2*precision*recall/(precision+recall)||0};
+  });
+  const precision=perClass.reduce((sum,value)=>sum+value.precision,0)/classCount;
+  const recall=perClass.reduce((sum,value)=>sum+value.recall,0)/classCount;
+  const f1=perClass.reduce((sum,value)=>sum+value.f1,0)/classCount;
+  return{tp:matrix[1]?.[1]||0,tn:matrix[0]?.[0]||0,fp:matrix[0]?.[1]||0,fn:matrix[1]?.[0]||0,accuracy:data.length?correct/data.length:0,precision,recall,f1,matrix,perClass};
 }
 
 /* ─── Line mini-chart ───────────────────────────────────────────── */
@@ -66,9 +90,9 @@ function Line({states,type,color,label}){
 /* ─── Accuracy mini-chart (0–1 range) ──────────────────────────── */
 function AccLine({states,data}){
   const vals=states.map(s=>{
-    let tp=0,tn=0;
-    data.forEach(p=>{let y=s.weights[0]*p.x+s.weights[1]*p.y+s.bias>=0?1:0;if(p.label===y)y===1?tp++:tn++;});
-    return(tp+tn)/data.length;
+    let correct=0;
+    data.forEach(p=>{if(p.label===predictState(s,p))correct++});
+    return correct/data.length;
   });
   const p=vals.map((v,i)=>`${i/Math.max(1,vals.length-1)*260},${85-v*75}`).join(' ');
   return(
@@ -82,15 +106,13 @@ function AccLine({states,data}){
 }
 
 /* ─── Class balance bar ─────────────────────────────────────────── */
-function ClassBalance({data,names}){
-  const c0=data.filter(p=>!p.label).length,c1=data.filter(p=>p.label).length,t=data.length;
-  const p0=t?Math.round(c0/t*100):0,p1=100-p0;
+function ClassBalance({data,classNames}){
+  const counts=classNames.map((_,index)=>data.filter(p=>p.label===index).length),t=data.length;
   return(
     <div className="class-balance">
-      <div className="balance-label"><span><i className="dot coral"/>Class 0 · {c0} ({p0}%)</span><span><i className="dot indigo"/>Class 1 · {c1} ({p1}%)</span></div>
+      <div className="balance-label">{classNames.map((name,index)=>{const percent=t?Math.round(counts[index]/t*100):0;return <span key={name}><i className="dot" style={{background:classColor(index)}}/>{name} · {counts[index]} ({percent}%)</span>})}</div>
       <div className="balance-bar">
-        <div className="bal-seg coral-seg" style={{width:`${p0}%`}}/>
-        <div className="bal-seg indigo-seg" style={{width:`${p1}%`}}/>
+        {classNames.map((_,index)=><div key={index} className="bal-seg" style={{width:`${t?counts[index]/t*100:0}%`,background:classColor(index)}}/>)}
       </div>
     </div>
   );
@@ -128,7 +150,7 @@ function Snapshots({model,data,names,onJump}){
 }
 
 /* ─── 3D Decision Plane (Interactive perspective projection) ─────── */
-function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSelectPoint,height=340}){
+function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],classNames=['Class 0','Class 1'],pred,onSelectPoint,height=340}){
   const canvasRef=useRef(null);
   const dragRef=useRef(null);
   const [dragging,setDragging]=useState(false);
@@ -312,7 +334,7 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
       const scoreY=rawScore*scoreScale;
       const [fx,fy]=project([p.x,0,p.y]);
       const [px,py,sc,depth]=project([p.x,scoreY,p.y]);
-      const predClass=rawScore>=0?1:0;
+      const predClass=predictState(state,p);
       const isError=predClass!==p.label;
       const r=Math.max(3.5,6*sc);
 
@@ -320,7 +342,7 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
       ctx.save();
       ctx.setLineDash([2,3]);
       ctx.lineWidth=1.2;
-      ctx.strokeStyle=p.label?'rgba(91,91,214,0.5)':'rgba(240,113,103,0.5)';
+      ctx.strokeStyle=`${classColor(p.label)}88`;
       ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(px,py);ctx.stroke();
 
       // Floor shadow
@@ -332,8 +354,8 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
       // Point sphere
       ctx.save();
       ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);
-      ctx.fillStyle=p.label?'#5b5bd6':'#f07167';
-      ctx.shadowColor=p.label?'rgba(91,91,214,0.5)':'rgba(240,113,103,0.5)';
+      ctx.fillStyle=classColor(p.label);
+      ctx.shadowColor=`${classColor(p.label)}80`;
       ctx.shadowBlur=6;
       ctx.fill();
 
@@ -490,14 +512,10 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
       )}
 
       <div className="canvas3d-legend">
-        <div className="canvas3d-legend-item">
-          <span className="canvas3d-legend-dot" style={{background:'#5b5bd6'}}/>
-          <span>Class 1</span>
-        </div>
-        <div className="canvas3d-legend-item">
-          <span className="canvas3d-legend-dot" style={{background:'#f07167'}}/>
-          <span>Class 0</span>
-        </div>
+        {classNames.map((className,index)=><div className="canvas3d-legend-item" key={className}>
+          <span className="canvas3d-legend-dot" style={{background:classColor(index)}}/>
+          <span>{className}</span>
+        </div>)}
         <div className="canvas3d-legend-item">
           <span className="canvas3d-legend-dot" style={{background:'#06b6d4'}}/>
           <span>Probe</span>
@@ -515,7 +533,7 @@ function DecisionPlane3D({state,data,names=['Feature 1','Feature 2'],pred,onSele
 }
 
 /* ─── 2D boundary chart ─────────────────────────────────────────── */
-function Chart({data,state,prevState,names,onPoint,pred}){
+function Chart({data,state,prevState,names,onPoint,pred,classNames}){
   const W=680,H=390,P=35,min=-3.5,max=3.5;
   const pos=v=>P+(v-min)/(max-min)*(W-P*2);
   const yy=v=>H-pos(v)+P*2;
@@ -540,8 +558,7 @@ function Chart({data,state,prevState,names,onPoint,pred}){
   return(
     <div className="boundary-wrap">
       <div className="chart-legend">
-        <span><i className="dot coral"/>Class 0</span>
-        <span><i className="dot indigo"/>Class 1</span>
+        {classNames.map((name,index)=><span key={name}><i className="dot" style={{background:classColor(index)}}/>{name}</span>)}
         <span><i className="line-key"/>Current boundary</span>
         {prevState&&<span><i className="line-key dashed"/>Previous</span>}
       </div>
@@ -569,12 +586,12 @@ function Chart({data,state,prevState,names,onPoint,pred}){
         <line x1={pos(min)} y1={yy(y1)} x2={pos(max)} y2={yy(y2)} className="boundary-shadow"/>
         <line x1={pos(min)} y1={yy(y1)} x2={pos(max)} y2={yy(y2)} className="boundary"/>
         {data.map(p=>{
-          const bad=(w[0]*p.x+w[1]*p.y+b>=0?1:0)!==p.label;
+          const bad=predictState(state,p)!==p.label;
           const isCur=p.id===state.point.id;
           return(
             <g key={p.id} onMouseEnter={()=>setTip(p)} onMouseLeave={()=>setTip(null)}>
-              <circle cx={pos(p.x)} cy={yy(p.y)} r={isCur?13:8} className={isCur?'pulse':''} fill={p.label?'#5b5bd6':'#f07167'} opacity=".2"/>
-              <circle cx={pos(p.x)} cy={yy(p.y)} r="5.8" fill={p.label?'#5b5bd6':'#f07167'} stroke={bad?'#f59e0b':'#fff'} strokeWidth={bad?'3':'1.5'}/>
+              <circle cx={pos(p.x)} cy={yy(p.y)} r={isCur?13:8} className={isCur?'pulse':''} fill={classColor(p.label)} opacity=".2"/>
+              <circle cx={pos(p.x)} cy={yy(p.y)} r="5.8" fill={classColor(p.label)} stroke={bad?'#f59e0b':'#fff'} strokeWidth={bad?'3':'1.5'}/>
             </g>
           );
         })}
@@ -604,13 +621,13 @@ function Import({close,load}){
     return values.filter(v=>numericValue(v)!==null).length>=2&&values.every(v=>absent(v)||numericValue(v)!==null);
   });
   const classValues=target?new Set(raw.filter(r=>!absent(r[h.indexOf(target)])).map(r=>classKey(target,r[h.indexOf(target)]))):new Set();
-  const binaryTargets=h.map((column,index)=>{
+  const targetClassCounts=h.map((column,index)=>{
     const values=new Set(raw.filter(r=>!absent(r[index])).map(r=>classKey(column,r[index])));
-    return values.size===2;
+    return values.size;
   });
   const numericColumns=h.filter((_,i)=>numeric[i]);
   const numericCount=column=>numericColumns.indexOf(column);
-  const validMapping=numeric[x? h.indexOf(x):-1]&&numeric[y? h.indexOf(y):-1]&&x!==y&&classValues.size===2;
+  const validMapping=numeric[x? h.indexOf(x):-1]&&numeric[y? h.indexOf(y):-1]&&x!==y&&classValues.size>=2;
   const miss=raw.flat().filter(absent).length;
 
   async function read(f){
@@ -632,7 +649,7 @@ function Import({close,load}){
       setY(headers[chosenFeatures[1]]||'');
       const candidates=headers.map((column,index)=>{
         const values=new Set(dataRows.filter(r=>!absent(r[index])).map(r=>classKey(column,r[index])));
-        return values.size===2?index:-1;
+        return values.size>=2?index:-1;
       }).filter(i=>i>=0);
       const preferred=candidates.find(i=>/label|target|class|outcome/i.test(headers[i]))??
         candidates.find(i=>/gender|sex/i.test(headers[i]))??candidates[0];
@@ -646,11 +663,12 @@ function Import({close,load}){
   function apply(){
     const xi=h.indexOf(x),yi=h.indexOf(y),ti=h.indexOf(target);
     if(xi<0||yi<0||!numeric[xi]||!numeric[yi]||xi===yi){setError('Choose two distinct numeric feature columns.');return}
-    if(ti<0||classValues.size!==2){setError(`Target "${target||'column'}" must contain exactly two classes. Choose a binary target such as gender, or prepare a two-class label column.`);return}
+    if(ti<0||classValues.size<2){setError(`Target "${target||'column'}" must contain at least two classes. Choose a binary or multiclass label column.`);return}
 
-    const targetKeys=[...classValues];
     const usableRows=raw.filter(r=>!absent(r[ti]));
     if(usableRows.length<2){setError('The selected target needs at least two rows with class values.');return}
+    const targetKeys=[...classValues].sort();
+    const targetLabels=targetKeys.map(key=>usableRows.find(r=>classKey(target,r[ti])===key)?.[ti]??key);
     const imputed=numeric.map((isNumeric,i)=>{
       const values=raw.map(r=>numericValue(r[i])).filter(v=>v!==null);
       if(!values.length)return null;
@@ -682,8 +700,8 @@ function Import({close,load}){
     }));
     load(cleaned.map((r,id)=>{
       const key=classKey(target,r[ti]);
-      return{id,x:r[xi],y:r[yi],label:key===targetKeys[0]?0:1};
-    }),[x,y],file.name);
+      return{id,x:r[xi],y:r[yi],label:targetKeys.indexOf(key)};
+    }),[x,y],file.name,targetLabels);
     close();
   }
 
@@ -693,7 +711,7 @@ function Import({close,load}){
         <button className="modal-close" onClick={close}><X size={18}/></button>
         <div className="modal-title">
           <span className="icon-orb"><FileSpreadsheet size={21}/></span>
-          <div><h2>Bring your own data</h2><p>Choose a binary target and two numeric features.</p></div>
+          <div><h2>Bring your own data</h2><p>Choose a target with two or more classes and two numeric features.</p></div>
         </div>
         <label className="dropzone">
           <input type="file" accept=".csv,text/csv" onChange={e=>e.target.files[0]&&read(e.target.files[0])}/>
@@ -711,11 +729,11 @@ function Import({close,load}){
           <div className="mapping">
             <label>X feature<select value={x} onChange={e=>{setX(e.target.value);setError('')}}>{numericColumns.map(z=><option key={z}>{z}</option>)}</select></label>
             <label>Y feature<select value={y} onChange={e=>{setY(e.target.value);setError('')}}>{numericColumns.map(z=><option key={z}>{z}</option>)}</select></label>
-            <label>Target<select value={target} onChange={e=>{setTarget(e.target.value);setError('')}}><option value="">Select target</option>{h.map((z,i)=><option key={z} value={z}>{z}{binaryTargets[i]?' · 2 classes':''}</option>)}</select></label>
+            <label>Target<select value={target} onChange={e=>{setTarget(e.target.value);setError('')}}><option value="">Select target</option>{h.map((z,i)=><option key={z} value={z}>{z}{targetClassCounts[i]>=2?` · ${targetClassCounts[i]} classes`:''}</option>)}</select></label>
           </div>
-          <p className={`mapping-hint${classValues.size===2?' valid':''}`}>
-            {classValues.size===2?`Target "${target}" has 2 classes. ${numericCount(x)>=0&&numericCount(y)>=0&&x!==y?'':'Choose two different numeric features.'}`:
-              target?`Target "${target}" has ${classValues.size} classes. Choose a target marked “2 classes”.`:'Choose a target marked “2 classes”.'}
+          <p className={`mapping-hint${classValues.size>=2?' valid':''}`}>
+            {classValues.size>=2?`Target "${target}" has ${classValues.size} classes. ${numericCount(x)>=0&&numericCount(y)>=0&&x!==y?'':'Choose two different numeric features.'}`:
+              target?`Target "${target}" has ${classValues.size} usable classes. Choose a target with at least 2 classes.`:'Choose a target marked “2+ classes”.'}
           </p>
           <div className="table-preview">
             <table><thead><tr>{h.slice(0,5).map(z=><th key={z}>{z}</th>)}</tr></thead>
@@ -820,13 +838,13 @@ function ShareModal({close,step,rate,epochs}){
 }
 
 /* ─── Export report ──────────────────────────────────────────────── */
-function exportReport(data,model,names,rate,epochs){
+function exportReport(data,model,names,rate,epochs,classNames){
   const last=model.states[model.states.length-1];
   const m=metrics(data,last);
   const lines=[
     `Perceptron Training Report`,`Generated: ${new Date().toLocaleString()}`,``,
     `Dataset: ${data.length} samples, 2 features (${names.join(', ')})`,
-    `Class 0: ${data.filter(p=>!p.label).length} · Class 1: ${data.filter(p=>p.label).length}`,``,
+    `Classes: ${classNames.map((name,index)=>`${name}=${data.filter(p=>p.label===index).length}`).join(' · ')}`,``,
     `Hyperparameters`,`Learning rate: ${rate}`,`Max epochs: ${epochs}`,``,
     `Results`,`Converged: ${model.converged?'Yes':'No (epoch limit reached)'}`,
     `Total steps: ${model.states.length}`,
@@ -848,6 +866,7 @@ function App(){
 
   const [data,setData]=useState(seed);
   const [names,setNames]=useState(['Feature 1','Feature 2']);
+  const [classNames,setClassNames]=useState(['Class 0','Class 1']);
   const [name,setName]=useState('Linearly separable demo');
   const [rate,setRate]=useState(hash.r?+hash.r:.15);
   const [epochs,setEpochs]=useState(hash.e?+hash.e:12);
@@ -866,12 +885,14 @@ function App(){
   // dark mode
   useEffect(()=>{document.documentElement.setAttribute('data-theme',dark?'dark':'light')},[dark]);
 
-  const model=useMemo(()=>fit(data,rate,epochs),[data,rate,epochs]);
+  const model=useMemo(()=>fit(data,rate,epochs,classNames.length),[data,rate,epochs,classNames.length]);
   const state=model.states[Math.min(step,model.states.length-1)];
   const prevState=step>0?model.states[step-1]:null;
   const hist=model.states.slice(0,step+1);
   const m=metrics(data,state);
-  const score=state.weights[0]*pred.x+state.weights[1]*pred.y+state.bias;
+  const predictionScores=classScores(state,pred);
+  const predictedClass=argMax(predictionScores);
+  const score=predictionScores[predictedClass]??0;
   const deltas=[
     state.weights[0]-state.before[0],
     state.weights[1]-state.before[1],
@@ -922,7 +943,7 @@ function App(){
         <Metric label="CURRENT STEP" value={`${state.step}/${model.states.length}`} sub={`Epoch ${state.epoch+1}`}/>
         <Metric label="ACCURACY" value={`${(m.accuracy*100).toFixed(0)}%`} sub="Current model" tone="green"/>
         <Metric label="MISCLASSIFIED" value={state.errors} sub="In current epoch" tone={state.errors?'orange':'green'}/>
-        <Metric label="F1 SCORE" value={m.f1.toFixed(2)} sub="Positive class" tone="blue"/>
+        <Metric label="F1 SCORE" value={m.f1.toFixed(2)} sub="Macro average" tone="blue"/>
       </section>
 
       <section className="dashboard-grid">
@@ -938,7 +959,7 @@ function App(){
               <Layers3 size={15}/>{three?'Hide 3D':'Show 3D'}
             </button>
           </div>
-          <Chart data={data} state={state} prevState={prevState} names={names} pred={pred}/>
+          <Chart data={data} state={state} prevState={prevState} names={names} pred={pred} classNames={classNames}/>
           <div className="timeline">
             <span className="timeline-label">STEP {state.step}</span>
             <input type="range" min="0" max={model.states.length-1} value={step} onChange={e=>setStep(+e.target.value)}/>
@@ -953,12 +974,12 @@ function App(){
             <span className={`event-chip${state.error?' error':''}`}>{state.error?'Correcting error':'Correct prediction'}</span>
           </div>
           <div className="sample-focus">
-            <span className={`sample-marker${state.point.label?' blue':''}`}>{state.sampleIndex+1}</span>
+            <span className="sample-marker" style={{background:classColor(state.point.label)}}>{state.sampleIndex+1}</span>
             <div>
               <b>Sample #{state.sampleIndex+1}</b>
               <p>{names[0]} {state.point.x.toFixed(2)} · {names[1]} {state.point.y.toFixed(2)}</p>
             </div>
-            <span className="true-class">Class {state.point.label}</span>
+            <span className="true-class">{classNames[state.point.label]??`Class ${state.point.label}`}</span>
           </div>
           <div className="math-steps">
             <div>
@@ -968,19 +989,19 @@ function App(){
             </div>
             <div>
               <span>2</span>
-              <p>Prediction before update <code>score ≥ 0</code></p>
-              <b>Class {state.prediction}</b>
+              <p>Prediction before update <code>highest class score</code></p>
+              <b>{classNames[state.prediction]??`Class ${state.prediction}`}</b>
             </div>
             <div className={state.error?'changed':''}>
               <span>3</span>
-              <p>{state.error?'Update applied':'No update needed'} <code>{state.error?`η=${rate} · y=${state.point.label} · ŷ=${state.prediction}`:'prediction matched label'}</code></p>
+              <p>{state.error?'Update applied':'No update needed'} <code>{state.error?`η=${rate} · true=${classNames[state.point.label]??state.point.label} · predicted=${classNames[state.prediction]??state.prediction}`:'prediction matched label'}</code></p>
               <b>{state.error?'Boundary shifted':'Stable'}</b>
             </div>
           </div>
           <div className="weight-update">
             <div className="weight-update-heading">
               <b>What changed</b>
-              <code>Δw = η(y − ŷ)x · Δb = η(y − ŷ)</code>
+              <code>True class moves toward x; predicted class moves away</code>
             </div>
             <table className="update-table">
               <thead><tr><th>Parameter</th><th>Before</th><th>Change</th><th>After</th></tr></thead>
@@ -1043,14 +1064,14 @@ function App(){
             <div><p className="eyebrow">EVALUATION</p><h3>Confusion matrix</h3></div>
             <span className="event-chip">{model.converged?'Converged':'Limit reached'}</span>
           </div>
-          <div className="matrix">
-            <span>Actual \ Pred.</span><b>0</b><b>1</b>
-            <b>0</b><strong>{m.tn}</strong><strong>{m.fp}</strong>
-            <b>1</b><strong>{m.fn}</strong><strong>{m.tp}</strong>
+          <div className="matrix" style={{gridTemplateColumns:`repeat(${classNames.length+1},minmax(35px,1fr))`}}>
+            <span>Actual \ Pred.</span>{classNames.map((className,index)=><b key={`head-${index}`}>{className}</b>)}
+            {classNames.map((className,row)=><React.Fragment key={`row-${row}`}><b>{className}</b>{classNames.map((_,column)=><strong key={`${row}-${column}`}>{m.matrix?.[row]?.[column]??0}</strong>)}</React.Fragment>)}
           </div>
           <div className="metric-strip">
             <span>Precision <b>{m.precision.toFixed(2)}</b></span>
             <span>Recall <b>{m.recall.toFixed(2)}</b></span>
+            <span>Macro F1 <b>{m.f1.toFixed(2)}</b></span>
           </div>
         </article>
 
@@ -1064,8 +1085,8 @@ function App(){
           <div className="prediction-inputs">
             <label>{names[0]}<input type="number" value={pred.x} onChange={e=>setPred(p=>({...p,x:+e.target.value}))} step=".1"/></label>
             <label>{names[1]}<input type="number" value={pred.y} onChange={e=>setPred(p=>({...p,y:+e.target.value}))} step=".1"/></label>
-            <div className={`prediction-result${score>=0?' positive':''}`}>
-              <b>Class {score>=0?1:0}</b><small>score {score.toFixed(3)}</small>
+            <div className="prediction-result positive">
+              <b>{classNames[predictedClass]??`Class ${predictedClass}`}</b><small>score {score.toFixed(3)}</small>
             </div>
           </div>
         </article>
@@ -1076,7 +1097,7 @@ function App(){
             <p className="eyebrow">3D DECISION PLANE & SCORE SURFACE</p>
             <h3>Interactive score surface</h3>
             <p className="muted" style={{marginBottom:8}}>Drag to rotate · Scroll to zoom · Click any point to test in Prediction Explorer.</p>
-            <DecisionPlane3D state={state} data={data} names={names} pred={pred} onSelectPoint={setPred} height={360}/>
+            <DecisionPlane3D state={state} data={data} names={names} classNames={classNames} pred={pred} onSelectPoint={setPred} height={360}/>
           </section>
         )}
 
@@ -1100,7 +1121,7 @@ function App(){
           <div>
             <p className="eyebrow">DATASET EXPLORER</p>
             <h2>{name}</h2>
-            <span>{data.length} rows · binary classes · two visualized numeric features</span>
+            <span>{data.length} rows · {classNames.length} classes · two visualized numeric features</span>
           </div>
           <div className="header-actions">
             <button className="outline-button" onClick={download}><Download size={15}/>Clean CSV</button>
@@ -1110,23 +1131,22 @@ function App(){
         <div className="dataset-summary">
           <div><span>Feature X</span><b>{names[0]}</b><small>{Math.min(...data.map(p=>p.x)).toFixed(2)} to {Math.max(...data.map(p=>p.x)).toFixed(2)}</small></div>
           <div><span>Feature Y</span><b>{names[1]}</b><small>{Math.min(...data.map(p=>p.y)).toFixed(2)} to {Math.max(...data.map(p=>p.y)).toFixed(2)}</small></div>
-          <div><span>Class 0</span><b>{data.filter(p=>!p.label).length}</b><small>coral samples</small></div>
-          <div><span>Class 1</span><b>{data.filter(p=>p.label).length}</b><small>indigo samples</small></div>
+          {classNames.map((className,index)=><div key={className}><span>{className}</span><b>{data.filter(p=>p.label===index).length}</b><small style={{color:classColor(index)}}>class {index}</small></div>)}
         </div>
         {/* Class balance bar — Phase 2 */}
-        <ClassBalance data={data} names={names}/>
+        <ClassBalance data={data} classNames={classNames}/>
         <table className="data-table">
           <thead><tr><th>Sample</th><th>{names[0]}</th><th>{names[1]}</th><th>Class</th><th>Prediction</th></tr></thead>
           <tbody>
             {data.map(p=>{
-              const q=state.weights[0]*p.x+state.weights[1]*p.y+state.bias>=0?1:0;
+              const q=predictState(state,p);
               return(
                 <tr key={p.id}>
                   <td>#{p.id+1}</td>
                   <td>{p.x.toFixed(2)}</td>
                   <td>{p.y.toFixed(2)}</td>
-                  <td><i className={`dot ${p.label?'indigo':'coral'}`}/> {p.label}</td>
-                  <td className={q===p.label?'ok':'bad'}>{q===p.label?'Correct':'Error'} · {q}</td>
+                  <td><i className="dot" style={{background:classColor(p.label)}}/> {classNames[p.label]??`Class ${p.label}`}</td>
+                  <td className={q===p.label?'ok':'bad'}>{q===p.label?'Correct':'Error'} · {classNames[q]??`Class ${q}`}</td>
                 </tr>
               );
             })}
@@ -1147,15 +1167,13 @@ function App(){
             <span>Click to add · drag existing points to reposition · watch the boundary move.</span>
           </div>
           <div className="class-picker">
-            <button className={addClass===0?'selected coral-btn':''} onClick={()=>setAddClass(0)}>Add class 0</button>
-            <button className={addClass===1?'selected indigo-btn':''} onClick={()=>setAddClass(1)}>Add class 1</button>
+            {classNames.map((className,index)=><button key={className} className={addClass===index?'selected':''} onClick={()=>setAddClass(index)} style={addClass===index?{borderColor:classColor(index),color:classColor(index)}:undefined}>Add {className}</button>)}
           </div>
         </div>
         {/* draggable version of chart */}
         <div className="boundary-wrap">
           <div className="chart-legend">
-            <span><i className="dot coral"/>Class 0</span>
-            <span><i className="dot indigo"/>Class 1</span>
+            {classNames.map((className,index)=><span key={className}><i className="dot" style={{background:classColor(index)}}/>{className}</span>)}
             <span><i className="line-key"/>Boundary</span>
           </div>
           <svg className="boundary-svg playground-canvas" viewBox="0 0 680 390" onClick={e=>{
@@ -1180,11 +1198,11 @@ function App(){
                 <line x1={pos(min)} y1={yy(y1)} x2={pos(max)} y2={yy(y2)} className="boundary-shadow"/>
                 <line x1={pos(min)} y1={yy(y1)} x2={pos(max)} y2={yy(y2)} className="boundary"/>
                 {data.map(p=>{
-                  const bad=(w[0]*p.x+w[1]*p.y+b>=0?1:0)!==p.label;
+                  const bad=predictState(state,p)!==p.label;
                   return(
                     <g key={p.id} onMouseDown={e=>startDrag(e,p)} style={{cursor:'grab'}}>
-                      <circle cx={pos(p.x)} cy={yy(p.y)} r="13" fill={p.label?'#5b5bd6':'#f07167'} opacity=".12"/>
-                      <circle cx={pos(p.x)} cy={yy(p.y)} r="5.8" fill={p.label?'#5b5bd6':'#f07167'} stroke={bad?'#f59e0b':'#fff'} strokeWidth={bad?'3':'1.5'}/>
+                      <circle cx={pos(p.x)} cy={yy(p.y)} r="13" fill={classColor(p.label)} opacity=".12"/>
+                      <circle cx={pos(p.x)} cy={yy(p.y)} r="5.8" fill={classColor(p.label)} stroke={bad?'#f59e0b':'#fff'} strokeWidth={bad?'3':'1.5'}/>
                     </g>
                   );
                 })}
@@ -1227,7 +1245,7 @@ function App(){
         <div className="comparison-table">
           <div className="comp-head"><b>Configuration</b><b>Converged</b><b>Steps</b><b>Accuracy</b><b>F1</b></div>
           {[.05,.1,.15,.25,.5].map(r=>{
-            const f=fit(data,r,epochs),e=metrics(data,f.states[f.states.length-1]);
+            const f=fit(data,r,epochs,classNames.length),e=metrics(data,f.states[f.states.length-1]);
             return(
               <div key={r} className={r===rate?'comp-active':''}>
                 <span>η = {r.toFixed(2)} {r===rate&&<em>current</em>}</span>
@@ -1274,6 +1292,7 @@ function App(){
             state={state}
             data={data}
             names={names}
+            classNames={classNames}
             pred={pred}
             onSelectPoint={setPred}
             height={460}
@@ -1292,15 +1311,15 @@ function App(){
           <div className="prediction-inputs">
             <label>{names[0]}<input type="number" value={pred.x} onChange={e=>setPred(p=>({...p,x:+e.target.value}))} step=".1"/></label>
             <label>{names[1]}<input type="number" value={pred.y} onChange={e=>setPred(p=>({...p,y:+e.target.value}))} step=".1"/></label>
-            <div className={`prediction-result${score>=0?' positive':''}`}>
-              <b>Class {score>=0?1:0}</b>
+            <div className="prediction-result positive">
+              <b>{classNames[predictedClass]??`Class ${predictedClass}`}</b>
               <small>score {score.toFixed(3)}</small>
             </div>
           </div>
           <div style={{marginTop:12,padding:'10px 12px',background:'var(--surface2)',borderRadius:8,fontSize:11,fontFamily:'DM Mono'}}>
             <div>z = ({state.weights[0].toFixed(2)} × {pred.x}) + ({state.weights[1].toFixed(2)} × {pred.y}) + ({state.bias.toFixed(2)})</div>
-            <div style={{marginTop:4,color:score>=0?'var(--accent)':'var(--coral)',fontWeight:700}}>
-              = {score.toFixed(3)} &rarr; {score>=0?'Above z=0 floor (Class 1)':'Below z=0 floor (Class 0)'}
+            <div style={{marginTop:4,color:'var(--accent)',fontWeight:700}}>
+              = {score.toFixed(3)} &rarr; predicted {classNames[predictedClass]??`Class ${predictedClass}`}
             </div>
           </div>
         </article>
@@ -1372,7 +1391,7 @@ function App(){
             <button className="dataset-button" onClick={()=>setView('dataset')}>
               <FileSpreadsheet size={17}/><span>{name}</span><ChevronDown size={15}/>
             </button>
-            <button className="outline-button" onClick={()=>exportReport(data,model,names,rate,epochs)}>
+            <button className="outline-button" onClick={()=>exportReport(data,model,names,rate,epochs,classNames)}>
               <Download size={15}/>Export report
             </button>
             <button className="outline-button" onClick={()=>setShareOpen(true)}>
@@ -1427,7 +1446,7 @@ function App(){
         {content}
       </main>
 
-      {upload&&<Import close={()=>setUpload(false)} load={(d,n,f)=>{setData(d);setNames(n);setName(f)}}/>}
+      {upload&&<Import close={()=>setUpload(false)} load={(d,n,f,c)=>{setData(d);setNames(n);setName(f);setClassNames(c||['Class 0','Class 1']);setAddClass(0)}}/>}
       {shareOpen&&<ShareModal close={()=>setShareOpen(false)} step={step} rate={rate} epochs={epochs}/>}
     </div>
   );
