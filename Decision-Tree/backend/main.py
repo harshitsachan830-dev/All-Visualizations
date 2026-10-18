@@ -12,7 +12,7 @@ from pathlib import Path
 from time import perf_counter
 
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import (
     accuracy_score,
@@ -43,6 +43,7 @@ MODEL_STATE = {
     "feature_encoders": {},
     "target_encoder": None,
     "class_names": [],
+    "task": "classification",
 }
 
 
@@ -103,8 +104,10 @@ def trace_tree_prediction(model, feature_names, sample):
         right = int(tree.children_right[node_id])
 
         if feature_index == -2:
-            predicted_class = int(
-                np.argmax(tree.value[node_id][0])
+            predicted_class = (
+                float(tree.value[node_id][0][0])
+                if MODEL_STATE.get("task") == "regression"
+                else int(np.argmax(tree.value[node_id][0]))
             )
 
             path.append({
@@ -210,9 +213,9 @@ async def predict_sample(request: PredictionRequest):
         dtype=float,
     )
 
-    prediction = int(
-        model.predict(sample_array)[0]
-    )
+    raw_prediction = model.predict(sample_array)[0]
+    is_regression = MODEL_STATE.get("task") == "regression"
+    prediction = float(raw_prediction) if is_regression else int(raw_prediction)
 
     path = trace_tree_prediction(
         model,
@@ -232,12 +235,13 @@ async def predict_sample(request: PredictionRequest):
         if step["type"] == "leaf":
 
             step["prediction_name"] = (
-                class_names[step["prediction"]]
+                f"{float(step['prediction']):,.2f}" if is_regression
+                else class_names[step["prediction"]]
             )
 
     return {
         "prediction": prediction,
-        "prediction_name": class_names[prediction],
+        "prediction_name": f"{prediction:,.2f}" if is_regression else class_names[prediction],
         "path": path,
     }
 
@@ -342,6 +346,34 @@ def build_split_explorer(model, X_train, y_train, feature_names, class_names):
 
     return explorer
 
+def train_regression_payload(file, target, df, X, y, feature_names, imputation_strategy, imputed_counts, target_missing_rows, max_depth, criterion, splitter, min_samples_split, min_samples_leaf, max_leaf_nodes, max_features_value, min_impurity_decrease, ccp_alpha):
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = DecisionTreeRegressor(criterion=criterion, splitter=splitter, max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf, max_leaf_nodes=max_leaf_nodes, max_features=max_features_value, min_impurity_decrease=min_impurity_decrease, ccp_alpha=ccp_alpha, random_state=42)
+    started = perf_counter(); model.fit(X_train, y_train)
+    training_time_ms = (perf_counter() - started) * 1000
+    train_predictions, predictions = model.predict(X_train), model.predict(X_test)
+    MODEL_STATE.update({"model": model, "feature_names": feature_names, "target_encoder": None, "class_names": [], "task": "regression"})
+    tree = model.tree_; parent_map, depth_map = {0: -1}, {0: 0}
+    for parent_id in range(tree.node_count):
+        for child_id in (int(tree.children_left[parent_id]), int(tree.children_right[parent_id])):
+            if child_id != -1:
+                parent_map[child_id] = parent_id; depth_map[child_id] = depth_map[parent_id] + 1
+    nodes = []
+    for node_id in range(tree.node_count):
+        feature_index = tree.feature[node_id]; is_leaf = feature_index == -2; value = float(tree.value[node_id][0][0])
+        nodes.append({"id": int(node_id), "parent_id": int(parent_map.get(node_id, -1)), "depth": int(depth_map.get(node_id, 0)), "feature": None if is_leaf else feature_names[feature_index], "threshold": None if is_leaf else float(tree.threshold[node_id]), "samples": int(tree.n_node_samples[node_id]), "gini": round(float(tree.impurity[node_id]), 4), "left": int(tree.children_left[node_id]), "right": int(tree.children_right[node_id]), "is_leaf": bool(is_leaf), "prediction": value, "prediction_name": f"{value:,.2f}", "class_distribution": [int(tree.n_node_samples[node_id])]})
+    importance = [{"feature": feature, "importance": round(float(value), 6)} for feature, value in zip(feature_names, model.feature_importances_)]
+    importance.sort(key=lambda item: item["importance"], reverse=True)
+    learning = []
+    for fraction in (0.2, 0.4, 0.6, 0.8, 1.0):
+        sample_count = min(max(2, int(len(X_train) * fraction)), len(X_train))
+        curve_model = DecisionTreeRegressor(criterion=criterion, splitter=splitter, max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf, max_leaf_nodes=max_leaf_nodes, max_features=max_features_value, min_impurity_decrease=min_impurity_decrease, ccp_alpha=ccp_alpha, random_state=42)
+        curve_model.fit(X_train.iloc[:sample_count], y_train[:sample_count])
+        learning.append({"training_rows": sample_count, "training_score": round(float(r2_score(y_train[:sample_count], curve_model.predict(X_train.iloc[:sample_count]))), 4), "validation_score": round(float(r2_score(y_test, curve_model.predict(X_test))), 4)})
+    r2 = float(r2_score(y_test, predictions)); train_r2 = float(r2_score(y_train, train_predictions))
+    return {"task": "regression", "dataset": {"filename": file.filename, "rows": int(len(df)), "columns": int(len(df.columns)), "features": feature_names, "target": target, "train_rows": int(len(X_train)), "test_rows": int(len(X_test)), "rows_data": df.to_dict(orient="records"), "imputation": {"strategy": imputation_strategy, "imputed_cells": sum(item["count"] for item in imputed_counts.values()), "target_rows_dropped": target_missing_rows, "columns": imputed_counts}}, "metrics": {"r2": round(r2, 4), "mae": round(float(mean_absolute_error(y_test, predictions)), 4), "rmse": round(float(np.sqrt(mean_squared_error(y_test, predictions))), 4), "train_r2": round(train_r2, 4), "validation_r2": round(r2, 4), "training_time_ms": round(float(training_time_ms), 3)}, "confusion_matrix": [], "confusion_rows": [], "class_names": [], "learning_curve": learning, "split_explorer": [], "tree": nodes, "feature_importance": importance, "complexity": {"requested_max_depth": int(max_depth), "requested_criterion": criterion, "requested_splitter": splitter, "requested_min_samples_split": int(min_samples_split), "requested_min_samples_leaf": int(min_samples_leaf), "requested_max_leaf_nodes": int(max_leaf_nodes or 0), "requested_max_features": "all" if max_features_value is None else max_features_value, "requested_class_weight": "none", "requested_min_impurity_decrease": float(min_impurity_decrease), "requested_ccp_alpha": float(ccp_alpha), "random_state": 42, "actual_depth": int(model.get_depth()), "node_count": int(tree.node_count), "leaf_count": int(model.get_n_leaves()), "train_accuracy": None, "validation_accuracy": None, "generalization_gap": None, "train_r2": round(train_r2, 4), "validation_r2": round(r2, 4), "error_node_counts": {}, "max_error_node_count": 0}}
+
 @app.post("/train")
 async def train_model(
     file: UploadFile = File(...),
@@ -356,16 +388,19 @@ async def train_model(
     class_weight: str = "none",
     min_impurity_decrease: float = 0.0,
     ccp_alpha: float = 0.0,
-    imputation_strategy: str = "mean"):
+    imputation_strategy: str = "mean",
+    model_type: str = "auto"):
 
-    if criterion not in {"gini", "entropy", "log_loss"}:
-        raise HTTPException(status_code=400, detail="Criterion must be gini, entropy, or log_loss.")
+    if criterion not in {"gini", "entropy", "log_loss", "squared_error", "friedman_mse", "absolute_error", "poisson"}:
+        raise HTTPException(status_code=400, detail="Unsupported tree criterion.")
     if splitter not in {"best", "random"}:
         raise HTTPException(status_code=400, detail="Splitter must be best or random.")
     if max_features not in {"all", "sqrt", "log2"}:
         raise HTTPException(status_code=400, detail="max_features must be all, sqrt, or log2.")
     if class_weight not in {"none", "balanced"}:
         raise HTTPException(status_code=400, detail="class_weight must be none or balanced.")
+    if model_type not in {"auto", "classification", "regression"}:
+        raise HTTPException(status_code=400, detail="model_type must be auto, classification, or regression.")
     max_depth = max(1, min(int(max_depth), 20))
     min_samples_split = max(2, min(int(min_samples_split), 10000))
     min_samples_leaf = max(1, min(int(min_samples_leaf), 10000))
@@ -445,7 +480,7 @@ async def train_model(
 
     for column in X.columns:
 
-        if X[column].dtype == "object":
+        if pd.api.types.is_string_dtype(X[column]) and not pd.api.types.is_numeric_dtype(X[column]):
 
             encoder = LabelEncoder()
 
@@ -467,6 +502,24 @@ async def train_model(
 
     X = X.loc[valid]
     y = y.loc[valid]
+
+    is_regression = model_type == "regression" or (
+        model_type == "auto" and pd.api.types.is_numeric_dtype(y) and y.nunique(dropna=True) > 10
+    )
+    if is_regression:
+        y_numeric = pd.to_numeric(y, errors="coerce")
+        valid_target = ~y_numeric.isna()
+        X = X.loc[valid_target].copy()
+        y_numeric = y_numeric.loc[valid_target]
+        if len(y_numeric) < 5 or y_numeric.nunique() < 2:
+            raise HTTPException(status_code=400, detail="Regression target must contain at least five rows and two numeric values.")
+        MODEL_STATE["feature_encoders"] = feature_encoders
+        if criterion in {"gini", "entropy", "log_loss"}:
+            criterion = "squared_error"
+        return train_regression_payload(file, target, df.loc[X.index], X, y_numeric.to_numpy(dtype=float), list(X.columns), imputation_strategy, imputed_counts, target_missing_rows, max_depth, criterion, splitter, min_samples_split, min_samples_leaf, max_leaf_nodes, max_features_value, min_impurity_decrease, ccp_alpha)
+
+    if criterion not in {"gini", "entropy", "log_loss"}:
+        criterion = "gini"
 
     # Encode target
     target_encoder = None
@@ -558,6 +611,7 @@ async def train_model(
     MODEL_STATE["feature_names"] = feature_names
     MODEL_STATE["feature_encoders"] = feature_encoders
     MODEL_STATE["target_encoder"] = target_encoder
+    MODEL_STATE["task"] = "classification"
 
     predictions = model.predict(X_test)
 
@@ -893,6 +947,7 @@ async def train_model(
     )
 
     return {
+        "task": "classification",
         "dataset": {
             "filename": file.filename,
             "rows": int(len(df)),

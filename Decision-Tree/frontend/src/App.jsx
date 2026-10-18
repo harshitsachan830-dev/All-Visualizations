@@ -300,7 +300,7 @@ function ConfusionMatrix({ result, compact = false }) {
   );
 }
 
-function LearningCurve({ points }) {
+function LearningCurve({ points, task = "classification" }) {
   if (!points?.length) return <div className="chart-empty">Train a tree to calculate its learning curve.</div>;
   const width = 520;
   const height = 260;
@@ -312,12 +312,15 @@ function LearningCurve({ points }) {
   const plotHeight = height - top - bottom;
   const maxRows = Math.max(...points.map((point) => point.training_rows), 1);
   const x = (value) => left + (value / maxRows) * plotWidth;
-  const y = (value) => top + (1 - value) * plotHeight;
+  const scoreValues = points.flatMap((point) => [Number(point.training_score), Number(point.validation_score)]).filter(Number.isFinite);
+  const scoreMin = task === "regression" ? Math.min(-1, Math.floor(Math.min(...scoreValues, 0) * 10) / 10) : 0.5;
+  const scoreMax = Math.max(1, Math.ceil(Math.max(...scoreValues, 1) * 10) / 10);
+  const y = (value) => top + ((scoreMax - Number(value)) / (scoreMax - scoreMin || 1)) * plotHeight;
   const path = (key) => points.map((point, index) => `${index ? "L" : "M"} ${x(point.training_rows)} ${y(point[key])}`).join(" ");
   return (
     <div className="learning-chart">
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Training and validation learning curve">
-        {[0.5, 0.6, 0.7, 0.8, 0.9, 1].map((score) => (
+        {Array.from({ length: 6 }, (_, index) => scoreMin + ((scoreMax - scoreMin) * index) / 5).map((score) => (
           <g key={score}>
             <line className="chart-grid-line" x1={left} x2={width - right} y1={y(score)} y2={y(score)} />
             <text className="chart-tick" x={left - 7} y={y(score) + 4} textAnchor="end">{score.toFixed(1)}</text>
@@ -331,7 +334,7 @@ function LearningCurve({ points }) {
             <circle className="learning-dot validation" cx={x(point.training_rows)} cy={y(point.validation_score)} r="4" />
           </g>
         ))}
-        <text className="chart-axis-title" x={left + plotWidth / 2} y={height - 8} textAnchor="middle">Training size (rows)</text>
+        <text className="chart-axis-title" x={left + plotWidth / 2} y={height - 8} textAnchor="middle">Training size (rows) · {task === "regression" ? "R²" : "accuracy"}</text>
       </svg>
       <div className="chart-legend">
         <span><i className="train" />Training score</span>
@@ -418,6 +421,7 @@ function App() {
   const [csvPreview, setCsvPreview] = useState({ headers: [], rows: [] });
   const [imputationStrategy, setImputationStrategy] = useState("mean");
   const [target, setTarget] = useState("target");
+  const [modelType, setModelType] = useState("auto");
   const [maxDepth, setMaxDepth] = useState(4);
   const [criterion, setCriterion] = useState("gini");
   const [splitter, setSplitter] = useState("best");
@@ -492,6 +496,7 @@ function App() {
       body.append("file", datasetFile);
       const query = new URLSearchParams({
         target: datasetTarget,
+        model_type: modelType,
         max_depth: String(maxDepth),
         criterion,
         splitter,
@@ -514,6 +519,8 @@ function App() {
         throw new Error(message);
       }
       setResult(data);
+      if (data.complexity?.requested_criterion) setCriterion(data.complexity.requested_criterion);
+      if (data.task === "regression") setClassWeight("none");
       setSection("overview");
       setViewMode("tree");
       setSelectedNode(data.tree.find((node) => node.id === 0) || null);
@@ -631,6 +638,12 @@ function App() {
           </label>
           <label className="control-label" htmlFor="target-column">Target column</label>
           <input id="target-column" className="sidebar-input" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="e.g. Result" />
+          <label className="control-label" htmlFor="model-type">Tree task</label>
+          <select id="model-type" className="sidebar-input" value={modelType} onChange={(event) => { const next = event.target.value; setModelType(next); setCriterion(next === "regression" ? "squared_error" : "gini"); }}>
+            <option value="auto">Auto-detect</option>
+            <option value="classification">Classification</option>
+            <option value="regression">Regression</option>
+          </select>
 
           {result && (
             <>
@@ -654,7 +667,7 @@ function App() {
           <label className="control-label" htmlFor="max-depth">Max depth</label>
           <input id="max-depth" className="sidebar-input" type="number" min="1" max="20" value={maxDepth} onChange={(event) => setMaxDepth(Math.min(20, Math.max(1, Number(event.target.value))))} />
         <label className="control-label" htmlFor="criterion">Split quality (criterion)</label>
-        <select id="criterion" className="sidebar-input" value={criterion} onChange={(event) => setCriterion(event.target.value)}><option value="gini">Gini impurity</option><option value="entropy">Entropy</option><option value="log_loss">Log loss</option></select>
+        <select id="criterion" className="sidebar-input" value={criterion} onChange={(event) => setCriterion(event.target.value)}>{(modelType === "regression" || result?.task === "regression") ? <><option value="squared_error">Squared error</option><option value="friedman_mse">Friedman MSE</option><option value="absolute_error">Absolute error</option><option value="poisson">Poisson</option></> : <><option value="gini">Gini impurity</option><option value="entropy">Entropy</option><option value="log_loss">Log loss</option></>}</select>
         <label className="control-label" htmlFor="splitter">Split strategy</label>
         <select id="splitter" className="sidebar-input" value={splitter} onChange={(event) => setSplitter(event.target.value)}><option value="best">Best split</option><option value="random">Random candidate</option></select>
         <label className="control-label" htmlFor="min-split">Minimum samples to split</label>
@@ -665,8 +678,8 @@ function App() {
         <input id="max-leaf-nodes" className="sidebar-input" type="number" min="0" value={maxLeafNodes} onChange={(event) => setMaxLeafNodes(Math.max(0, Number(event.target.value)))} />
         <label className="control-label" htmlFor="max-features">Features considered per split</label>
         <select id="max-features" className="sidebar-input" value={maxFeatures} onChange={(event) => setMaxFeatures(event.target.value)}><option value="all">All features</option><option value="sqrt">Square root</option><option value="log2">Log₂</option></select>
-        <label className="control-label" htmlFor="class-weight">Class balancing</label>
-        <select id="class-weight" className="sidebar-input" value={classWeight} onChange={(event) => setClassWeight(event.target.value)}><option value="none">No weighting</option><option value="balanced">Balanced classes</option></select>
+        {!(modelType === "regression" || result?.task === "regression") && <><label className="control-label" htmlFor="class-weight">Class balancing</label>
+        <select id="class-weight" className="sidebar-input" value={classWeight} onChange={(event) => setClassWeight(event.target.value)}><option value="none">No weighting</option><option value="balanced">Balanced classes</option></select></>}
         <label className="control-label" htmlFor="min-impurity">Minimum impurity decrease</label>
         <input id="min-impurity" className="sidebar-input" type="number" min="0" step="0.001" value={minImpurityDecrease} onChange={(event) => setMinImpurityDecrease(Math.max(0, Number(event.target.value)))} />
           <label className="control-label" htmlFor="pruning-alpha">Pruning alpha</label>
@@ -734,10 +747,17 @@ function App() {
             {section === "overview" && (
               <div className="overview-page">
                 <section className="metric-strip" aria-label="Model performance summary">
-                  <MetricCard title="Accuracy" value={result.metrics.accuracy} icon="✦" tone="green" />
-                  <MetricCard title="Precision" value={result.metrics.precision} icon="▥" tone="blue" />
-                  <MetricCard title="Recall" value={result.metrics.recall} icon="↗" tone="purple" />
-                  <MetricCard title="F1 Score" value={result.metrics.f1} icon="↗" tone="orange" />
+                  {result.task === "regression" ? <>
+                    <MetricCard title="R² score" value={result.metrics.r2} icon="✦" tone="green" />
+                    <MetricCard title="MAE" value={result.metrics.mae} icon="↔" tone="blue" />
+                    <MetricCard title="RMSE" value={result.metrics.rmse} icon="⌁" tone="purple" />
+                    <MetricCard title="Validation R²" value={result.metrics.validation_r2} icon="↗" tone="orange" />
+                  </> : <>
+                    <MetricCard title="Accuracy" value={result.metrics.accuracy} icon="✦" tone="green" />
+                    <MetricCard title="Precision" value={result.metrics.precision} icon="▥" tone="blue" />
+                    <MetricCard title="Recall" value={result.metrics.recall} icon="↗" tone="purple" />
+                    <MetricCard title="F1 Score" value={result.metrics.f1} icon="↗" tone="orange" />
+                  </>}
                   <MetricCard title="Training Time" value={result.metrics.training_time_ms} icon="◷" tone="red" time />
                 </section>
 
@@ -768,8 +788,8 @@ function App() {
                 <div className="overview-bottom-grid">
                   <section className="panel chart-panel"><div className="panel-heading"><div><h2>2D Decision Boundary</h2><p>{plotFeatures.slice(0, 2).join(" vs ")}</p></div><button className="subtle-link" type="button" onClick={() => setSection("boundary")}>Open</button></div><BoundaryPlot result={result} features={plotFeatures} /></section>
                   <section className="panel chart-panel"><div className="panel-heading"><div><h2>Feature Importance</h2><p>Relative contribution to tree splits.</p></div><button className="subtle-link" type="button" onClick={() => setSection("importance")}>Open</button></div><FeatureBars items={result.feature_importance.slice(0, 5)} compact /></section>
-                  <section className="panel chart-panel"><div className="panel-heading"><div><h2>Confusion Matrix</h2><p>Held-out test rows.</p></div><button className="subtle-link" type="button" onClick={() => setSection("confusion")}>Open</button></div><ConfusionMatrix result={result} compact /></section>
-                  <section className="panel chart-panel learning-preview"><div className="panel-heading"><div><h2>Learning Curve</h2><p>Training and validation accuracy.</p></div><button className="subtle-link" type="button" onClick={() => setSection("learning")}>Open</button></div><LearningCurve points={result.learning_curve} /></section>
+                  {result.task !== "regression" && <section className="panel chart-panel"><div className="panel-heading"><div><h2>Confusion Matrix</h2><p>Held-out test rows.</p></div><button className="subtle-link" type="button" onClick={() => setSection("confusion")}>Open</button></div><ConfusionMatrix result={result} compact /></section>}
+                  <section className="panel chart-panel learning-preview"><div className="panel-heading"><div><h2>Learning Curve</h2><p>Training and validation {result.task === "regression" ? "R²" : "accuracy"}.</p></div><button className="subtle-link" type="button" onClick={() => setSection("learning")}>Open</button></div><LearningCurve points={result.learning_curve} task={result.task} /></section>
                 </div>
                 <section className="panel overview-features"><div className="features-summary"><div><h2>Dataset Overview</h2><p>{result.dataset.filename} · {result.dataset.rows} rows · {result.dataset.columns} columns · target <strong>{result.dataset.target}</strong></p></div><button className="subtle-link" type="button" onClick={() => setSection("dataset")}>Explore dataset</button></div><div className="feature-chip-list">{result.dataset.features.map((feature) => <span key={feature}>{feature}</span>)}</div></section>
               </div>
@@ -799,9 +819,9 @@ function App() {
               <section className="panel focused-panel"><SectionHeading eyebrow="MODEL EXPLANATION" title="Feature Importance" detail="Impurity-based importance measures how much each feature contributes to reducing split impurity." /><FeatureBars items={result.feature_importance} /></section>
             )}
 
-            {section === "performance" && <PerformanceReport result={result} />}
-            {section === "learning" && <section className="panel focused-panel"><SectionHeading eyebrow="MODEL DIAGNOSTICS" title="Learning Curve" detail="Training and held-out validation accuracy as the training set grows." /><LearningCurve points={result.learning_curve} /></section>}
-            {section === "confusion" && <section className="panel focused-panel"><SectionHeading eyebrow="CLASSIFICATION" title="Confusion Matrix" detail="Rows are actual classes; columns are model predictions on the held-out test split." /><ConfusionMatrix result={result} /></section>}
+            {section === "performance" && (result.task === "regression" ? <RegressionPerformance result={result} /> : <PerformanceReport result={result} />)}
+            {section === "learning" && <section className="panel focused-panel"><SectionHeading eyebrow="MODEL DIAGNOSTICS" title="Learning Curve" detail={`Training and held-out validation ${result.task === "regression" ? "R²" : "accuracy"} as the training set grows.`} /><LearningCurve points={result.learning_curve} task={result.task} /></section>}
+            {section === "confusion" && (result.task === "regression" ? <RegressionPerformance result={result} /> : <section className="panel focused-panel"><SectionHeading eyebrow="CLASSIFICATION" title="Confusion Matrix" detail="Rows are actual classes; columns are model predictions on the held-out test split." /><ConfusionMatrix result={result} /></section>)}
 
             {section === "prediction" && (
               <section className="panel focused-panel"><SectionHeading eyebrow="SINGLE-ROW EXPLANATION" title="Prediction Path" detail="Choose a dataset row to replay each decision rule from the root to its prediction." /><div className="prediction-controls"><label>Dataset row<select value={predictionRowIndex} onChange={(event) => setPredictionRowIndex(event.target.value)}>{result.dataset.rows_data.map((row, index) => <option value={index} key={index}>Row {index + 1} · {String(row[result.dataset.target])}</option>)}</select></label><button className="primary-button" type="button" onClick={tracePrediction} disabled={predictionLoading}>{predictionLoading ? "Tracing…" : "Trace prediction"}</button></div>{prediction && <div className="prediction-path"><div className="prediction-result"><span>Predicted class</span><strong>{prediction.prediction_name}</strong><small>{prediction.path.length} steps</small></div>{prediction.path.map((step, index) => <article className="path-step" key={`${step.node_id}-${index}`}><span className="path-step-number">{index + 1}</span><div><strong>{step.type === "leaf" ? `Leaf prediction: ${step.prediction_name}` : `${step.feature} ${step.operator} ${Number(step.threshold).toPrecision(4)}`}</strong>{step.type === "split" && <p>Value {Number(step.value).toPrecision(4)} → follow the <b>{step.branch}</b> branch.</p>}</div></article>)}</div>}</section>
@@ -884,6 +904,12 @@ function NodeInformation({ node, classes, showTitle = true }) {
   );
 }
 
+function RegressionPerformance({ result }) {
+  const metrics = result.metrics;
+  const items = [["R² score", metrics.r2], ["Mean absolute error", metrics.mae], ["Root mean squared error", metrics.rmse], ["Training R²", metrics.train_r2], ["Validation R²", metrics.validation_r2]];
+  return <section className="panel focused-panel"><SectionHeading eyebrow="REGRESSION METRICS" title="Numeric target performance" detail="R² explains variance captured; MAE and RMSE are in the target's original units." /><div className="metric-detail-grid">{items.map(([name, value]) => <article className="metric-detail-card" key={name}><span>{name}</span><strong>{Number(value).toFixed(3)}</strong></article>)}</div><p className="table-footnote">Lower MAE/RMSE is better. Compare validation R² with training R² to check for overfitting.</p></section>;
+}
+
 function PerformanceReport({ result }) {
   const metrics = result.metrics;
   const summary = [
@@ -958,10 +984,10 @@ function TreeControls({
       </div>
       <details className="tree-advanced-controls" open>
         <summary>More parameters</summary>
-        <label>Split criterion<select value={criterion} onChange={(event) => setCriterion(event.target.value)}><option value="gini">Gini</option><option value="entropy">Entropy</option><option value="log_loss">Log loss</option></select></label>
+        <label>Split criterion<select value={criterion} onChange={(event) => setCriterion(event.target.value)}>{result.task === "regression" ? <><option value="squared_error">Squared error</option><option value="friedman_mse">Friedman MSE</option><option value="absolute_error">Absolute error</option><option value="poisson">Poisson</option></> : <><option value="gini">Gini</option><option value="entropy">Entropy</option><option value="log_loss">Log loss</option></>}</select></label>
         <label>Split strategy<select value={splitter} onChange={(event) => setSplitter(event.target.value)}><option value="best">Best</option><option value="random">Random</option></select></label>
         <label>Features per split<select value={maxFeatures} onChange={(event) => setMaxFeatures(event.target.value)}><option value="all">All features</option><option value="sqrt">Square root</option><option value="log2">Log₂</option></select></label>
-        <label>Class weighting<select value={classWeight} onChange={(event) => setClassWeight(event.target.value)}><option value="none">None</option><option value="balanced">Balanced</option></select></label>
+        {result.task !== "regression" && <label>Class weighting<select value={classWeight} onChange={(event) => setClassWeight(event.target.value)}><option value="none">None</option><option value="balanced">Balanced</option></select></label>}
       </details>
       <button className="primary-button tree-apply-button" type="button" onClick={() => onTrain()} disabled={!file || loading}>{loading ? "Training…" : changed ? "Apply settings & retrain" : "Retrain model"}</button>
       {features.length > 0 && <p className="tree-control-features">Selected features: {features.slice(0, 3).join(", ")}</p>}
@@ -979,11 +1005,11 @@ function HyperparameterReport({ result, ...controlProps }) {
     ["Class weighting", config.requested_class_weight], ["Minimum impurity decrease", config.requested_min_impurity_decrease],
     ["Cost-complexity pruning alpha", config.requested_ccp_alpha], ["Fixed random seed", config.random_state],
     ["Node count", config.node_count], ["Leaf count", config.leaf_count],
-    ["Training accuracy", percent(config.train_accuracy)], ["Validation accuracy", percent(config.validation_accuracy)],
+    ...(result.task === "regression" ? [["Training R²", Number(config.train_r2).toFixed(3)], ["Validation R²", Number(config.validation_r2).toFixed(3)]] : [["Training accuracy", percent(config.train_accuracy)], ["Validation accuracy", percent(config.validation_accuracy)]]),
   ];
   const descriptions = {
     "Maximum depth (configured)": "Limits the number of sequential decisions along a path.",
-    "Split criterion": "Scores class purity after a split; Gini is the default, entropy and log loss use information gain.",
+    "Split criterion": result.task === "regression" ? "Controls the regression loss: squared error, Friedman MSE, absolute error, or Poisson deviance." : "Scores class purity after a split; Gini is the default, entropy and log loss use information gain.",
     "Split strategy": "Best selects the strongest candidate; random samples a candidate threshold.",
     "Minimum samples to split": "A node needs at least this many rows before it can create children.",
     "Minimum samples per leaf": "Keeps each terminal group from becoming too small and fragile.",
@@ -993,7 +1019,7 @@ function HyperparameterReport({ result, ...controlProps }) {
     "Minimum impurity decrease": "Requires a split to improve purity by at least this amount.",
     "Cost-complexity pruning alpha": "A larger alpha penalizes complexity and prunes more branches.",
   };
-  return <section className="panel focused-panel"><SectionHeading eyebrow="TREE CONTROLS" title="Hyperparameters" detail="Customize numeric settings with sliders and fine-tune split options. Apply changes to train a new tree." /><TreeControls result={result} {...controlProps} /><div className="hyperparameter-grid">{items.map(([name, value]) => <article className="hyperparameter-card" key={name}><span>{name}</span><strong>{value ?? "—"}</strong>{descriptions[name] && <small>{descriptions[name]}</small>}</article>)}</div><p className="table-footnote">The random seed is fixed at 42 for reproducible comparisons. Validation accuracy is a held-out estimate, not a guarantee of future performance.</p></section>;
+  return <section className="panel focused-panel"><SectionHeading eyebrow="TREE CONTROLS" title="Hyperparameters" detail="Customize numeric settings with sliders and fine-tune split options. Apply changes to train a new tree." /><TreeControls result={result} {...controlProps} /><div className="hyperparameter-grid">{items.map(([name, value]) => <article className="hyperparameter-card" key={name}><span>{name}</span><strong>{value ?? "—"}</strong>{descriptions[name] && <small>{descriptions[name]}</small>}</article>)}</div><p className="table-footnote">The random seed is fixed at 42 for reproducible comparisons. {result.task === "regression" ? "R² is higher-is-better; MAE and RMSE are lower-is-better." : "Validation accuracy is a held-out estimate, not a guarantee of future performance."}</p></section>;
 }
 
 function DecisionTreeGuide({ maxDepth, setMaxDepth, result, file, loading, onTrain }) {
