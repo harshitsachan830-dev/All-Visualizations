@@ -771,6 +771,170 @@ function ActivationHeatmap({
   );
 }
 
+type ViewMode = "3D Interactive" | "2D Network" | "Feature Space";
+
+type FocusedViewProps = {
+  activeNav: string;
+  dataset: Dataset | null;
+  model: Model | null;
+  current: ForwardResult | null;
+  history: HistoryPoint[];
+  epoch: number;
+  sampleIndex: number;
+  viewMode: ViewMode;
+  threshold: number;
+  autoRotate: boolean;
+  resetVersion: number;
+  activationLayer: string;
+  selectedFeature: number;
+  training: boolean;
+  onTrainingToggle: () => void;
+  onEpochChange: (epoch: number) => void;
+  onSampleChange: (sample: number) => void;
+  onViewModeChange: (mode: ViewMode) => void;
+  onThresholdChange: (threshold: number) => void;
+  onRotateToggle: () => void;
+  onResetView: () => void;
+  onActivationLayerChange: (layer: string) => void;
+  onFeatureChange: (feature: number) => void;
+};
+
+function FocusedView({
+  activeNav,
+  dataset,
+  model,
+  current,
+  history,
+  epoch,
+  sampleIndex,
+  threshold,
+  autoRotate,
+  resetVersion,
+  activationLayer,
+  selectedFeature,
+  training,
+  onTrainingToggle,
+  onEpochChange,
+  onSampleChange,
+  onViewModeChange,
+  onThresholdChange,
+  onRotateToggle,
+  onResetView,
+  onActivationLayerChange,
+  onFeatureChange,
+}: FocusedViewProps) {
+  if (activeNav === "Overview") return null;
+  const predictionIndex = current
+    ? current.layers[3].indexOf(Math.max(...current.layers[3]))
+    : 0;
+  const title = activeNav;
+  const descriptions: Record<string, string> = {
+    "Model Architecture": "Inspect the network layers, nodes, weights, and biases.",
+    "Training Progress": "Follow loss and accuracy as the model learns.",
+    "3D Visualization": "Explore the network in an interactive 3D space.",
+    "Decision Boundary": "See how the model separates classes in feature space.",
+    "Feature Analysis": "Compare feature influence and neuron activations.",
+    Predictions: "Inspect the prediction and confidence for every sample.",
+    "About MLP": "Learn what each part of this visualizer means.",
+  };
+
+  return (
+    <section className="focused-view" aria-labelledby="focused-view-title">
+      <div className="focused-heading">
+        <div>
+          <span className="eyebrow">DEDICATED VIEW</span>
+          <h2 id="focused-view-title">{title}</h2>
+          <p>{descriptions[activeNav]}</p>
+        </div>
+        {activeNav === "Training Progress" && (
+          <button className="train-button" onClick={onTrainingToggle}>
+            {training ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
+            {training ? "Pause" : "Train model"}
+          </button>
+        )}
+      </div>
+
+      {activeNav === "Model Architecture" && (
+        <div className="focused-grid architecture-view">
+          <article className="panel focused-panel architecture-card">
+            <div className="panel-heading">
+              <div>
+                <h3>2D Network Architecture</h3>
+                <p>Follow the signal from input features to the predicted class.</p>
+              </div>
+              <span className="live-badge"><i /> LIVE</span>
+            </div>
+            <div className="network-wrap focused-network-wrap">
+              <NetworkSvg dataset={dataset} current={current} model={model} threshold={threshold} />
+            </div>
+            <div className="focused-actions">
+              <button className="subtle-button" onClick={() => onViewModeChange("2D Network")}>2D view active</button>
+              <label className="threshold-control">
+                <span>Link threshold</span>
+                <input type="range" min="0" max=".8" step=".02" value={threshold} onChange={(event) => onThresholdChange(Number(event.target.value))} />
+              </label>
+            </div>
+          </article>
+          <article className="panel focused-panel architecture-notes">
+            <h3>Layer map</h3>
+            <div className="layer-summary"><b>{dataset?.features.length ?? 0}</b><span>input features</span></div>
+            <div className="layer-summary"><b>8</b><span>hidden neurons · layer 1</span></div>
+            <div className="layer-summary"><b>6</b><span>hidden neurons · layer 2</span></div>
+            <div className="layer-summary"><b>{dataset?.classes.length ?? 0}</b><span>output classes</span></div>
+            <p>Node glow reflects activation. Link color shows weight sign, and the threshold hides weaker connections for readability.</p>
+          </article>
+          <article className="panel focused-panel focused-wide detail-panel">
+            <div className="panel-heading"><div><h3>How one prediction moves through the network</h3><p>The selected sample is traced from raw features to the final class probability.</p></div></div>
+            <div className="explanation-steps">
+              <div><b>1 · Input layer</b><span>Each input node represents one cleaned feature. Numeric values are standardized before entering the network, so features with different units can be compared.</span></div>
+              <div><b>2 · Hidden layer 1</b><span>Eight neurons combine the inputs using learned weights and biases. ReLU keeps positive signals and clips negative signals to zero.</span></div>
+              <div><b>3 · Hidden layer 2</b><span>Six neurons recombine the first hidden representation. This lets the model learn interactions that are not visible from one feature alone.</span></div>
+              <div><b>4 · Output layer</b><span>One output neuron is created for each target class. Softmax converts the output scores into probabilities that add up to 100%.</span></div>
+            </div>
+          </article>
+        </div>
+      )}
+
+      {activeNav === "Training Progress" && (
+        <div className="focused-grid training-view">
+          <article className="panel focused-panel large-chart"><div className="panel-heading"><h3>Training loss</h3><span className="legend"><i className="legend-blue" />Train <i className="legend-pink" />Validation</span></div><LineChart history={history} epoch={epoch} metric="loss" /><div className="axis-caption"><span>LOSS</span><span>Epochs</span></div></article>
+          <article className="panel focused-panel large-chart"><div className="panel-heading"><h3>Accuracy over epochs</h3><span className="legend"><i className="legend-blue" />Train <i className="legend-pink" />Validation</span></div><LineChart history={history} epoch={epoch} metric="accuracy" /><div className="axis-caption"><span>ACCURACY</span><span>Epochs</span></div></article>
+          <article className="panel focused-panel epoch-panel"><h3>Epoch control</h3><p>Inspect the model metrics at a specific point in training.</p><div className="epoch-control"><span>Epoch <b>{epoch}</b> / 200</span><input aria-label="Focused epoch" type="range" min="0" max="200" value={epoch} onChange={(event) => onEpochChange(Number(event.target.value))} /></div></article>
+          <article className="panel focused-panel focused-wide detail-panel">
+            <h3>How to interpret the training curves</h3>
+            <div className="explanation-columns">
+              <div><b>Loss</b><p>Loss measures how far the predicted probability distribution is from the correct label. Lower is better. A sharp early drop usually means the model is learning useful patterns.</p></div>
+              <div><b>Accuracy</b><p>Accuracy is the fraction of rows assigned to the correct class. It can rise quickly on a small or easy dataset, so read it together with validation accuracy.</p></div>
+              <div><b>Train vs validation</b><p>Training metrics use rows the model learns from. Validation metrics use held-out rows. A widening gap can be a sign of overfitting.</p></div>
+            </div>
+            <div className="training-loop"><span>Forward pass</span><i>→</i><span>Cross-entropy loss</span><i>→</i><span>Backpropagation</span><i>→</i><span>Weight update</span></div>
+          </article>
+        </div>
+      )}
+
+      {activeNav === "3D Visualization" && (
+        <div className="focused-stack"><article className="panel focused-panel three-view"><div className="network-wrap focused-network-wrap"><ThreeNetwork dataset={dataset} sampleIndex={sampleIndex} model={model} threshold={threshold} autoRotate={autoRotate} resetVersion={resetVersion} /></div><div className="focused-actions"><div className="view-toggle"><button onClick={() => onViewModeChange("2D Network")}>2D</button><button className="selected">3D</button><button onClick={() => onViewModeChange("Feature Space")}>Space</button></div><label className="threshold-control"><span>Link threshold</span><input type="range" min="0" max=".8" step=".02" value={threshold} onChange={(event) => onThresholdChange(Number(event.target.value))} /></label><button className="subtle-button" onClick={onRotateToggle}>{autoRotate ? "Pause rotation" : "Rotate"}</button><button className="subtle-button" onClick={onResetView}>Reset view</button></div></article><div className="focused-grid details-three"><article className="panel focused-panel detail-panel"><h3>What the 3D view shows</h3><p>The horizontal direction represents the flow of information: inputs on the left, hidden processing in the middle, and predictions on the right. Node size and glow change with the selected sample's activations.</p><ul className="detail-list"><li><b>Blue / green nodes:</b> active signals in the current forward pass.</li><li><b>Colored links:</b> learned connections between adjacent layers.</li><li><b>Link threshold:</b> a visual filter only; it does not change model weights.</li></ul></article><article className="panel focused-panel detail-panel"><h3>Controls and interaction</h3><p>Drag inside the stage to rotate the camera. Scroll to zoom. Pause rotation when you want to inspect one angle, then use Reset view to return to the default camera.</p><div className="control-legend"><span><b>2D</b> readable node-and-link map</span><span><b>3D</b> spatial architecture view</span><span><b>Space</b> feature-space projection</span></div></article></div></div>
+      )}
+
+      {activeNav === "Decision Boundary" && (
+        <article className="panel focused-panel decision-view"><div className="panel-heading"><div><h3>Class decision regions</h3><p>First two standardized features; other features remain at the selected sample.</p></div></div><DecisionPlot dataset={dataset} model={model} sampleIndex={sampleIndex} onSelect={onSampleChange} /><div className="focused-sample-control"><span>Selected sample <b>{sampleIndex + 1}</b> / {dataset?.x.length ?? 0}</span><input aria-label="Decision boundary sample" type="range" min="0" max={Math.max(0, (dataset?.x.length ?? 1) - 1)} value={Math.min(sampleIndex, Math.max(0, (dataset?.x.length ?? 1) - 1))} onChange={(event) => onSampleChange(Number(event.target.value))} /></div><div className="boundary-guide"><div><b>Colored regions</b><span>Each region shows the class the model would predict for that area of the two-dimensional projection.</span></div><div><b>Dots</b><span>Each dot is a dataset row. The selected row is highlighted so you can compare its location with its predicted class.</span></div><div><b>Important caveat</b><span>The plot visualizes only the first two features. The model still uses every feature, while the remaining features are held at the selected sample's values.</span></div></div></article>
+      )}
+
+      {activeNav === "Feature Analysis" && (
+        <div className="focused-grid feature-view"><article className="panel focused-panel"><div className="panel-heading"><div><h3>Feature importance</h3><p>Normalized class-separation sensitivity.</p></div><SlidersHorizontal size={15} className="muted-icon" /></div><div className="importance-list focused-importance-list">{(dataset?.features ?? []).map((feature, index) => <button key={feature} className={`importance-row ${selectedFeature === index ? "chosen" : ""}`} onClick={() => onFeatureChange(index)}><span className="importance-name">{feature.replaceAll("_", " ")}</span><span className="bar-track"><i style={{ width: `${Math.max(7, (dataset?.importance[index] ?? 0) * 100)}%`, background: ["#fb4e8a", "#ff9552", "#388bfa", "#8955dc"][index % 4] }} /></span><b>{(dataset?.importance[index] ?? 0).toFixed(2)}</b></button>)}</div><div className="feature-footnote"><i className="online-dot" />Selected: {dataset?.features[selectedFeature]?.replaceAll("_", " ") ?? "feature"}</div></article><article className="panel focused-panel"><div className="panel-heading"><div><h3>Activation map</h3><p>{activationLayer} · sample {sampleIndex + 1}</p></div><select className="mini-select" aria-label="Focused activation layer" value={activationLayer} onChange={(event) => onActivationLayerChange(event.target.value)}><option>Layer 1</option><option>Layer 2</option><option>Output</option></select></div><ActivationHeatmap current={current} sampleIndex={sampleIndex} selectedLayer={activationLayer} dataset={dataset} model={model} /></article><article className="panel focused-panel focused-wide detail-panel"><h3>How to use Feature Analysis</h3><div className="explanation-columns"><div><b>Importance bars</b><p>These values summarize how strongly each feature's class averages are separated. A longer bar means more separation in this dataset, not that the feature causes the prediction.</p></div><div><b>Activation map</b><p>Each cell shows one neuron's activation for one nearby sample. Compare columns to see whether a neuron responds consistently or only to specific rows.</p></div><div><b>Change the sample</b><p>Use the sample controls in Predictions or Overview, then return here to see the selected activation pattern change.</p></div></div></article></div>
+      )}
+
+      {activeNav === "Predictions" && (
+        <div className="focused-grid predictions-view"><article className="panel focused-panel prediction-card"><span className="eyebrow">CURRENT SAMPLE</span><strong className="prediction-class">{dataset?.classes[predictionIndex] ?? "-"}</strong><span className="prediction-confidence">{((current?.layers[3][predictionIndex] ?? 0) * 100).toFixed(1)}% confidence</span><p>True class: <b>{dataset?.classes[dataset?.y[sampleIndex] ?? 0] ?? "-"}</b></p><input aria-label="Prediction sample" type="range" min="0" max={Math.max(0, (dataset?.x.length ?? 1) - 1)} value={Math.min(sampleIndex, Math.max(0, (dataset?.x.length ?? 1) - 1))} onChange={(event) => onSampleChange(Number(event.target.value))} /></article><article className="panel focused-panel"><h3>Class probabilities</h3><div className="probability-list">{(dataset?.classes ?? []).map((className, index) => <div className="probability-row" key={className}><span>{className}</span><i><b style={{ width: `${(current?.layers[3][index] ?? 0) * 100}%` }} /></i><strong>{((current?.layers[3][index] ?? 0) * 100).toFixed(1)}%</strong></div>)}</div><p className="detail-copy">The predicted class is the output with the highest probability. Confidence is not a guarantee; it is the model's relative preference among the available classes.</p></article><article className="panel focused-panel focused-wide detail-panel"><h3>What to look for in a prediction</h3><div className="explanation-columns"><div><b>Correct and confident</b><p>The predicted and true labels match, and one probability dominates the others.</p></div><div><b>Correct but uncertain</b><p>The true class wins by a small margin. Nearby samples may cross a decision boundary.</p></div><div><b>Incorrect prediction</b><p>The highest-probability class differs from the true label. Inspect the sample's features and the decision boundary for context.</p></div></div></article></div>
+      )}
+
+      {activeNav === "About MLP" && (
+        <div className="focused-grid about-focused-view"><article className="panel focused-panel"><h3>What is a multilayer perceptron?</h3><p>An MLP is a feed-forward neural network. Inputs move through two hidden ReLU layers, then a softmax output layer produces class probabilities.</p><div className="formula"><span>weighted input</span> z = Σ (weight × input) + bias<br /><span>activation</span> a = ReLU(z) = max(0, z)</div><p className="detail-copy">During a forward pass, every layer transforms the representation. During training, backpropagation calculates how each weight contributed to the error and gradient descent updates the weights.</p></article><article className="panel focused-panel"><h3>How to read this visualizer</h3><ol className="about-steps"><li><b>Choose data:</b> select or upload a dataset and choose the target column.</li><li><b>Prepare data:</b> missing values are filled, categories are encoded, and numeric features are standardized.</li><li><b>Inspect architecture:</b> follow inputs through hidden layers to outputs.</li><li><b>Train:</b> compare training and validation curves as epochs progress.</li><li><b>Explore:</b> inspect decision regions, features, activations, and predictions.</li></ol></article><article className="panel focused-panel"><h3>What happens to a CSV?</h3><div className="explanation-steps compact-steps"><div><b>Parse</b><span>The first row becomes headers; blank rows and malformed extra fields are identified.</span></div><div><b>Clean</b><span>Missing numeric values use a selected strategy, while categorical values use their mode.</span></div><div><b>Encode</b><span>Text features become numeric category codes and every numeric feature is standardized.</span></div><div><b>Split</b><span>A stratified holdout is created for validation so class performance can be compared.</span></div></div></article><article className="panel focused-panel"><h3>Training vocabulary</h3><div className="term-list"><div><b>Epoch</b><span>One pass through the training rows.</span></div><div><b>Loss</b><span>A penalty for assigning low probability to the correct class.</span></div><div><b>Accuracy</b><span>The share of rows classified correctly.</span></div><div><b>Validation</b><span>Performance on held-out rows not used for weight updates.</span></div></div></article><article className="panel focused-panel focused-wide"><h3>Important limitations</h3><p>This is an educational classifier, not a production modeling pipeline. Feature bars measure normalized class separation rather than causality or learned-weight attribution. The decision plot shows only two features at a time. Numeric targets with many unique values are grouped into Low, Medium, and High classes because the model uses a softmax classification head; true numeric regression is not implemented.</p></article></div>
+      )}
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const [activeNav, setActiveNav] = useState("Overview");
   const [viewMode, setViewMode] = useState<
@@ -1004,33 +1168,23 @@ export default function Dashboard() {
 
   function navigate(label: string) {
     setActiveNav(label);
-    const targets: Record<string, string> = {
-      Overview: "overview",
-      "Model Architecture": "network-architecture",
-      "Training Progress": "training-progress",
-      "3D Visualization": "network-architecture",
-      "Decision Boundary": "decision-boundary",
-      "Feature Analysis": "feature-analysis",
-      Predictions: "prediction-summary",
-      "About MLP": "about-mlp",
-    };
     if (label === "3D Visualization") setViewMode("3D Interactive");
     if (label === "Model Architecture") setViewMode("2D Network");
-    if (label !== "Overview" && label !== "About MLP")
-      document
-        .getElementById(targets[label])
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    else window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const missingCount =
     parsed?.columns.reduce((sum, column) => sum + column.missing, 0) ?? 0;
+  const targetColumn = parsed?.columns.find((column) => column.name === target);
+  const numericTargetWillBeBinned = Boolean(
+    targetColumn?.numeric && new Set(targetColumn.values).size > 12,
+  );
   const chosenSample =
     samples.find((sample) => sample.name === datasetName)?.name ??
     "__uploaded__";
 
   return (
-    <div className={`app-shell ${activeNav === "About MLP" ? "about-open" : ""}`}>
+    <div className={`app-shell ${activeNav !== "Overview" ? "focused-open" : ""}`}>
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">
@@ -1141,6 +1295,7 @@ export default function Dashboard() {
             />
           </div>
         </header>
+        <div className="overview-content">
         <section className="metric-grid" aria-label="Model summary">
           <MetricCard
             icon={<Sparkles size={19} />}
@@ -1625,6 +1780,32 @@ export default function Dashboard() {
             </button>
           </div>
         </section>
+        </div>
+        <FocusedView
+          activeNav={activeNav}
+          dataset={dataset}
+          model={model}
+          current={current}
+          history={history}
+          epoch={epoch}
+          sampleIndex={sampleIndex}
+          viewMode={viewMode}
+          threshold={threshold}
+          autoRotate={autoRotate}
+          resetVersion={resetVersion}
+          activationLayer={activationLayer}
+          selectedFeature={selectedFeature}
+          training={training}
+          onTrainingToggle={() => (training ? pauseTraining() : startTraining())}
+          onEpochChange={setEpoch}
+          onSampleChange={setSampleIndex}
+          onViewModeChange={setViewMode}
+          onThresholdChange={setThreshold}
+          onRotateToggle={() => setAutoRotate((value) => !value)}
+          onResetView={() => setResetVersion((value) => value + 1)}
+          onActivationLayerChange={setActivationLayer}
+          onFeatureChange={setSelectedFeature}
+        />
       </main>
       {uploadOpen && (
         <div
@@ -1805,6 +1986,14 @@ export default function Dashboard() {
                     Blank/NA values are imputed, duplicate and malformed rows
                     removed, headers normalized, and text features encoded.
                   </p>
+                  {numericTargetWillBeBinned && (
+                    <p className="clean-note">
+                      <CircleHelp size={13} />
+                      This continuous numeric target will be grouped into
+                      balanced Low, Medium, and High classes for the
+                      classification model.
+                    </p>
+                  )}
                 </>
               )}
               {uploadError && <p className="upload-error">{uploadError}</p>}

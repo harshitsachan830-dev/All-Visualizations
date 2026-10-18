@@ -60,6 +60,18 @@ export function makeDataset(parsed: ParsedCsv, target: string, strategies: Recor
   if (targetIndex < 0) throw new Error('Choose a target column to train against.')
   if (parsed.rows.length < 2) throw new Error('Add at least two non-empty rows to train the model.')
   const rows = parsed.rows.map((row) => row.map((value, index) => missing(value) ? fill(parsed.columns[index].values, parsed.columns[index].numeric, index === targetIndex ? 'mode' : strategies[parsed.columns[index].name] ?? (parsed.columns[index].numeric ? 'median' : 'mode')) : value))
+  // The dashboard trains a softmax classifier. Group continuous score targets
+  // so a CSV with hundreds of unique scores does not create a huge output layer.
+  const targetValues = rows.map((row) => Number(row[targetIndex]))
+  if (parsed.columns[targetIndex].numeric && new Set(targetValues).size > 12) {
+    const sorted = [...targetValues].sort((a, b) => a - b)
+    const lowCutoff = sorted[Math.floor(sorted.length / 3)]
+    const highCutoff = sorted[Math.floor((sorted.length * 2) / 3)]
+    for (const row of rows) {
+      const value = Number(row[targetIndex])
+      row[targetIndex] = value <= lowCutoff ? 'Low' : value <= highCutoff ? 'Medium' : 'High'
+    }
+  }
   const classes = [...new Set(rows.map((row) => row[targetIndex]))].sort()
   if (classes.length < 2) throw new Error('The target column needs at least two different classes.')
   const indexes = parsed.headers.map((_, index) => index).filter((index) => index !== targetIndex)
