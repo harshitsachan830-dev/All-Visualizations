@@ -1,4 +1,4 @@
-import { RandomForestClassifier } from "ml-random-forest";
+import { RandomForestClassifier, RandomForestRegression } from "ml-random-forest";
 import Papa from "papaparse";
 import gardenCsv from "./data/garden-bed.csv?raw";
 import greenhouseCsv from "./data/greenhouse-trials.csv?raw";
@@ -17,6 +17,7 @@ export type FlowerDataset = {
   featureNames: string[];
   classLabels: ClassLabel[];
   targetName: string;
+  problemType?: "classification" | "regression";
   flowers: Flower[];
   dataQuality?: {
     sourceRows: number;
@@ -38,7 +39,7 @@ export type TreeNode = {
   splitValue?: number;
   numberSamples?: number;
   gain?: number;
-  distribution?: { getRow: (row: number) => number[] } | number[][];
+  distribution?: { getRow: (row: number) => number[] } | number[][] | number;
   left?: TreeNode;
   right?: TreeNode;
 };
@@ -52,6 +53,15 @@ type ForestEngine = {
   featureImportance: () => number[];
   estimators: Array<{ root: TreeNode }>;
   indexes: number[][];
+  oobResults?: Array<{ true: number; all: number[]; predicted: number }>;
+};
+
+type RegressionEngine = {
+  train: (features:number[][], values:number[])=>void;
+  predict: (features:number[][])=>number[];
+  featureImportance: ()=>number[];
+  estimators: Array<{root:TreeNode}>;
+  indexes:number[][];
 };
 
 export type TrainedForest = {
@@ -60,7 +70,19 @@ export type TrainedForest = {
   importance: number[];
   predict: (flower: Flower) => ClassLabel;
   predictEach: (flower: Flower) => ClassLabel[];
+  predictTree: (treeIndex: number, flower: Flower) => ClassLabel;
+  oobErrorByTree: number[];
+  oobScore: number | null;
 };
+
+export type TrainedRegressionForest = {
+  trees: TreeNode[];
+  importance: number[];
+  predict: (row:Flower)=>number;
+  predictEach: (row:Flower)=>number[];
+};
+
+export type RegressionMetrics = { mae:number; rmse:number; r2:number; sampleCount:number; actual:number[]; predicted:number[] };
 
 export type Evaluation = {
   confusion: number[][];
@@ -144,11 +166,12 @@ export function makeDatasetFromRows(
   targetName: string,
   rows: Flower[],
   dataQuality?: FlowerDataset["dataQuality"],
+  problemType: "classification" | "regression" = "classification",
 ): FlowerDataset {
   if (rows.length < 8)
     throw new Error("Dataset needs at least 8 rows for a train/test split.");
-  if (featureNames.length === 0 || classLabels.length < 2)
-    throw new Error("Choose at least one feature and a target with two classes.");
+  if (featureNames.length === 0 || (problemType === "classification" && classLabels.length < 2))
+    throw new Error("Choose at least one feature and a valid target.");
   return {
     id,
     name,
@@ -156,9 +179,28 @@ export function makeDatasetFromRows(
     featureNames,
     classLabels,
     targetName,
+    problemType,
     flowers: rows,
     dataQuality,
   };
+}
+
+export function trainRegressionForest(treeCount:number, depth:number|null, seed:number, flowers:Flower[], minSamples=3, maxFeatures=Math.max(1,Math.floor(Math.sqrt(flowers[0]?.features.length??1))), gainThreshold=.01):TrainedRegressionForest {
+  const training=getTrainingFlowers(flowers);
+  const engine=new RandomForestRegression({nEstimators:treeCount,maxFeatures:Math.max(1,Math.min(training[0]?.features.length??1,maxFeatures)),replacement:false,useSampleBagging:true,noOOB:true,seed,selectionMethod:"mean",treeOptions:{maxDepth:depth??Infinity,minNumSamples:minSamples,gainThreshold}}) as unknown as RegressionEngine;
+  const value=(row:Flower)=>Number(row.label);
+  engine.train(training.map(getFeatures),training.map(value));
+  const predictEach=(row:Flower)=>engine.predict([getFeatures(row)]);
+  return {trees:engine.estimators.map(estimator=>estimator.root),importance:engine.featureImportance(),predict:row=>engine.predict([getFeatures(row)])[0]??0,predictEach};
+}
+
+export function evaluateRegression(forest:TrainedRegressionForest, flowers:Flower[]):RegressionMetrics {
+  const test=getTestFlowers(flowers), actual=test.map(row=>Number(row.label)), predicted=test.map(row=>forest.predict(row));
+  const mae=actual.length?actual.reduce((sum,value,index)=>sum+Math.abs(value-(predicted[index]??0)),0)/actual.length:0;
+  const mse=actual.length?actual.reduce((sum,value,index)=>sum+(value-(predicted[index]??0))**2,0)/actual.length:0;
+  const mean=actual.length?actual.reduce((sum,value)=>sum+value,0)/actual.length:0;
+  const total=actual.reduce((sum,value)=>sum+(value-mean)**2,0);
+  return {mae,rmse:Math.sqrt(mse),r2:total?1-actual.reduce((sum,value,index)=>sum+(value-(predicted[index]??0))**2,0)/total:0,sampleCount:test.length,actual,predicted};
 }
 
 export const FLOWER_DATASETS: FlowerDataset[] = [...BUNDLED_DATASETS];
@@ -202,31 +244,35 @@ export function trainForest(
   flowers: Flower[],
   classLabels: ClassLabel[],
   minSamples = 3,
+  maxFeatures = Math.max(1, Math.floor(Math.sqrt(flowers[0]?.features.length ?? 1))),
+  gainThreshold = 0.01,
 ): TrainedForest {
   const trainingFlowers = getTrainingFlowers(flowers);
-  const engine = new RandomForestClassifier({
+  const makeEngine = (noOOB: boolean) => new RandomForestClassifier({
     nEstimators: treeCount,
-    maxFeatures: Math.max(
-      1,
-      Math.floor(Math.sqrt(trainingFlowers[0]?.features.length ?? 1)),
-    ),
+    maxFeatures: Math.max(1, Math.min(trainingFlowers[0]?.features.length ?? 1, maxFeatures)),
     replacement: false,
     useSampleBagging: true,
-    noOOB: true,
+    noOOB,
     seed,
     treeOptions: {
       maxDepth: depth ?? Infinity,
       minNumSamples: minSamples,
-      gainThreshold: 0.01,
+      gainThreshold,
     },
   }) as unknown as ForestEngine;
   const encode = (label: ClassLabel) => classLabels.indexOf(label);
   const decode = (value: number) => classLabels[Math.round(value)] ?? classLabels[0];
 
-  engine.train(
-    trainingFlowers.map(getFeatures),
-    trainingFlowers.map((flower) => encode(flower.label)),
-  );
+  let engine = makeEngine(false);
+  try {
+    engine.train(trainingFlowers.map(getFeatures), trainingFlowers.map((flower) => encode(flower.label)));
+  } catch {
+    // ml-random-forest can fail while summarizing OOB votes when very few trees
+    // leave a sample with no votes. Keep the fitted forest usable without OOB.
+    engine = makeEngine(true);
+    engine.train(trainingFlowers.map(getFeatures), trainingFlowers.map((flower) => encode(flower.label)));
+  }
 
   function predictEach(flower: Flower) {
     const predictions = engine.predictionValues([getFeatures(flower)]);
@@ -235,14 +281,44 @@ export function trainForest(
     );
   }
 
+  const oobRows = engine.oobResults ?? [];
+  const oobErrorByTree = Array.from({ length: treeCount }, (_, treeIndex) => {
+    const eligible = oobRows.filter((row) => row.all.length > treeIndex);
+    if (!eligible.length) return 0;
+    const errors = eligible.filter((row) => {
+      const counts = new Map<number, number>();
+      row.all.slice(0, treeIndex + 1).forEach((vote) => counts.set(vote, (counts.get(vote) ?? 0) + 1));
+      const predicted = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+      return predicted !== row.true;
+    }).length;
+    return errors / eligible.length;
+  });
+  const finalOobRows = oobRows.filter((row) => row.all.length > 0);
+  const oobScore = finalOobRows.length
+    ? 1 - finalOobRows.filter((row) => row.predicted !== row.true).length / finalOobRows.length
+    : null;
+
   return {
     trees: engine.estimators.map((estimator) => estimator.root),
     featureIndexes: engine.indexes,
     importance: engine.featureImportance(),
     predict: (flower) => decode(engine.predict([getFeatures(flower)])[0]),
     predictEach,
+    predictTree: (treeIndex, flower) => {
+      let node = engine.estimators[treeIndex]?.root;
+      while (node?.left && node.right && node.splitColumn !== undefined && node.splitValue !== undefined) {
+        const feature = engine.indexes[treeIndex]?.[node.splitColumn];
+        if (feature === undefined) break;
+        node = (getFeatures(flower)[feature] ?? 0) < node.splitValue ? node.left : node.right;
+      }
+      const dist = node ? getClassDistribution(node, classLabels.length) : [];
+      return decode(dist.indexOf(Math.max(...dist)));
+    },
+    oobErrorByTree,
+    oobScore,
   };
 }
+
 
 export function evaluateForest(
   forest: TrainedForest,
@@ -382,7 +458,7 @@ export function getDecisionPath(
 export function getClassDistribution(node: TreeNode, classCount = 2) {
   const distribution = node.distribution;
   if (!distribution) return Array.from({ length: classCount }, () => 0);
-  const values = Array.isArray(distribution)
+  const values = typeof distribution === "number" ? [] : Array.isArray(distribution)
     ? (distribution[0] ?? [])
     : distribution.getRow(0);
   return Array.from({ length: classCount }, (_, index) => values[index] ?? 0);

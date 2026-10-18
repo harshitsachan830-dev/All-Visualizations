@@ -1,1958 +1,249 @@
 import { useMemo, useState } from "react";
-import {
-  FLOWER_DATASETS,
-  evaluateForest,
-  getClassDistribution,
-  getDecisionPath,
-  getTrainingFlowers,
-  getTestFlowers,
-  getTreeFeatureIndex,
-  trainForest,
-  calculatePermutationImportance,
-  makeDatasetFromRows,
-  type ClassLabel,
-  type Flower,
-  type TreeNode,
-  type TrainedForest,
-  type FlowerDataset,
-} from "./model";
 import { CsvUpload } from "./CsvUpload";
 import { type CleanedDataset } from "./csvParser";
+import { ThreeVisualization } from "./ThreeVisualization";
+import {
+  FLOWER_DATASETS, evaluateForest, getTestFlowers, getTrainingFlowers,
+  evaluateRegression, makeDatasetFromRows, trainForest, trainRegressionForest, type ClassLabel, type Flower, type FlowerDataset,
+  type RegressionMetrics, type TrainedForest, type TrainedRegressionForest, type TreeNode,
+} from "./model";
 import "./Explorer.css";
 
-type View =
-  | "datasets"
-  | "forest"
-  | "prediction"
-  | "trees"
-  | "paths"
-  | "importance"
-  | "quality"
-  | "insights"
-  | "about";
+type Page = "overview" | "3d" | "tree" | "full-tree" | "data" | "guide";
+const COLORS = ["#2378df", "#20a665", "#f17b13", "#9258d6", "#e44848", "#11a9ad"];
+const color = (i: number) => COLORS[i % COLORS.length];
+const fmt = (n: number, d = 2) => Number.isFinite(n) ? n.toFixed(d) : "—";
+const pct = (n: number) => `${Math.round(n * 100)}%`;
 
-function format(value: number) {
-  return value.toFixed(1);
+function majority(votes: ClassLabel[], labels: string[]) {
+  const counts = labels.map((label) => votes.filter((v) => v === label).length);
+  return labels[counts.indexOf(Math.max(...counts))] ?? labels[0] ?? "—";
 }
 
-function shortLabel(label: ClassLabel) {
-  return label;
+function SvgCard({ title, subtitle, className = "", children }: { title: string; subtitle: string; className?: string; children: React.ReactNode }) {
+  return <article className={`rf-card ${className}`}><header className="rf-card-head"><div><h2>{title}</h2><p>{subtitle}</p></div></header>{children}</article>;
 }
 
-function classTone(index: number) {
-  return `class-${["a", "b", "c", "d", "e", "f"][index % 6]}`;
-}
-
-function shapeTone(index: number, prefix: "bar" | "flower" | "point" | "shape" | "tile") {
-  return `${prefix}-${["a", "b", "c", "d", "e", "f"][index % 6]}`;
-}
-
-const VIEW_ITEMS: Array<{ id: View; label: string; icon: string }> = [
-  { id: "forest", label: "Overview", icon: "⌂" },
-  { id: "prediction", label: "Prediction", icon: "◉" },
-  { id: "trees", label: "Trees", icon: "♧" },
-  { id: "paths", label: "Decision Paths", icon: "⇢" },
-  { id: "importance", label: "Feature Importance", icon: "▥" },
-  { id: "quality", label: "Evaluation", icon: "✓" },
-  { id: "insights", label: "Data Insights", icon: "▦" },
-];
-
-function findNode(
-  root: TreeNode,
-  targetPath: string,
-  currentPath = "",
-): TreeNode {
-  if (currentPath === targetPath) return root;
-  if (targetPath.startsWith(`${currentPath}L`) && root.left)
-    return findNode(root.left, targetPath, `${currentPath}L`);
-  if (targetPath.startsWith(`${currentPath}R`) && root.right)
-    return findNode(root.right, targetPath, `${currentPath}R`);
-  return root;
-}
-
-type PositionedNode = {
-  node: TreeNode;
-  path: string;
-  depth: number;
-  slot: number;
-};
-
-function layoutNodes(root: TreeNode) {
-  const nodes: PositionedNode[] = [];
-  const countLeaves = (node: TreeNode): number => {
-    if (!node.left && !node.right) return 1;
-    return (
-      (node.left ? countLeaves(node.left) : 0) +
-      (node.right ? countLeaves(node.right) : 0)
-    );
+function shortTree(root: TreeNode, featureNames: string[], labels: string[], height = 300, maxLevels = 2) {
+  const visibleLeaves = (node:TreeNode, depth:number):number => depth>=maxLevels||(!node.left&&!node.right)?1:(node.left?visibleLeaves(node.left,depth+1):0)+(node.right?visibleLeaves(node.right,depth+1):0);
+  const leaves = visibleLeaves(root,0);
+  const width = Math.max(320, leaves * 96);
+  const items: Array<{ n: TreeNode; x: number; y: number; path: string; d: number }> = [];
+  const visit = (n: TreeNode, path: string, d: number, start: number, end: number): number => {
+    const x = (start + end) / 2;
+    const y = 30 + d * 76;
+    items.push({ n, x, y, path, d });
+    if (d < maxLevels-1 && n.left) visit(n.left, path + "L", d + 1, start, x);
+    if (d < maxLevels-1 && n.right) visit(n.right, path + "R", d + 1, x, end);
+    return x;
   };
-  const leafCount = countLeaves(root);
-  const visit = (
-    node: TreeNode,
-    path: string,
-    depth: number,
-    firstLeaf: number,
-  ): number => {
-    if (!node.left && !node.right) {
-      nodes.push({ node, path, depth, slot: firstLeaf + 0.5 });
-      return firstLeaf + 0.5;
-    }
-
-    const childCenters: number[] = [];
-    let nextLeaf = firstLeaf;
-    if (node.left) {
-      childCenters.push(visit(node.left, `${path}L`, depth + 1, nextLeaf));
-      nextLeaf += countLeaves(node.left);
-    }
-    if (node.right)
-      childCenters.push(visit(node.right, `${path}R`, depth + 1, nextLeaf));
-    const slot =
-      childCenters.reduce((sum, center) => sum + center, 0) /
-      childCenters.length;
-    nodes.push({ node, path, depth, slot });
-    return slot;
-  };
-  visit(root, "", 0, 0);
-  return { nodes, leafCount };
+  visit(root, "", 0, 8, width - 8);
+  const links = items.flatMap((it) => ["L", "R"].flatMap((branch) => {
+    const child = items.find((candidate) => candidate.path === it.path + branch);
+    return child ? [{ it, child, branch }] : [];
+  }));
+  const actualHeight = Math.max(height, 90 + Math.max(...items.map((i) => i.d)) * 76);
+  return <svg className="mini-tree-svg" viewBox={`0 0 ${width} ${actualHeight}`} role="img" aria-label="Fitted decision tree preview">
+    {links.map(({it, child, branch}) => <g key={child.path}><line x1={it.x} y1={it.y+18} x2={child.x} y2={child.y-18} stroke={branch === "L" ? "#20a665" : "#287de0"} strokeWidth="2"/><text x={(it.x+child.x)/2} y={(it.y+child.y)/2} className="tree-branch">{branch === "L" ? "YES" : "NO"}</text></g>)}
+    {items.map(({n,x,y,path}) => { const leaf = !n.left && !n.right; const distribution=n.distribution; const counts=typeof distribution==="number"?[]:Array.isArray(distribution)?distribution[0]??[]:distribution?.getRow(0)??[]; const pred = labels[Math.max(0,counts.indexOf(Math.max(0,...counts)))] ?? labels[0] ?? "Leaf"; const label = leaf ? pred : `${featureNames[n.splitColumn ?? 0] ?? "Feature"} ≤ ${fmt(n.splitValue ?? 0, 1)}`; return <g key={path || "root"}><rect x={x-42} y={y-17} width="84" height="36" rx="8" className={leaf ? "mini-leaf" : "mini-split"}/><text x={x} y={y+4} textAnchor="middle" className="mini-tree-label">{label.length > 18 ? `${label.slice(0,16)}…` : label}</text></g>;})}
+    {items.filter(({n,d})=>d===maxLevels-1&&(n.left||n.right)).map(({x,y,path})=><text key={`more-${path}`} x={x} y={y+29} textAnchor="middle" className="tree-branch">more below…</text>)}
+  </svg>;
 }
 
-function getActivePath(
-  forest: TrainedForest,
-  treeIndex: number,
-  flower: Flower,
-) {
-  const path = getDecisionPath(forest, treeIndex, flower);
-  const activeNodes = new Set([""]);
-  let current = "";
-  for (const step of path.steps) {
-    current += step.passes ? "L" : "R";
-    activeNodes.add(current);
-  }
-  activeNodes.add(path.leafPath);
-  return { path, activeNodes };
+function FullTreeView({root,names,labels,regression=false}:{root:TreeNode;names:string[];labels:string[];regression?:boolean}){
+  const [zoom,setZoom]=useState(1);
+  const leafCounts=new Map<TreeNode,number>();const leafCount=(node:TreeNode):number=>{const cached=leafCounts.get(node);if(cached!==undefined)return cached;const count=node.left||node.right?(node.left?leafCount(node.left):0)+(node.right?leafCount(node.right):0):1;leafCounts.set(node,count);return count;};
+  const leaves=Math.max(1,leafCount(root)),width=Math.max(900,leaves*138),items:Array<{node:TreeNode;path:string;depth:number;x:number}>=[];
+  const walk=(node:TreeNode,path:string,depth:number,start:number,end:number)=>{items.push({node,path,depth,x:(start+end)/2});const left=node.left?leafCount(node.left):0,total=Math.max(1,left+(node.right?leafCount(node.right):0)),mid=start+(end-start)*left/total;if(node.left)walk(node.left,path+"L",depth+1,start,mid);if(node.right)walk(node.right,path+"R",depth+1,mid,end);};
+  walk(root,"",0,40,width-40);const depth=Math.max(0,...items.map(item=>item.depth)),height=100+depth*104;const itemByPath=new Map(items.map(item=>[item.path,item]));
+  const links=items.flatMap(item=>["L","R"].flatMap(side=>{const child=itemByPath.get(item.path+side);return child?[{item,child,side}]:[]}));
+  const nodeText=(node:TreeNode)=>{if(node.left||node.right)return `${names[node.splitColumn??0]??"Feature"} ≤ ${fmt(node.splitValue??0,2)}`;const d=node.distribution;if(typeof d==="number")return `${labels[0]??"Value"}: ${fmt(d,2)}`;const counts=Array.isArray(d)?d[0]??[]:d?.getRow(0)??[];const cls=counts.indexOf(Math.max(0,...counts));return labels[cls]??`Class ${cls+1}`;};
+  return <div className="full-tree-panel"><div className="full-tree-toolbar"><div><b>{items.length.toLocaleString()} nodes</b><span>{leaves.toLocaleString()} leaves · depth {depth}{regression?" · regression values":" · class predictions"}</span></div><div><button type="button" aria-label="Zoom out full tree" onClick={()=>setZoom(z=>Math.max(.25,z/1.2))}>−</button><output>{Math.round(zoom*100)}%</output><button type="button" aria-label="Zoom in full tree" onClick={()=>setZoom(z=>Math.min(3,z*1.2))}>+</button><button type="button" onClick={()=>setZoom(1)}>Reset</button></div></div><div className="full-tree-viewport"><svg width={width*zoom} height={height*zoom} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Complete fitted decision tree with ${items.length} nodes`}>
+    {links.map(({item,child,side})=><g key={`edge-${child.path}`}><line x1={item.x} y1={48+item.depth*104+22} x2={child.x} y2={48+child.depth*104-22} stroke={side==="L"?"#20a665":"#287de0"} strokeWidth="2"/><text x={(item.x+child.x)/2} y={(48+item.depth*104+48+child.depth*104)/2} className="tree-branch">{side==="L"?"YES":"NO"}</text></g>)}
+    {items.map(({node,path,depth:d,x})=>{const leaf=!node.left&&!node.right,label=nodeText(node),y=48+d*104;return <g key={path||"root"}><rect x={x-58} y={y-22} width="116" height="44" rx="8" className={leaf?"mini-leaf":"mini-split"}/><text x={x} y={y-2} textAnchor="middle" className="mini-tree-label">{label.length>20?`${label.slice(0,18)}…`:label}</text><text x={x} y={y+13} textAnchor="middle" className="tree-node-samples">{node.numberSamples??"—"} samples</text></g>})}
+  </svg></div><p className="full-tree-hint">Scroll horizontally or vertically to explore the complete tree. Use −/+ to zoom; branch labels show the left/right outcomes.</p></div>;
 }
 
-function TreeDiagram({
-  forest,
-  treeIndex,
-  flower,
-  featureNames,
-  classLabels,
-  selectedNodePath,
-  onSelectNode,
-}: {
-  forest: TrainedForest;
-  treeIndex: number;
-  flower: Flower;
-  featureNames: string[];
-  classLabels: string[];
-  selectedNodePath: string;
-  onSelectNode: (path: string) => void;
-}) {
-  const root = forest.trees[treeIndex];
-  const layout = layoutNodes(root);
-  const { nodes } = layout;
-  const maxDepth = Math.max(...nodes.map((item) => item.depth));
-  const width = Math.max(980, layout.leafCount * 230);
-  const nodeWidth = 198;
-  const nodeHeight = 90;
-  const rowGap = 142;
-  const top = 64;
-  const height = top * 2 + maxDepth * rowGap + nodeHeight;
-  const { path, activeNodes } = getActivePath(forest, treeIndex, flower);
-  const activeEdges = new Set<string>();
-  let activeKey = "";
-  path.steps.forEach((step) => {
-    activeKey += step.passes ? "L" : "R";
-    activeEdges.add(activeKey);
+function project3(x: number, y: number, z: number, angle: number, scale = 1) {
+  const a = angle * Math.PI / 180;
+  const px = 225 + (x - .5) * 220 * Math.cos(a) + (y - .5) * 190 * Math.sin(a);
+  const py = 300 + (x - .5) * 58 * Math.sin(a) - (y - .5) * 82 * Math.cos(a) - z * 210;
+  return [px * scale, py * scale] as const;
+}
+function rangeOf(rows: Flower[], index: number): [number, number] {
+  const values = rows.map((row) => row.features[index] ?? 0);
+  return [Math.min(...values), Math.max(...values) || Math.min(...values) + 1];
+}
+function norm(value: number, range: [number, number]) { return (value - range[0]) / (range[1] - range[0] || 1); }
+function predictShares(forest: TrainedForest, values: number[], labels: string[]) {
+  const row: Flower = { id: -1, features: values, label: labels[0] ?? "" };
+  const votes = forest.predictEach(row);
+  return labels.map((label) => votes.filter((vote) => vote === label).length / Math.max(1, votes.length));
+}
+
+function Surface3D({ rows, names, labels, forest, mode = "class", target = 0, treeIds = [0,1,2], angle = 32, axes = [0,1,2] }: { rows: Flower[]; names: string[]; labels: string[]; forest: TrainedForest; mode?: "class" | "vote" | "trees" | "pdp"; target?: number; treeIds?: number[]; angle?: number; axes?: number[] }) {
+  const xi=(axes[0]??0)%names.length, yi=(axes[1]??Math.min(1,names.length-1))%names.length, zi=(axes[2]??Math.min(2,names.length-1))%names.length;
+  const xr = rangeOf(rows, xi), yr = rangeOf(rows, yi);
+  const means = names.map((_, i) => rows.reduce((s, r) => s + (r.features[i] ?? 0), 0) / Math.max(1, rows.length));
+  const steps = 10;
+  const cells = Array.from({length: steps * steps}, (_, k) => {
+    const ix = k % steps, iy = Math.floor(k / steps);
+    const xn = (ix + .5) / steps, yn = (iy + .5) / steps;
+    const features = [...means]; features[xi] = xr[0] + xn * (xr[1]-xr[0]); if (features.length > 1) features[yi] = yr[0] + yn * (yr[1]-yr[0]);
+    let shares = predictShares(forest, features, labels);
+    if (mode === "pdp") {
+      const sample = rows.filter((_, i) => i % Math.max(1, Math.floor(rows.length / 16)) === 0).slice(0,16);
+      const score = sample.reduce((s, r) => { const f=[...r.features];f[xi]=features[xi]??0;if(f.length>1)f[yi]=features[yi]??0;return s+predictShares(forest,f,labels)[target]!;},0)/Math.max(1,sample.length);
+      shares = [score];
+    }
+    const classIndex = shares.indexOf(Math.max(...shares));
+    let z = mode === "vote" || mode === "pdp" ? shares[target] ?? 0 : .1 + (classIndex / Math.max(1,labels.length-1)) * .38;
+    if (mode === "trees") z = .12 + (treeIds.reduce((s, id) => s + (forest.predictTree(id % forest.trees.length, {id:-1,features,label:labels[0]??""}) === labels[classIndex] ? 1:0),0) / Math.max(1,treeIds.length))*.36;
+    return {ix,iy,xn,yn,z,classIndex};
   });
-  const position = (item: PositionedNode) => ({
-    x: (item.slot / layout.leafCount) * width,
-    y: top + item.depth * rowGap,
+  return <svg viewBox="0 0 470 400" className="rf-plot rf-plot-3d" role="img" aria-label="Three-dimensional model feature space visualization">
+    <polygon points="44,305 225,365 430,290 249,230" className="plot-floor"/>
+    {Array.from({length:7},(_,i)=><g key={`grid${i}`} className="plot-grid"><line x1={44+i*30} y1={305+i*10} x2={249+i*30} y2={230+i*10}/><line x1={44+i*30} y1={305+i*10} x2={225+i*30} y2={365-i*12}/></g>)}
+    <path d="M44 305L44 125L249 50L430 110L430 290L225 365M44 125L225 185L430 110M225 185V365M249 50V230" className="plot-box"/>
+    {cells.sort((a,b)=>a.iy-b.iy).map((cell)=>{const z1=mode==="vote"||mode==="pdp"||mode==="trees"?cell.z:.1+(cell.classIndex/Math.max(1,labels.length-1))*.38;const pts=[project3(cell.ix/steps,cell.iy/steps,z1,angle),project3((cell.ix+1)/steps,cell.iy/steps,z1,angle),project3((cell.ix+1)/steps,(cell.iy+1)/steps,z1,angle),project3(cell.ix/steps,(cell.iy+1)/steps,z1,angle)];const fill=mode==="vote"||mode==="pdp"?`hsl(${260-cell.z*220} 82% 55%)`:color(cell.classIndex);return <polygon key={`${cell.ix}:${cell.iy}`} points={pts.map(p=>p.join(",")).join(" ")} fill={fill} fillOpacity=".42" stroke={fill} strokeOpacity=".58" strokeWidth=".65"/>;})}
+    {rows.map((row)=>{const x=norm(row.features[xi]??0,xr),y=norm(row.features[yi]??0,yr),shares=predictShares(forest,row.features,labels),predicted=labels[shares.indexOf(Math.max(...shares))],z=mode==="class"?.1+(labels.indexOf(row.label)/Math.max(1,labels.length-1))*.38:mode==="vote"||mode==="pdp"?shares[target]??0:treeIds.filter(id=>forest.predictTree(id%forest.trees.length,row)===predicted).length/Math.max(1,treeIds.length);const [cx,cy]=project3(x,y,z,angle);return <circle key={row.id} cx={cx} cy={cy} r="3.2" fill={color(labels.indexOf(row.label))} stroke="white" strokeWidth=".7" opacity=".9"><title>{row.label} · {names[xi]} {fmt(row.features[xi]??0)} · {names[yi]} {fmt(row.features[yi]??0)} · {names[zi]??"Model output"}</title></circle>;})}
+    <text x="270" y="388" className="plot-axis-label">{names[xi] ?? "Feature 1"}</text><text x="36" y="349" className="plot-axis-label">{names[yi] ?? "Feature 2"}</text><text x="249" y="45" className="plot-axis-label">{mode === "vote" ? `Vote share: ${labels[target] ?? "class"}` : mode === "pdp" ? `Partial dependence: ${labels[target] ?? "class"}` : mode === "trees" ? "Tree vote" : mode === "class" ? "Predicted class" : names[zi] ?? "Feature 3"}</text>
+  </svg>;
+}
+
+function Scatter3D({ rows, names, labels, selectedId, axes=[0,1,2] }: { rows: Flower[]; names: string[]; labels: string[]; selectedId: number; axes?:number[] }) {
+  const xi=(axes[0]??0)%names.length,yi=(axes[1]??Math.min(1,names.length-1))%names.length,zi=(axes[2]??Math.min(2,names.length-1))%names.length,xr=rangeOf(rows,xi), yr=rangeOf(rows,yi), zr=rangeOf(rows,zi);
+  return <svg viewBox="0 0 470 400" className="rf-plot rf-plot-3d" role="img" aria-label="Three-dimensional scatter of observations"><polygon points="44,305 225,365 430,290 249,230" className="plot-floor"/>{Array.from({length:7},(_,i)=><g key={i} className="plot-grid"><line x1={44+i*30} y1={305+i*10} x2={249+i*30} y2={230+i*10}/><line x1={44+i*30} y1={305+i*10} x2={225+i*30} y2={365-i*12}/></g>)}<path d="M44 305L44 125L249 50L430 110L430 290L225 365M44 125L225 185L430 110M225 185V365" className="plot-box"/>{rows.map((row)=>{const [cx,cy]=project3(norm(row.features[xi]??0,xr),norm(row.features[yi]??0,yr),norm(row.features[zi]??0,zr),32);return <circle key={row.id} cx={cx} cy={cy} r={row.id===selectedId?6:3.5} fill={color(labels.indexOf(row.label))} stroke="white" strokeWidth="1"><title>{row.label}: {names[xi]} {fmt(row.features[xi]??0)} · {names[yi]} {fmt(row.features[yi]??0)} · {names[zi]} {fmt(row.features[zi]??0)}</title></circle>;})}<text x="270" y="388" className="plot-axis-label">{names[xi]}</text><text x="36" y="349" className="plot-axis-label">{names[yi]??"Feature 2"}</text><text x="249" y="45" className="plot-axis-label">{names[zi]??names[0]}</text></svg>;
+}
+// Retained only as reference helpers during migration; all visible 3D routes use ThreeVisualization.
+void Surface3D;
+void Scatter3D;
+
+function Boundary2D({ rows, names, labels, forest, axes = [0,1] }: { rows: Flower[]; names: string[]; labels: string[]; forest: TrainedForest; axes?: number[] }) {
+  const xi=axes[0]??0, yi=axes[1]??Math.min(1,names.length-1), xr=rangeOf(rows,xi), yr=rangeOf(rows,yi),means=names.map((_,i)=>rows.reduce((s,r)=>s+(r.features[i]??0),0)/rows.length);
+  const grid=Array.from({length:18*14},(_,index)=>{const x=index%18,y=Math.floor(index/18),f=[...means];f[xi]=xr[0]+x/17*(xr[1]-xr[0]);if(yi!==xi)f[yi]=yr[0]+(13-y)/13*(yr[1]-yr[0]);const label=majority(forest.predictEach({id:-1,features:f,label:labels[0]??""}),labels);return {x,y,label};});
+  return <svg viewBox="0 0 520 340" className="rf-plot" role="img" aria-label="Decision boundary and observations"><rect x="54" y="18" width="440" height="275" rx="6" className="plot-bg"/>{grid.map((c)=><rect key={`${c.x}:${c.y}`} x={54+c.x*440/18} y={18+c.y*275/14} width={440/18+1} height={275/14+1} fill={color(labels.indexOf(c.label))} opacity=".32"/>)}<line x1="54" y1="293" x2="494" y2="293" className="plot-axis"/><line x1="54" y1="18" x2="54" y2="293" className="plot-axis"/>{rows.map((r)=>{const cx=54+(r.features[xi]-xr[0])/(xr[1]-xr[0]||1)*440,cy=293-(r.features[yi]-yr[0])/(yr[1]-yr[0]||1)*275;return <circle key={r.id} cx={cx} cy={cy} r="3.2" fill={color(labels.indexOf(r.label))} stroke="white" strokeWidth=".8"/>;})}<text x="274" y="324" textAnchor="middle" className="plot-axis-label">{names[xi]}</text><text x="15" y="155" textAnchor="middle" className="plot-axis-label" transform="rotate(-90 15 155)">{names[yi]}</text></svg>;
+}
+
+function OverviewTree({ forest, names, labels, index, onChange }: { forest: TrainedForest; names: string[]; labels: string[]; index: number; onChange: (index:number)=>void }) {
+  const [zoom,setZoom]=useState(1);
+  const activeIndex=Math.min(index,forest.trees.length-1);
+  const root=forest.trees[activeIndex]!;
+  return <div className="overview-tree-view">
+    <div className="overview-tree-toolbar"><div><b>Tree {activeIndex+1}</b><span>of {forest.trees.length} · fitted from the active dataset</span></div><div className="tree-mini-zoom"><button type="button" aria-label="Previous tree" title="Previous tree" onClick={()=>onChange(Math.max(0,activeIndex-1))}>←</button><button type="button" aria-label="Next tree" title="Next tree" onClick={()=>onChange(Math.min(forest.trees.length-1,activeIndex+1))}>→</button><button type="button" aria-label="Zoom out tree" title="Zoom out" onClick={()=>setZoom(value=>Math.max(.7,Number((value-.2).toFixed(1))))}>−</button><button type="button" aria-label="Zoom in tree" title="Zoom in" onClick={()=>setZoom(value=>Math.min(2.4,Number((value+.2).toFixed(1))))}>+</button><button type="button" title="Fit tree" onClick={()=>setZoom(1)}>Fit</button></div></div>
+    <label className="tree-picker">Select a tree by dragging<input type="range" min="0" max={forest.trees.length-1} step="1" value={activeIndex} onChange={event=>onChange(Number(event.target.value))}/><span>Tree 1 <i/> Tree {forest.trees.length}</span></label>
+    <div className="overview-tree-viewport"><div className="overview-tree-content" style={{width:`${zoom*100}%`,height:`${zoom*340}px`}}>{shortTree(root,names,labels,340,4)}</div></div>
+    <small className="overview-tree-hint">{Math.round(zoom*100)}% · use +/− to inspect nodes; scroll horizontally when zoomed</small>
+  </div>;
+}
+
+export default function App() {
+  const [page,setPage]=useState<Page>("overview");
+  const [dark,setDark]=useState(()=>localStorage.getItem("rf-theme")==="dark");
+  const [treeCount,setTreeCount]=useState(50);
+  const [maxDepth,setMaxDepth]=useState<number|null>(null);
+  const [minSamples,setMinSamples]=useState(3);
+  const [maxFeatures,setMaxFeatures]=useState(Math.max(1,Math.ceil(Math.sqrt(FLOWER_DATASETS[0]!.featureNames.length))));
+  const [gainThreshold,setGainThreshold]=useState(.01);
+  const [seed,setSeed]=useState(42);
+  const [applied,setApplied]=useState({treeCount:50,maxDepth:null as number|null,minSamples:3,maxFeatures:2,gainThreshold:.01,seed:42});
+  const modelUpdating=treeCount!==applied.treeCount||maxDepth!==applied.maxDepth||minSamples!==applied.minSamples||maxFeatures!==applied.maxFeatures||gainThreshold!==applied.gainThreshold||seed!==applied.seed;
+  const [datasets,setDatasets]=useState<FlowerDataset[]>([]);
+  const [datasetId,setDatasetId]=useState(FLOWER_DATASETS[0]!.id);
+  const [selectedId,setSelectedId]=useState(getTestFlowers(FLOWER_DATASETS[0]!.flowers)[0]!.id);
+  const [selectedTree,setSelectedTree]=useState(0);
+  const applyChanges=()=>{setApplied({treeCount,maxDepth,minSamples,maxFeatures,gainThreshold,seed});setSelectedTree(current=>Math.min(current,Math.max(0,treeCount-1)));};
+  const [selectedClass,setSelectedClass]=useState(0);
+  const [axes,setAxes]=useState<[number,number,number]>([0,1,2]);
+  const allDatasets=[...FLOWER_DATASETS,...datasets];
+  const dataset=allDatasets.find(d=>d.id===datasetId)??allDatasets[0]!;
+  const rows=dataset.flowers, names=dataset.featureNames, labels=dataset.classLabels;
+  const isRegression=dataset.problemType==="regression";
+  const forest=useMemo(()=>{const source=isRegression?FLOWER_DATASETS[0]!:datasets.find(d=>d.id===datasetId)??FLOWER_DATASETS.find(d=>d.id===datasetId)??FLOWER_DATASETS[0]!;return trainForest(applied.treeCount,applied.maxDepth,applied.seed,source.flowers,source.classLabels,applied.minSamples,applied.maxFeatures,applied.gainThreshold);},[applied,datasetId,datasets,isRegression]);
+  const regressionForest=useMemo(()=>isRegression?trainRegressionForest(applied.treeCount,applied.maxDepth,applied.seed,dataset.flowers,applied.minSamples,applied.maxFeatures,applied.gainThreshold):null,[isRegression,applied,dataset.flowers]);
+  const regressionMetrics=useMemo(()=>regressionForest?evaluateRegression(regressionForest,dataset.flowers):null,[regressionForest,dataset.flowers]);
+  const train=getTrainingFlowers(isRegression?FLOWER_DATASETS[0]!.flowers:rows), test=getTestFlowers(isRegression?FLOWER_DATASETS[0]!.flowers:rows), metrics=evaluateForest(forest,isRegression?FLOWER_DATASETS[0]!.flowers:rows,isRegression?FLOWER_DATASETS[0]!.classLabels:labels);
+  const confusion=metrics.confusion, maxConf=Math.max(1,...confusion.flat());
+  const importance=names.map((name,i)=>({name,value:forest.importance[i]??0})).sort((a,b)=>b.value-a.value);
+  const sampleVotes=rows.map(r=>({row:r,votes:forest.predictEach(r)}));
+  const roc=labels.map((label,ci)=>{
+    const cases=test.map(r=>({positive:r.label===label,score:forest.predictEach(r).filter(v=>v===label).length/Math.max(1,forest.trees.length)}));
+    const pts=[{x:0,y:0}]; for(let k=10;k>=1;k--){const t=k/10,tp=cases.filter(v=>v.positive&&v.score>=t).length,fp=cases.filter(v=>!v.positive&&v.score>=t).length,p=cases.filter(v=>v.positive).length,n=cases.length-p;pts.push({x:n?fp/n:0,y:p?tp/p:0});}pts.push({x:1,y:1});return {label,color:color(ci),pts};
   });
-
-  return (
-    <div className="tree-diagram-scroll">
-      <svg
-        className="tree-diagram"
-        style={{ width: `${width}px` }}
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={`Decision tree ${treeIndex + 1}. Select a node for details. The selected flower route is highlighted.`}
-      >
-        {nodes
-          .filter(
-            (item) =>
-              item.depth < maxDepth && (item.node.left || item.node.right),
-          )
-          .map((item) => {
-            const parent = position(item);
-            return (["L", "R"] as const).map((direction) => {
-              const childPath = `${item.path}${direction}`;
-              const child = nodes.find(
-                (candidate) => candidate.path === childPath,
-              );
-              if (!child) return null;
-              const endpoint = position(child);
-              const active = activeEdges.has(childPath);
-              return (
-                <g key={`${item.path}-${direction}`}>
-                  <line
-                    className={`tree-edge ${active ? "is-on-path" : ""}`}
-                    x1={parent.x}
-                    y1={parent.y + nodeHeight / 2}
-                    x2={endpoint.x}
-                    y2={endpoint.y - nodeHeight / 2}
-                  />
-                  <text
-                    className={`tree-edge-label ${active ? "is-on-path" : ""}`}
-                    x={(parent.x + endpoint.x) / 2}
-                    y={(parent.y + endpoint.y) / 2 - 2}
-                  >
-                    {direction === "L" ? "YES" : "NO"}
-                  </text>
-                </g>
-              );
-            });
-          })}
-        {nodes.map((item) => {
-          const point = position(item);
-          const featureIndex = getTreeFeatureIndex(
-            forest,
-            treeIndex,
-            item.node,
-          );
-          const isSplit =
-            featureIndex !== undefined &&
-            item.node.splitValue !== undefined &&
-            Boolean(item.node.left || item.node.right);
-          const distribution = getClassDistribution(item.node, classLabels.length);
-          const predictedClass =
-            classLabels[distribution.indexOf(Math.max(...distribution))] ??
-            classLabels[0];
-          const active = activeNodes.has(item.path);
-          const selected = selectedNodePath === item.path;
-          const label = isSplit
-            ? `${featureNames[featureIndex]} less than ${format(item.node.splitValue!)}`
-            : `Leaf predicts ${predictedClass}`;
-          return (
-            <g
-              key={item.path || "root"}
-              className={`tree-node ${active ? "is-on-path" : ""} ${selected ? "is-selected" : ""} ${isSplit ? "is-split" : "is-leaf"}`}
-              role="button"
-              tabIndex={0}
-              aria-label={label}
-              transform={`translate(${point.x - nodeWidth / 2}, ${point.y - nodeHeight / 2})`}
-              onClick={() => onSelectNode(item.path)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelectNode(item.path);
-                }
-              }}
-            >
-              <rect width={nodeWidth} height={nodeHeight} rx="10" />
-              {isSplit ? (
-                <>
-                  <text className="tree-node-kicker" x="14" y="24">
-                    SPLIT {item.depth + 1} ·{" "}
-                    {featureNames[featureIndex]?.toUpperCase()}
-                  </text>
-                  <text className="tree-node-main" x="14" y="50">
-                    Is {featureNames[featureIndex]?.toLowerCase()} &lt;{" "}
-                    {format(item.node.splitValue!)}?
-                  </text>
-                  <text className="tree-node-meta" x="14" y="73">
-                    {item.node.numberSamples ?? "—"} samples · Gini gain{" "}
-                    {format(item.node.gain ?? 0)}
-                  </text>
-                </>
-              ) : (
-                <>
-                  <text className="tree-node-kicker" x="14" y="24">
-                    LEAF · {active ? "SELECTED PATH" : "OTHER BRANCH"}
-                  </text>
-                  <text className="tree-node-main" x="14" y="51">
-                    Predict {predictedClass}
-                  </text>
-                  <text className="tree-node-meta" x="14" y="73">
-                    {classLabels.map((label, index) =>
-                      `${label}: ${Math.round((distribution[index] ?? 0) * 100)}%`,
-                    ).join(" · ")}
-                  </text>
-                </>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function TreeInspector({
-  forest,
-  treeIndex,
-  flower,
-  featureNames,
-  classLabels,
-  selectedNodePath,
-  setSelectedNodePath,
-  setTreeIndex,
-  onBack,
-  onFullTree,
-}: {
-  forest: TrainedForest;
-  treeIndex: number;
-  flower: Flower;
-  featureNames: string[];
-  classLabels: string[];
-  selectedNodePath: string;
-  setSelectedNodePath: (path: string) => void;
-  setTreeIndex: (index: number) => void;
-  onBack?: () => void;
-  onFullTree?: () => void;
-}) {
-  const root = forest.trees[treeIndex];
-  const { path } = getActivePath(forest, treeIndex, flower);
-  const selectedNode = findNode(root, selectedNodePath);
-  const selectedFeature = getTreeFeatureIndex(forest, treeIndex, selectedNode);
-  const selectedIsSplit =
-    selectedFeature !== undefined &&
-    selectedNode.splitValue !== undefined &&
-    Boolean(selectedNode.left || selectedNode.right);
-  const selectedDistribution = getClassDistribution(selectedNode, classLabels.length);
-  const leafDistribution = getClassDistribution(path.leaf, classLabels.length);
-  const leafPrediction =
-    classLabels[leafDistribution.indexOf(Math.max(...leafDistribution))] ??
-    classLabels[0];
-
-  return (
-    <section className="inspector" aria-labelledby="inspector-title">
-      <div className="inspector-heading">
-        <div>
-          <p className="eyebrow">
-            TREE EXPLORER · T{String(treeIndex + 1).padStart(2, "0")}
-          </p>
-          <h3 id="inspector-title">Decision path</h3>
-          <p className="inspector-intro">
-            Tree {String(treeIndex + 1).padStart(2, "0")} · highlighted route
-            for row #{String(flower.id + 1).padStart(2, "0")}
-          </p>
-        </div>
-        <div className="tree-navigation">
-          <button
-            type="button"
-            disabled={treeIndex === 0}
-            onClick={() => {
-              setTreeIndex(treeIndex - 1);
-              setSelectedNodePath("");
-            }}
-          >
-            ← Previous
-          </button>
-          <button
-            type="button"
-            disabled={treeIndex === forest.trees.length - 1}
-            onClick={() => {
-              setTreeIndex(treeIndex + 1);
-              setSelectedNodePath("");
-            }}
-          >
-            Next →
-          </button>
-          {onBack && (
-            <button className="back-button" type="button" onClick={onBack}>
-              Forest overview
-            </button>
-          )}
-          {onFullTree && (
-            <button className="full-tree-button" type="button" onClick={onFullTree}>
-              View Full Tree
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="inspector-layout">
-        <div className="tree-canvas-panel">
-          <TreeDiagram
-            forest={forest}
-            treeIndex={treeIndex}
-            flower={flower}
-            featureNames={featureNames}
-            classLabels={classLabels}
-            selectedNodePath={selectedNodePath}
-            onSelectNode={setSelectedNodePath}
-          />
-        </div>
-        <aside className="inspector-side">
-          <section className="node-detail">
-            <span className="detail-kicker">SELECTED NODE</span>
-            {selectedIsSplit ? (
-              <>
-                <strong>
-                  {featureNames[selectedFeature!]} &lt;{" "}
-                  {format(selectedNode.splitValue!)}
-                </strong>
-                <span>
-                  {selectedNode.numberSamples ?? "Sample count unavailable"}{" "}
-                  samples reached this split.
-                </span>
-                <span>Gini gain: {format(selectedNode.gain ?? 0)}.</span>
-              </>
-            ) : (
-              <>
-                <strong>
-                  Leaf predicts{" "}
-                  {classLabels[selectedDistribution.indexOf(Math.max(...selectedDistribution))] ?? classLabels[0]}
-                </strong>
-                <span>
-                  Bootstrap class mix:{" "}
-                  {classLabels.map((label, index) =>
-                    `${label} ${Math.round((selectedDistribution[index] ?? 0) * 100)}%`,
-                  ).join(" · ")}.
-                </span>
-                <span>Leaf sample count is not exposed by this model.</span>
-              </>
-            )}
-          </section>
-          <section className="path-summary" aria-live="polite">
-            <span className="detail-kicker">
-              WHY THIS TREE VOTED {shortLabel(leafPrediction)}
-            </span>
-            {path.steps.length === 0 ? (
-              <span>This tree ends at its root leaf.</span>
-            ) : (
-              path.steps.map((step, index) => (
-                <div
-                  className="route-item"
-                  key={`${step.featureIndex}-${index}`}
-                >
-                  <span className="route-number">{index + 1}</span>
-                  <span className="route-copy">
-                    <strong>
-                      {featureNames[step.featureIndex]}{" "}
-                      {step.passes ? "<" : "≥"} {format(step.node.splitValue!)}
-                    </strong>
-                    <small>Observation value: {format(step.value)}</small>
-                  </span>
-                  <span
-                    className={`route-status ${step.passes ? "route-yes" : "route-no"}`}
-                  >
-                    {step.passes ? "Passed" : "No"}
-                  </span>
-                </div>
-              ))
-            )}
-            <div
-              className={`route-result ${classTone(classLabels.indexOf(leafPrediction))}`}
-            >
-              Leaf vote: {leafPrediction}
-            </div>
-          </section>
-        </aside>
-      </div>
-    </section>
-  );
-}
-
-function VoteDistribution({
-  votes,
-  classLabels,
-}: {
-  votes: ClassLabel[];
-  classLabels: string[];
-}) {
-  const counts = classLabels.map(
-    (label) => votes.filter((vote) => vote === label).length,
-  );
-  const predicted =
-    classLabels[counts.indexOf(Math.max(...counts))] ?? classLabels[0];
-
-  return (
-    <div className="vote-distribution" aria-live="polite">
-      <div className="distribution-head">
-        <span>ENSEMBLE OUTPUT</span>
-        <strong>{predicted}</strong>
-      </div>
-      <div
-        className="distribution-bar"
-        role="img"
-        aria-label={counts
-          .map((count, index) => `${count} trees vote for ${classLabels[index]}`)
-          .join("; ")}
-      >
-        {counts.map((count, index) => (
-          <span
-            key={classLabels[index]}
-            className={shapeTone(index, "bar")}
-            style={{ width: `${(count / votes.length) * 100}%` }}
-          />
-        ))}
-      </div>
-      <div className="distribution-legend">
-        {counts.map((count, index) => (
-          <span key={classLabels[index]}>
-            <i className={classTone(index)} />{" "}
-            {classLabels[index]} <b>{count}</b>
-          </span>
-        ))}
-      </div>
-      <p>Vote share is a model output, not a calibrated probability.</p>
-    </div>
-  );
-}
-
-function App() {
-  const [view, setView] = useState<View>("forest");
-  const [treeCount, setTreeCount] = useState(5);
-  const [maxDepth, setMaxDepth] = useState<number | null>(3);
-  const [minSamples, setMinSamples] = useState(3);
-  const [forestSeed, setForestSeed] = useState(42);
-  const [datasetId, setDatasetId] = useState(FLOWER_DATASETS[0].id);
-  const [selectedId, setSelectedId] = useState(
-    getTestFlowers(FLOWER_DATASETS[0].flowers)[0].id,
-  );
-  const [selectedTree, setSelectedTree] = useState(0);
-  const [selectedNodePath, setSelectedNodePath] = useState("");
-  const [userDatasets, setUserDatasets] = useState<FlowerDataset[]>([]);
-  const [showConfig, setShowConfig] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [importanceMethod, setImportanceMethod] = useState<"gini" | "permutation">("gini");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [actionMessage, setActionMessage] = useState("");
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-  const [inputMode, setInputMode] = useState<"dataset" | "manual">("dataset");
-  const [manualFeatures, setManualFeatures] = useState<number[]>([]);
-
-  const allDatasets = useMemo(
-    () => [...FLOWER_DATASETS, ...userDatasets],
-    [userDatasets],
-  );
-  const dataset =
-    allDatasets.find((item) => item.id === datasetId) ?? allDatasets[0];
-  const flowers = dataset.flowers;
-  const featureNames = dataset.featureNames;
-  const classLabels = dataset.classLabels;
-  const trainingFlowers = getTrainingFlowers(flowers);
-  const testFlowers = getTestFlowers(flowers);
-  const forest = useMemo(() => {
-    return trainForest(
-      treeCount,
-      maxDepth,
-      forestSeed,
-      flowers,
-      classLabels,
-      minSamples,
-    );
-  }, [treeCount, maxDepth, minSamples, forestSeed, flowers, classLabels]);
-  const flower =
-    flowers.find((item) => item.id === selectedId) ?? testFlowers[0];
-  const predictionFlower: Flower = {
-    ...flower,
-    id: inputMode === "manual" ? -1 : flower.id,
-    features:
-      inputMode === "manual" && manualFeatures.length === featureNames.length
-        ? manualFeatures
-        : flower.features,
-  };
-  const votes = forest.predictEach(predictionFlower);
-  const selectedTreePath = getDecisionPath(
-    forest,
-    selectedTree,
-    predictionFlower,
-  );
-  const voteCounts = classLabels.map(
-    (label) => votes.filter((vote) => vote === label).length,
-  );
-  const modelPrediction =
-    classLabels[voteCounts.indexOf(Math.max(...voteCounts))] ?? classLabels[0];
-  const modelAgreement = Math.max(...voteCounts);
-  const evaluation = evaluateForest(forest, flowers, classLabels);
-  const rootNode = forest.trees[selectedTree];
-  const rootFeatureIndex = rootNode
-    ? getTreeFeatureIndex(forest, selectedTree, rootNode)
-    : undefined;
-  const permutationValues = useMemo(
-    () =>
-      calculatePermutationImportance(forest, flowers, forestSeed),
-    [forest, flowers, forestSeed],
-  );
-  const importance = featureNames.map((name, index) => ({
-    name,
-    value:
-      importanceMethod === "gini"
-        ? forest.importance[index] ?? 0
-        : permutationValues[index] ?? 0,
-  })).sort((left, right) => right.value - left.value);
-  const totalClassCount = evaluation.classCounts.reduce((sum, count) => sum + count, 0);
-  const trainPercent = Math.round((trainingFlowers.length / flowers.length) * 100);
-  const testPercent = 100 - trainPercent;
-  const isTestRow = (id: number) => testFlowers.some((row) => row.id === id);
-  const featureMinimums = featureNames.map((_, index) =>
-    Math.min(...flowers.map((item) => item.features[index] ?? 0)),
-  );
-  const featureMaximums = featureNames.map((_, index) =>
-    Math.max(...flowers.map((item) => item.features[index] ?? 0)),
-  );
-  const xMin = featureMinimums[0] ?? 0;
-  const xRange = (featureMaximums[0] ?? 1) - xMin || 1;
-  const yMin = featureMinimums[1] ?? 0;
-  const yRange = (featureMaximums[1] ?? 1) - yMin || 1;
-  const decisionRegions = useMemo(
-    () =>
-      Array.from({ length: 18 * 12 }, (_, index) => {
-        const column = index % 18;
-        const row = Math.floor(index / 18);
-        const features = featureNames.map((_, featureIndex) => {
-          const min = featureMinimums[featureIndex] ?? 0;
-          const range =
-            (featureMaximums[featureIndex] ?? min + 1) - min || 1;
-          if (featureIndex === 0) return min + (column / 17) * range;
-          if (featureIndex === 1) return min + ((11 - row) / 11) * range;
-          return flowers.reduce(
-            (sum, item) => sum + (item.features[featureIndex] ?? 0),
-            0,
-          ) / flowers.length;
-        });
-        const point: Flower = {
-          id: -1,
-          features,
-          label: classLabels[0],
-        };
-        return { column, row, prediction: forest.predict(point) };
-      }),
-    [classLabels, featureMaximums, featureMinimums, featureNames, flowers, forest],
-  );
-
-  function chooseFlower(id: number) {
-    setSelectedId(id);
-    setSelectedNodePath("");
-    setInputMode("dataset");
-  }
-
-  function chooseTree(index: number) {
-    setSelectedTree(index);
-    setSelectedNodePath("");
-  }
-
-  function chooseDataset(id: string) {
-    const nextDataset =
-      allDatasets.find((item) => item.id === id) ?? allDatasets[0];
-    setDatasetId(nextDataset.id);
-    setSelectedId(getTestFlowers(nextDataset.flowers)[0].id);
-    setManualFeatures([]);
-    setInputMode("dataset");
-    setSelectedTree(0);
-    setSelectedNodePath("");
-  }
-
-  function handleUploadedDataset(cleaned: CleanedDataset, filename: string) {
-    const id = `user-${Date.now()}`;
-    const shortName = filename.replace(/\.csv$/i, "").slice(0, 28);
-    try {
-      const newDataset = makeDatasetFromRows(
-        id,
-        shortName,
-        `Uploaded · ${cleaned.rows.length} rows`,
-        cleaned.featureNames,
-        cleaned.classLabels,
-        cleaned.targetName,
-        cleaned.rows,
-        {
-          sourceRows: cleaned.sourceRowCount,
-          missingRows: cleaned.missingRowCount,
-          duplicateRows: cleaned.duplicateCount,
-          droppedRows: cleaned.droppedCount,
-          imputedValues: cleaned.imputedCount,
-        },
-      );
-      setUserDatasets((prev) => [...prev, newDataset]);
-      // Immediately switch to the new dataset
-      setDatasetId(id);
-      setSelectedId(getTestFlowers(newDataset.flowers)[0].id);
-      setManualFeatures([]);
-      setInputMode("dataset");
-      setSelectedTree(0);
-      setSelectedNodePath("");
-      setView("forest");
-    } catch (err) {
-      throw new Error(
-        `Could not activate uploaded dataset: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-  }
-
-  function refitForest() {
-    setForestSeed((seed) => seed + 73);
-    setSelectedTree(0);
-    setSelectedNodePath("");
-  }
-
-  function exportReport() {
-    const lines = [
-      ["Metric", "Value"],
-      ["Dataset", dataset.name],
-      ["Target", dataset.targetName],
-      ["Features", featureNames.join("; ")],
-      ["Rows", String(flowers.length)],
-      ["Training rows", String(trainingFlowers.length)],
-      ["Test rows", String(testFlowers.length)],
-      ["Split", `${trainPercent}/${testPercent}`],
-      ["Trees", String(treeCount)],
-      ["Criterion", "Gini"],
-      ["Maximum depth", maxDepth === null ? "Auto" : String(maxDepth)],
-      ["Minimum samples per leaf", String(minSamples)],
-      ["Random seed", String(forestSeed)],
-      ["Accuracy", String(evaluation.accuracy)],
-      ["Macro precision", String(evaluation.macroPrecision)],
-      ["Macro recall", String(evaluation.macroRecall)],
-      ["Macro F1", String(evaluation.macroF1)],
-      ["Weighted F1", String(evaluation.weightedF1)],
-      ...classLabels.map((label, index) => [
-        `Class count: ${label}`,
-        String(evaluation.classCounts[index] ?? 0),
-      ]),
-    ];
-    const csv = lines
-      .map((row) =>
-        row
-          .map((cell) => `"${cell.replaceAll('"', '""')}"`)
-          .join(","),
-      )
-      .join("\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${dataset.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-model-report.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function shareDashboard() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setActionMessage("Dashboard link copied.");
-    } catch (error) {
-      setActionMessage(
-        `Could not copy dashboard link: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-
-  return (
-    <div className={`workspace-shell ${isDarkTheme ? "theme-dark" : ""}`}>
-      <aside className="workspace-sidebar">
-        <a className="sidebar-brand" href="#top" aria-label="ModelMind home">
-          <span className="sidebar-brand-mark">▥</span> ModelMind
-        </a>
-        <nav className="sidebar-nav" aria-label="Main navigation">
-          <button type="button" className="sidebar-link" onClick={() => setView("forest")}>
-            <span>⌂</span> Home
-          </button>
-          <button type="button" className={`sidebar-link ${view === "datasets" ? "is-current" : ""}`} onClick={() => setView("datasets")}>
-            <span>⇧</span> Upload Dataset
-          </button>
-          <button type="button" className="sidebar-link" onClick={() => setView("datasets")}>
-            <span>⚙</span> Data Preprocessing
-          </button>
-          <div className="sidebar-group-label">VISUALIZATIONS</div>
-          <button
-            type="button"
-            className={`sidebar-link sidebar-link--nested ${view !== "datasets" && view !== "about" ? "is-current" : ""}`}
-            onClick={() => setView("forest")}
-          >
-            <span>♣</span> Random Forest
-          </button>
-          <button
-            type="button"
-            className={`sidebar-link sidebar-link--nested ${view === "about" ? "is-current" : ""}`}
-            onClick={() => setView("about")}
-          >
-            <span>ⓘ</span> About Random Forest
-          </button>
-          <div className="sidebar-divider" />
-          {[
-            ["Reports", "▧"],
-            ["Settings", "⚙"],
-          ].map(([label, icon]) => (
-            <button type="button" className="sidebar-link" key={label} onClick={() => label === "Reports" && exportReport()}>
-              <span>{icon}</span> {label}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-profile">
-          <span className="profile-avatar">H</span>
-          <span><strong>Harshit</strong><small>Local workspace</small></span>
-          <span className="profile-chevron">⌄</span>
-        </div>
-      </aside>
-
-      <main className="app-shell explorer-shell workspace-main">
-      <header className="topbar workspace-topbar">
-        <label className="workspace-search">
-          <span aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            placeholder="Search models, datasets, or features..."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                const match = VIEW_ITEMS.find((item) =>
-                  item.label.toLowerCase().includes(searchQuery.toLowerCase()),
-                );
-                if (match) setView(match.id);
-              }
-            }}
-            aria-label="Search models, datasets, or features"
-          />
-          <kbd>⌘ K</kbd>
-        </label>
-        <div className="header-actions">
-          <button className="toolbar-icon-button" type="button" aria-label="Toggle color theme" onClick={() => setIsDarkTheme((dark) => !dark)}>{isDarkTheme ? "☾" : "☼"}</button>
-          <button className="toolbar-button" type="button" onClick={() => setShowHelp(true)}>ⓘ Docs</button>
-          <button className="toolbar-button toolbar-button--accent" type="button" onClick={shareDashboard}>↗ Share</button>
-          <button className="toolbar-button toolbar-button--primary" type="button" onClick={exportReport}>⇧ Export Report</button>
-        </div>
-      </header>
-
-      <section className="intro explorer-intro" id="top">
-        <div>
-          <p className="eyebrow">RANDOM FOREST / CLASSIFICATION</p>
-          <h1>Random Forest Explorer</h1>
-          <p className="intro-copy">
-            Understand how a Random Forest model makes predictions with interactive visualizations.
-          </p>
-        </div>
-        <div className="intro-controls">
-          <label className="dataset-picker" htmlFor="dataset-select">
-            DATASET
-            <select
-              id="dataset-select"
-              value={datasetId}
-              onChange={(event) => chooseDataset(event.target.value)}
-            >
-              <optgroup label="Sample datasets">
-                {FLOWER_DATASETS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </optgroup>
-              {userDatasets.length > 0 && (
-                <optgroup label="My uploads">
-                  {userDatasets.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="upload-shortcut-btn"
-            onClick={() => setView("datasets")}
-            aria-label="Upload a CSV dataset"
-          >
-            ⤒ Upload CSV
-          </button>
-          <button className="train-button" type="button" onClick={refitForest}>▶ Train / Re-fit</button>
-        </div>
+  const activateUpload=(cleaned:CleanedDataset,filename:string)=>{const id=`uploaded-${Date.now()}`;const d=makeDatasetFromRows(id,filename.replace(/\.csv$/i,""),`CSV upload · ${cleaned.rows.length} cleaned rows`,cleaned.featureNames,cleaned.classLabels,cleaned.targetName,cleaned.rows,{sourceRows:cleaned.sourceRowCount,missingRows:cleaned.missingRowCount,duplicateRows:cleaned.duplicateCount,droppedRows:cleaned.droppedCount,imputedValues:cleaned.imputedCount},cleaned.problemType);setDatasets(prev=>[...prev,d]);setDatasetId(id);setSelectedId(cleaned.rows[0]!.id);setSelectedTree(0);setSelectedClass(0);setMaxFeatures(Math.max(1,Math.min(maxFeatures,cleaned.featureNames.length)));setAxes([0,Math.min(1,cleaned.featureNames.length-1),cleaned.featureNames.length>2?2:cleaned.featureNames.length]);setPage("3d");};
+  const selectDataset=(id:string)=>{const next=allDatasets.find(d=>d.id===id);if(!next)return;setDatasetId(id);setSelectedId(next.flowers[0]!.id);};
+  const nav: Array<[Page,string,string]>=[["overview","◫","Overview"],["3d","◇","3D Visualizations"],["tree","♧","Tree Explorer"],["full-tree","⌘","Full Tree"],["data","⇧","Dataset & cleaning"],["guide","ⓘ","Model guide"]];
+  if(isRegression&&regressionForest&&regressionMetrics)return <RegressionWorkspace page={page} setPage={setPage} dark={dark} setDark={setDark} dataset={dataset} datasets={allDatasets} onSelectDataset={selectDataset} rows={rows} names={names} forest={forest} regressionForest={regressionForest} metrics={regressionMetrics} treeCount={treeCount} setTreeCount={setTreeCount} maxDepth={maxDepth} setMaxDepth={setMaxDepth} minSamples={minSamples} setMinSamples={setMinSamples} maxFeatures={maxFeatures} setMaxFeatures={setMaxFeatures} gainThreshold={gainThreshold} setGainThreshold={setGainThreshold} selectedTree={selectedTree} setSelectedTree={setSelectedTree} onDatasetReady={activateUpload} modelUpdating={modelUpdating} applyChanges={applyChanges}/>;
+  return <div className={`rf-app ${dark?"is-dark":"is-light"}`}>
+    <header className="rf-header"><a className="rf-brand" href="#overview" onClick={e=>{e.preventDefault();setPage("overview")}}><span className="rf-brand-icon">🌲</span><span><b>ForestLab</b><small>RANDOM FOREST EXPLORER</small></span></a><div className="rf-heading"><h1>Random Forest <em>Visualization</em></h1><p>Explore how trees vote, where classes separate, and how well the forest generalizes.</p></div><div className="rf-header-actions"><label className="rf-select-label">DATASET<select value={datasetId} onChange={e=>selectDataset(e.target.value)}>{allDatasets.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><button className="rf-theme-toggle" onClick={()=>setDark(v=>{localStorage.setItem("rf-theme",v?"light":"dark");return !v})}>{dark?"☀ Light":"☾ Dark"}</button></div></header>
+    <nav className="rf-nav" aria-label="Main sections">{nav.map(([id,icon,label])=><button key={id} className={page===id?"active":""} onClick={()=>{if(id==="full-tree")setSelectedTree(mostComplexTreeIndex(forest.trees));setPage(id)}}><span>{icon}</span>{label}</button>)}</nav>{page==="tree"&&<div className="model-update-status" role="status"><span>{modelUpdating?"Parameters changed — visualization shows the last applied forest":"Adjust all desired parameters, then apply them together."}</span><button type="button" disabled={!modelUpdating} onClick={applyChanges}>{modelUpdating?"Apply changes":"Applied ✓"}</button></div>}
+    {page==="guide"&&<main className="rf-main guide-more"><div className="section-intro"><div><span className="section-kicker">DETAILED CLASSIFICATION GUIDE</span><h2>How a classification forest learns</h2><p>Follow one record from its input features through independent trees to the final class vote.</p></div></div><section className="guide-grid"><GuideCard n="09" title="Prepare target and features" text="Choose a categorical target such as Churn. Exclude the target from the input features, and consider removing IDs or fields created after the outcome because they can create leakage. The training/test split is held consistent while you compare settings."/><GuideCard n="10" title="Bootstrap samples and randomness" text="Each tree learns from a randomized sample of training rows and considers a subset of features at each split. This makes trees different from one another. The forest combines their class votes; a larger tree count usually stabilizes the result but increases fit time."/><GuideCard n="11" title="Read a node and its branches" text="A split node shows a feature threshold. Follow YES/left when the feature satisfies the displayed condition and NO/right otherwise. Continue until a leaf, whose label is that tree’s class decision. Full Tree shows every node of one estimator; choose a different tree to compare its rules."/><GuideCard n="12" title="Evaluate beyond accuracy" text="Use the held-out confusion matrix to see which classes are confused. Precision penalizes false alarms; recall penalizes missed positives; F1 balances them. For imbalanced classes, inspect per-class recall and the confusion matrix instead of relying on accuracy alone. OOB estimates are a separate training-side check."/><GuideCard n="13" title="Tune one idea at a time" text="Set tree count, maximum depth, minimum split size, feature count, gain threshold, and seed, then press Apply changes once. Shallow trees and larger minimum splits reduce complexity; deeper trees can capture finer rules but may overfit. Compare validation metrics after each applied configuration."/></section></main>}
+    {page==="full-tree"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">COMPLETE MODEL STRUCTURE</span><h2>Full decision tree</h2><p>Inspect every split and leaf of one fitted tree. Choose another estimator from the forest at any time.</p></div><label className="inline-select">Forest tree<select value={Math.min(selectedTree,forest.trees.length-1)} onChange={e=>setSelectedTree(Number(e.target.value))}>{forest.trees.map((_,i)=><option key={i} value={i}>Tree {i+1}</option>)}</select></label></div><section className="rf-card full-tree-card"><FullTreeView root={forest.trees[Math.min(selectedTree,forest.trees.length-1)]!} names={names} labels={labels}/></section></main>}
+    {page==="overview"&&<main className="rf-main" id="overview">
+      <div className="rf-kpis"><div><span>Number of trees</span><strong>{treeCount}</strong><i>independent voters</i></div><div><span>Maximum depth</span><strong>{maxDepth??"Unlimited"}</strong><i>{maxDepth===null?"grown until stopping rules":"depth cap applied"}</i></div><div><span>Out-of-bag score</span><strong>{forest.oobScore===null?"—":pct(forest.oobScore)}</strong><i>bootstrap-only rows</i></div><div><span>Test accuracy</span><strong>{pct(metrics.accuracy)}</strong><i>{metrics.sampleCount} held-out rows</i></div><button className="rf-kpi-config" onClick={()=>setPage("tree")}>⚙ Tune forest <b>→</b></button></div>
+      <section className="rf-dashboard-grid">
+        <SvgCard title="Random Forest · 3D decision surface" subtitle={`Interactive WebGL · drag to rotate, scroll to zoom · ${names[0]} × ${names[1]??names[0]}`} className="span-4"><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="surface" axes={axes} selectedClass={selectedClass} dark={dark} compact/><Legend labels={labels}/></SvgCard>
+        <SvgCard title="2D decision boundary" subtitle="Color field = forest prediction · dots = observed class" className="span-4"><Boundary2D rows={rows} names={names} labels={labels} forest={forest}/><Legend labels={labels}/></SvgCard>
+        <SvgCard title="Individual tree" subtitle="Inspect one fitted tree at a time · drag the selector to browse the forest" className="span-4 tree-card"><OverviewTree forest={forest} names={names} labels={labels} index={selectedTree} onChange={setSelectedTree}/></SvgCard>
+        <SvgCard title="Feature importance" subtitle="Normalized split-impurity reduction across the forest · not causal" className="span-4"><div className="horizontal-bars">{importance.slice(0,8).map((f,i)=><div key={f.name}><span>{f.name}</span><i><b style={{width:`${Math.max(2,f.value*100)}%`,background:color(i)}}/></i><strong>{f.value.toFixed(2)}</strong></div>)}</div></SvgCard>
+        <SvgCard title="Held-out model performance" subtitle={`Test split · ${metrics.sampleCount} observations`} className="span-4"><div className="metric-bars">{[["Accuracy",metrics.accuracy],["Macro precision",metrics.macroPrecision],["Macro recall",metrics.macroRecall],["Macro F1",metrics.macroF1]].map(([name,value],i)=><div key={String(name)}><b>{pct(Number(value))}</b><i><em style={{height:`${Number(value)*100}%`,background:color(i)}}/></i><span>{name}</span></div>)}</div></SvgCard>
+        <SvgCard title="Confusion matrix" subtitle="Rows = actual class · columns = forest prediction" className="span-4"><table className="rf-confusion"><thead><tr><th></th>{labels.map(l=><th key={l}>{l}</th>)}</tr></thead><tbody>{labels.map((l,r)=><tr key={l}><th>{l}</th>{labels.map((_,c)=><td key={c} style={{background:r===c?`rgba(35,120,223,${.12+.72*(confusion[r]?.[c]??0)/maxConf})`:undefined}}>{confusion[r]?.[c]??0}</td>)}</tr>)}</tbody></table><p className="chart-footnote">Correct predictions lie on the diagonal.</p></SvgCard>
+        <SvgCard title="Per-row class vote share" subtitle="Each marker is the fraction of trees voting for a class—not calibrated probability" className="span-3"><div className="vote-scatter">{sampleVotes.map(({row,votes:v})=><span key={row.id} title={`Row ${row.id+1}: ${row.label}; forest: ${majority(v,labels)}`} style={{left:`${(row.id/Math.max(1,rows.length-1))*100}%`,bottom:`${(v.filter(x=>x===labels[selectedClass]).length/treeCount)*100}%`,background:color(labels.indexOf(row.label))}}/>)}</div><div className="chart-axis-row"><span>Row index →</span><span>{labels[selectedClass]} vote share ↑</span></div><label className="inline-select">Class<select value={selectedClass} onChange={e=>setSelectedClass(Number(e.target.value))}>{labels.map((l,i)=><option key={l} value={i}>{l}</option>)}</select></label></SvgCard>
+        <SvgCard title="ROC · one vs rest" subtitle="Ranking by tree vote share on held-out observations" className="span-3"><RocChart curves={roc}/></SvgCard>
+        <SvgCard title="Out-of-bag error as trees are added" subtitle="OOB rows are evaluated only by trees that did not train on them" className="span-3"><LineChart values={forest.oobErrorByTree.map((v,i)=>({x:i+1,y:v}))} color="#9258d6" yLabel="OOB error"/></SvgCard>
+        <SvgCard title="Forest learning curve" subtitle="Held-out score as additional independently fitted trees vote" className="span-3"><LearningCurve forest={forest} rows={rows} labels={labels} count={treeCount}/></SvgCard>
       </section>
-
-      <section className="model-summary" aria-label="Selected model summary">
-        <div className="summary-stat">
-          <span>Number of Trees</span>
-          <strong>
-            {treeCount}
-            <small>All contributing</small>
-          </strong>
-        </div>
-        <div className="summary-stat">
-          <span>Test Accuracy</span>
-          <strong>
-            {Math.round(evaluation.accuracy * 100)}%
-            <small>({evaluation.sampleCount} test samples)</small>
-          </strong>
-        </div>
-        <div className="summary-stat">
-          <span>Target</span>
-          <strong>
-            {dataset.targetName}<small>{classLabels.length} classes</small>
-          </strong>
-        </div>
-        <div className="summary-stat">
-          <span>Training / Testing</span>
-          <strong>
-            {trainingFlowers.length} / {testFlowers.length}
-            <small>({trainPercent}% / {testPercent}%)</small>
-          </strong>
-        </div>
-        <button
-          className={`summary-stat config-summary ${showConfig ? "is-open" : ""}`}
-          type="button"
-          aria-expanded={showConfig}
-          onClick={() => setShowConfig((open) => !open)}
-        >
-          <span>Model Parameters</span>
-          <strong>
-            <small>Criterion: Gini</small>
-            <small>Max Depth: {maxDepth ?? "Auto"}</small>
-            <small>Min Samples: {minSamples}</small>
-            <small>Random State: {forestSeed}</small>
-          </strong>
-        </button>
-      </section>
-
-      {showConfig && (
-        <section className="model-config-panel" aria-label="Model configuration">
-          <div className="config-panel-heading">
-            <div><strong>Random Forest configuration</strong><small>Changes update the fitted model immediately.</small></div>
-            <button type="button" onClick={() => setShowConfig(false)} aria-label="Close model parameters">×</button>
-          </div>
-          <label>
-            Number of trees
-            <select value={treeCount} onChange={(event) => setTreeCount(Number(event.target.value))}>
-              {[5, 10, 25, 50, 100].map((count) => <option key={count} value={count}>{count}</option>)}
-            </select>
-          </label>
-          <label>
-            Maximum depth
-            <select value={maxDepth ?? "auto"} onChange={(event) => setMaxDepth(event.target.value === "auto" ? null : Number(event.target.value))}>
-              <option value="auto">Auto (unlimited)</option>
-              {[3, 5, 8, 12].map((depth) => <option key={depth} value={depth}>{depth}</option>)}
-            </select>
-          </label>
-          <label>
-            Minimum samples per leaf
-            <select value={minSamples} onChange={(event) => setMinSamples(Number(event.target.value))}>
-              {[2, 3, 5, 10].map((count) => <option key={count} value={count}>{count}</option>)}
-            </select>
-          </label>
-          <label>
-            Criterion
-            <input value="Gini (library default)" readOnly />
-          </label>
-          <label>
-            Random seed
-            <input value={forestSeed} onChange={(event) => {
-              const seed = Number(event.target.value);
-              if (Number.isInteger(seed) && seed >= 0) setForestSeed(seed);
-            }} type="number" min="0" />
-          </label>
-          <button type="button" className="train-button" onClick={() => setShowConfig(false)}>Apply &amp; Fit Model</button>
-        </section>
-      )}
-
-      <nav
-        className="view-tabs"
-        role="tablist"
-        aria-label="Model explorer views"
-      >
-        {VIEW_ITEMS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={view === id}
-            aria-controls={`${id}-view`}
-            onClick={() => setView(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {actionMessage && (
-        <div className="action-message" role="status">
-          {actionMessage}
-          <button type="button" onClick={() => setActionMessage("")} aria-label="Dismiss message">×</button>
-        </div>
-      )}
-
-      {view === "datasets" && (
-        <section
-          id="datasets-view"
-          className="model-view datasets-view"
-          role="tabpanel"
-          aria-label="Datasets"
-        >
-          <div className="view-heading">
-            <div>
-              <p className="eyebrow">00 / DATASETS</p>
-              <h2>Manage your datasets</h2>
-            </div>
-          </div>
-
-          <div className="datasets-layout">
-            {/* Upload panel */}
-            <section className="datasets-upload-section">
-              <div className="datasets-section-header">
-                <h3>Upload a CSV</h3>
-                <p>
-                  Upload a classification dataset with any column names. Select the target and input columns, handle missing values, and train the forest. At least 8 rows are required.
-                </p>
-              </div>
-              <CsvUpload onDatasetReady={handleUploadedDataset} />
-            </section>
-
-            {/* All datasets list */}
-            <section className="datasets-list-section">
-              <div className="datasets-section-header">
-                <h3>Available datasets</h3>
-                <p>Select a dataset to activate it for all model views.</p>
-              </div>
-              <div className="datasets-list">
-                {/* Sample datasets */}
-                <p className="datasets-group-label">SAMPLE DATASETS</p>
-                {FLOWER_DATASETS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`dataset-list-item ${
-                      datasetId === item.id ? "is-active" : ""
-                    }`}
-                    onClick={() => {
-                      chooseDataset(item.id);
-                      setView("forest");
-                    }}
-                  >
-                    <div className="dataset-item-info">
-                      <strong>{item.name}</strong>
-                      <span>{item.description}</span>
-                      <span className="dataset-item-meta">
-                        {item.flowers.length} rows
-                      </span>
-                    </div>
-                    <span className="dataset-item-badge">
-                      {datasetId === item.id ? "✓ Active" : "Use →"}
-                    </span>
-                  </button>
-                ))}
-
-                {/* User uploaded datasets */}
-                {userDatasets.length > 0 && (
-                  <>
-                    <p className="datasets-group-label datasets-group-label--user">
-                      MY UPLOADS
-                    </p>
-                    {userDatasets.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={`dataset-list-item dataset-list-item--user ${
-                          datasetId === item.id ? "is-active" : ""
-                        }`}
-                        onClick={() => {
-                          chooseDataset(item.id);
-                          setView("forest");
-                        }}
-                      >
-                        <div className="dataset-item-info">
-                          <strong>{item.name}</strong>
-                          <span>{item.description}</span>
-                          <span className="dataset-item-meta">
-                            {item.flowers.length} rows
-                          </span>
-                        </div>
-                        <span className="dataset-item-badge">
-                          {datasetId === item.id ? "✓ Active" : "Use →"}
-                        </span>
-                      </button>
-                    ))}
-                  </>
-                )}
-              </div>
-            </section>
-          </div>
-        </section>
-      )}
-
-      {(view === "forest" || view === "trees" || view === "paths") && (
-        <section
-          id={`${view}-view`}
-          className="model-view"
-          role="tabpanel"
-          aria-label={view === "forest" ? "Forest overview" : view === "trees" ? "Full tree explorer" : "Decision paths"}
-        >
-          {view === "forest" && (
-            <>
-          <div className="view-heading">
-            <div>
-              <p className="eyebrow">RANDOM FOREST / OVERVIEW</p>
-              <h2>Model dashboard</h2>
-            </div>
-            <button className="how-it-works-button" type="button" onClick={() => setShowHelp(true)}>ⓘ How it works?</button>
-          </div>
-          <div className="forest-dashboard overview-grid">
-            <section className="dashboard-card dataset-overview-card">
-              <div className="dashboard-card-heading">
-                <div>
-                  <h3>Dataset Overview</h3>
-                  <p>{dataset.name} · validated model inputs</p>
-                </div>
-                <span className="overview-card-icon">▦</span>
-              </div>
-              <div className="dataset-facts">
-                <div><span>Total Rows</span><strong>{flowers.length}</strong></div>
-                <div><span>Feature Columns</span><strong>{featureNames.length}</strong></div>
-                <div><span>Target Column</span><strong>{dataset.targetName}</strong></div>
-                <div><span>Missing Rows</span><strong>{dataset.dataQuality?.missingRows ?? 0}</strong></div>
-                <div><span>Classes</span><strong>{classLabels.length}</strong></div>
-              </div>
-              <strong className="mini-chart-label">Class Distribution</strong>
-              <div className="class-distribution-list">
-                {classLabels.map((label, index) => {
-                  const count = evaluation.classCounts[index] ?? 0;
-                  const percent = totalClassCount ? (count / totalClassCount) * 100 : 0;
-                  return (
-                    <div className="class-distribution-row" key={label}>
-                      <span className={classTone(index)}>{label}</span>
-                      <div className="class-distribution-track">
-                        <i className={shapeTone(index, "bar")} style={{ width: `${percent}%` }} />
-                      </div>
-                      <b>{count} <small>{percent.toFixed(0)}%</small></b>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section
-              className="dashboard-card forest-vote-card"
-              aria-labelledby="forest-vote-title"
-            >
-              <div className="dashboard-card-heading">
-                <div>
-                  <h3 id="forest-vote-title">Forest vote</h3>
-                  <p>
-                    How the trees voted for observation #
-                    {String(flower.id + 1).padStart(2, "0")}
-                  </p>
-                </div>
-                <button
-                  className="text-action"
-                  type="button"
-                  onClick={() => chooseTree(0)}
-                >
-                  View trees
-                </button>
-              </div>
-              <VoteDistribution votes={votes} classLabels={classLabels} />
-              <div className="tree-tiles">
-                {votes.map((vote, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    className={`tree-tile ${selectedTree === index ? "is-selected" : ""} ${shapeTone(classLabels.indexOf(vote), "tile")}`}
-                    aria-pressed={selectedTree === index}
-                    onClick={() => chooseTree(index)}
-                  >
-                    <span>T{String(index + 1).padStart(2, "0")}</span>
-                    <i aria-hidden="true">
-                      {classLabels.indexOf(vote) === 0 ? "●" : "◆"}
-                    </i>
-                    <strong>{vote}</strong>
-                  </button>
-                ))}
-              </div>
-            </section>
-            <section
-              className="dashboard-card feature-card"
-              aria-labelledby="top-features-title"
-            >
-              <div className="dashboard-card-heading">
-                <div>
-                  <h3 id="top-features-title">Top features</h3>
-                  <p>{importanceMethod === "gini" ? "Gini decrease · full forest" : "Permutation · held-out rows"}</p>
-                </div>
-                <div className="importance-method-switch" role="group" aria-label="Feature importance method">
-                  <button type="button" aria-pressed={importanceMethod === "gini"} onClick={() => setImportanceMethod("gini")}>Gini</button>
-                  <button type="button" aria-pressed={importanceMethod === "permutation"} onClick={() => setImportanceMethod("permutation")}>Permutation</button>
-                </div>
-              </div>
-              <div className="dashboard-importance">
-                {importance.map((feature) => (
-                  <div className="dashboard-importance-row" key={feature.name}>
-                    <span>{feature.name}</span>
-                    <div className="importance-track">
-                      <span
-                        style={{
-                          width: `${Math.max(0, feature.value * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{feature.value.toFixed(2)}</strong>
-                  </div>
-                ))}
-              </div>
-              <p className="dashboard-note">
-                {importanceMethod === "gini"
-                  ? "Forest-wide split importance; it does not imply causation."
-                  : "Accuracy decrease after shuffling each feature on held-out test rows. Not causal."}
-              </p>
-            </section>
-
-            <section className="dashboard-card model-performance-card">
-              <div className="dashboard-card-heading">
-                <div><h3>Model Performance</h3><p>Held-out test · {evaluation.sampleCount} rows</p></div>
-                <span className="performance-icon">✓</span>
-              </div>
-              <div className="performance-mini-metrics">
-                <div><span>Accuracy</span><strong>{Math.round(evaluation.accuracy * 100)}%</strong></div>
-                <div><span>Macro F1</span><strong>{Math.round(evaluation.macroF1 * 100)}%</strong></div>
-                <div><span>Precision</span><strong>{Math.round(evaluation.macroPrecision * 100)}%</strong></div>
-                <div><span>Recall</span><strong>{Math.round(evaluation.macroRecall * 100)}%</strong></div>
-              </div>
-              <p className="performance-caption">Macro-average gives each target class equal weight.</p>
-              {evaluation.sampleCount < 10 && (
-                <p className="small-test-warning" role="status">Small test set: metrics may be unstable.</p>
-              )}
-            </section>
-
-            <section className="dashboard-card tree-preview-card">
-              <div className="dashboard-card-heading">
-                <div><h3>Tree Explorer</h3><p>Tree {selectedTree + 1} · fitted root split</p></div>
-                <span className="tree-preview-icon">♧</span>
-              </div>
-              <label className="dashboard-select-label" htmlFor="overview-tree-select">
-                SELECT TREE
-                <select id="overview-tree-select" value={selectedTree} onChange={(event) => chooseTree(Number(event.target.value))}>
-                  {forest.trees.map((_, index) => <option key={index} value={index}>Tree {index + 1}</option>)}
-                </select>
-              </label>
-              <div className="tree-preview-rule">
-                {rootNode?.splitValue !== undefined && rootFeatureIndex !== undefined ? (
-                  <>
-                    <strong>{featureNames[rootFeatureIndex]} &lt; {format(rootNode.splitValue)}?</strong>
-                    <small>Samples: {rootNode.numberSamples ?? "—"} · Gini gain: {format(rootNode.gain ?? 0)}</small>
-                  </>
-                ) : <strong>This tree predicts from its root leaf.</strong>}
-              </div>
-              <button className="full-tree-button" type="button" onClick={() => setView("trees")}>View Full Tree →</button>
-            </section>
-
-            <section
-              className="dashboard-card prediction-card"
-              aria-labelledby="prediction-details-title"
-            >
-              <div className="dashboard-card-heading">
-                <div>
-                  <h3 id="prediction-details-title">Make a Prediction</h3>
-                  <p>Use input features or a row from this dataset</p>
-                </div>
-              </div>
-              <div className="prediction-mode-switch" role="tablist" aria-label="Prediction input mode">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={inputMode === "manual"}
-                  onClick={() => {
-                    setManualFeatures([...flower.features]);
-                    setInputMode("manual");
-                  }}
-                >Input Features</button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={inputMode === "dataset"}
-                  onClick={() => setInputMode("dataset")}
-                >Select from Dataset</button>
-              </div>
-              {inputMode === "manual" ? (
-                <div className="manual-feature-inputs">
-                  {featureNames.map((name, index) => {
-                    const min = featureMinimums[index] ?? 0;
-                    const max = featureMaximums[index] ?? 1;
-                    const range = max - min || 1;
-                    const value = manualFeatures[index] ?? flower.features[index] ?? min;
-                    return (
-                      <label key={name}>
-                        <span>{name}<b>{format(value)}</b></span>
-                        <input
-                          type="range"
-                          min={min}
-                          max={max}
-                          step={range > 1 ? range / 100 : 0.01}
-                          value={value}
-                          onChange={(event) => setManualFeatures((current) => {
-                            const next = current.length === featureNames.length ? [...current] : [...flower.features];
-                            next[index] = Number(event.target.value);
-                            return next;
-                          })}
-                        />
-                        <small>{format(min)} <i /> {format(max)}</small>
-                      </label>
-                    );
-                  })}
-                </div>
-              ) : (
-              <label
-                className="dashboard-select-label"
-                htmlFor="forest-observation-select"
-              >
-                OBSERVATION
-                <select
-                  id="forest-observation-select"
-                  value={selectedId}
-                  onChange={(event) => chooseFlower(Number(event.target.value))}
-                >
-                  {flowers.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      Row #{String(item.id + 1).padStart(2, "0")} ·{" "}
-                      {item.label} · {isTestRow(item.id) ? "test" : "train"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              )}
-              <div
-                className={`prediction-result ${classTone(classLabels.indexOf(modelPrediction))}`}
-              >
-                <span>PREDICTED CLASS</span>
-                <strong>{modelPrediction}</strong>
-                <small>
-                  {modelAgreement} of {treeCount} trees agree
-                </small>
-              </div>
-              <div className="prediction-features">
-                {featureNames.slice(0, 3).map((name, index) => (
-                  <span key={name}>
-                    {name} <b>{format(predictionFlower.features[index] ?? 0)}</b>
-                  </span>
-                ))}
-                {featureNames.length > 4 && (
-                  <span>+{featureNames.length - 4} more model inputs</span>
-                )}
-              </div>
-            </section>
-          </div>
-          <section className="decision-explanation-card">
-            <div className="dashboard-card-heading">
-              <div><h3>How the Forest Decided</h3><p>Tree votes followed by the selected tree’s real decision route.</p></div>
-              <span className="route-vote-summary">{modelAgreement} / {treeCount} majority votes → {modelPrediction}</span>
-            </div>
-            <div className="explanation-votes">
-              {votes.map((vote, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className={`explanation-tree ${selectedTree === index ? "is-selected" : ""} ${classTone(classLabels.indexOf(vote))}`}
-                  onClick={() => chooseTree(index)}
-                  aria-pressed={selectedTree === index}
-                >
-                  <small>Tree {index + 1}</small><strong>{vote}</strong>
-                </button>
-              ))}
-            </div>
-            <div className="explanation-route">
-              <strong>Why this prediction?</strong>
-              {selectedTreePath.steps.length === 0 ? (
-                <span>This tree has no split and predicts {votes[selectedTree]} from its root.</span>
-              ) : selectedTreePath.steps.map((step, index) => (
-                <span key={`${step.featureIndex}-${index}`}>
-                  <b>{index + 1}</b> {featureNames[step.featureIndex]} = {format(step.value)} {step.passes ? "<" : "≥"} {format(step.node.splitValue ?? 0)} · {step.node.numberSamples ?? "—"} samples · Gini gain {format(step.node.gain ?? 0)} · {step.passes ? "left branch" : "right branch"}
-                </span>
-              ))}
-            </div>
-          </section>
-            </>
-          )}
-          <TreeInspector
-            forest={forest}
-            treeIndex={selectedTree}
-            flower={predictionFlower}
-            featureNames={featureNames}
-            classLabels={classLabels}
-            selectedNodePath={selectedNodePath}
-            setSelectedNodePath={setSelectedNodePath}
-            setTreeIndex={chooseTree}
-            onBack={() => setView("forest")}
-            onFullTree={() => setView(view === "trees" ? "forest" : "trees")}
-          />
-        </section>
-      )}
-
-      {view === "prediction" && (
-        <section
-          id="prediction-view"
-          className="model-view"
-          role="tabpanel"
-          aria-label="Prediction explorer"
-        >
-          <div className="view-heading prediction-heading">
-            <div>
-              <p className="eyebrow">02 / OBSERVATION</p>
-              <h2>Inspect one observation</h2>
-            </div>
-            <label className="observation-picker" htmlFor="observation-select">
-              SELECT OBSERVATION
-              <select
-                id="observation-select"
-                value={selectedId}
-                onChange={(event) => chooseFlower(Number(event.target.value))}
-              >
-                {flowers.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    Row #{String(item.id + 1).padStart(2, "0")} ·{" "}
-                    {item.label} · {isTestRow(item.id) ? "test" : "train"}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="prediction-grid">
-            <section
-              className="sample-detail"
-              aria-label={`Row ${flower.id + 1} feature values`}
-            >
-              <div className="sample-detail-heading">
-                <div>
-                  <span className="section-label">CURRENT EXAMPLE</span>
-                  <h3>Row #{String(flower.id + 1).padStart(2, "0")}</h3>
-                </div>
-                <span
-                  className={`split-badge ${isTestRow(flower.id) ? "is-test" : ""}`}
-                >
-                  {isTestRow(flower.id) ? "TEST ROW" : "TRAIN ROW"}
-                </span>
-              </div>
-              <div className="feature-table">
-                <div>
-                  <span>FEATURE</span>
-                  <span>VALUE</span>
-                </div>
-                {featureNames.slice(0, 8).map((name, index) => (
-                  <div key={name}>
-                    <strong>{name}</strong>
-                    <span>{format(flower.features[index] ?? 0)}</span>
-                  </div>
-                ))}
-                <div>
-                  <strong>{dataset.targetName} · observed</strong>
-                  <span>{flower.label}</span>
-                </div>
-              </div>
-              <p className="sample-note">
-                Values shown are the encoded model inputs for this observation.
-              </p>
-              <div className="prediction-chart">
-                <div className="chart-title">
-                  <span>{featureNames[0]}{featureNames[1] ? ` × ${featureNames[1]}` : ""}</span>
-                  <span>TRAIN / TEST</span>
-                </div>
-                <svg
-                  className="chart"
-                  viewBox="0 0 620 340"
-                  role="img"
-                  aria-label={`Observations plotted by ${featureNames[0]} and ${featureNames[1] ?? "the first feature only"}. Held-out test rows have outlined markers.`}
-                >
-                  <defs>
-                    <pattern
-                      id="plot-grid"
-                      width="30"
-                      height="30"
-                      patternUnits="userSpaceOnUse"
-                    >
-                      <path
-                        d="M 30 0 L 0 0 0 30"
-                        fill="none"
-                        stroke="rgba(29,43,69,0.08)"
-                        strokeWidth="1"
-                      />
-                    </pattern>
-                  </defs>
-                  <rect
-                    x="56"
-                    y="16"
-                    width="536"
-                    height="276"
-                    fill="url(#plot-grid)"
-                  />
-                  {decisionRegions.map((cell) => (
-                    <rect
-                      key={`${cell.column}-${cell.row}`}
-                      x={56 + (cell.column / 18) * 536}
-                      y={16 + (cell.row / 12) * 276}
-                      width={536 / 18 + 1}
-                      height={276 / 12 + 1}
-                      className={`decision-cell ${shapeTone(classLabels.indexOf(cell.prediction), "flower")}`}
-                    />
-                  ))}
-                  <rect
-                    x="56"
-                    y="16"
-                    width="536"
-                    height="276"
-                    fill="url(#plot-grid)"
-                  />
-                  <line
-                    x1="56"
-                    y1="292"
-                    x2="592"
-                    y2="292"
-                    className="axis-line"
-                  />
-                  <line
-                    x1="56"
-                    y1="16"
-                    x2="56"
-                    y2="292"
-                    className="axis-line"
-                  />
-                  {Array.from({ length: 7 }, (_, index) => index).map((tick) => (
-                    <g key={tick} className="tick-label">
-                      <line
-                        x1={56 + (tick / 6) * 536}
-                        y1="292"
-                        x2={56 + (tick / 6) * 536}
-                        y2="297"
-                        className="axis-line"
-                      />
-                      <text
-                        x={56 + (tick / 6) * 536}
-                        y="312"
-                        textAnchor="middle"
-                      >
-                        {format(xMin + (tick / 6) * xRange)}
-                      </text>
-                    </g>
-                  ))}
-                  {Array.from({ length: 5 }, (_, index) => index).map((tick) => (
-                    <g key={tick} className="tick-label">
-                      <text
-                        x="44"
-                        y={292 - (tick / 4) * 276 + 4}
-                        textAnchor="end"
-                      >
-                        {featureNames.length > 1
-                          ? format(yMin + (tick / 4) * yRange)
-                          : ""}
-                      </text>
-                    </g>
-                  ))}
-                  {flowers.map((item) => {
-                    const cx =
-                      56 + (((item.features[0] ?? xMin) - xMin) / xRange) * 536;
-                    const cy =
-                      featureNames.length > 1
-                        ? 292 -
-                          (((item.features[1] ?? yMin) - yMin) / yRange) * 276
-                        : 154;
-                    const isSelected = item.id === flower.id;
-                    const isTest = isTestRow(item.id);
-                    return (
-                      <g
-                        key={item.id}
-                        className={`flower-point ${shapeTone(classLabels.indexOf(item.label), "point")} ${isTest ? "is-test" : ""}`}
-                        onClick={() => chooseFlower(item.id)}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Select row ${item.id + 1}, ${item.label}, ${featureNames[0]} ${format(item.features[0] ?? 0)}${featureNames[1] ? `, ${featureNames[1]} ${format(item.features[1] ?? 0)}` : ""}, ${isTest ? "test" : "training"} row`}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            chooseFlower(item.id);
-                          }
-                        }}
-                      >
-                        {isSelected && (
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r="11"
-                            className="selection-ring"
-                          />
-                        )}
-                        {classLabels.indexOf(item.label) === 0 ? (
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r={isSelected ? 6 : 4.5}
-                            className="point-core"
-                          />
-                        ) : (
-                          <rect
-                            x={cx - 4}
-                            y={cy - 4}
-                            width={isSelected ? 12 : 9}
-                            height={isSelected ? 12 : 9}
-                            transform={`rotate(45 ${cx} ${cy})`}
-                            className="point-core"
-                          />
-                        )}
-                      </g>
-                    );
-                  })}
-                  <text
-                    x="324"
-                    y="336"
-                    className="axis-title"
-                    textAnchor="middle"
-                  >
-                    {featureNames[0]?.toUpperCase()}
-                  </text>
-                  <text
-                    x="13"
-                    y="154"
-                    className="axis-title y-axis-title"
-                    textAnchor="middle"
-                    transform="rotate(-90 13 154)"
-                  >
-                    {featureNames[1]?.toUpperCase() ?? "SINGLE FEATURE"}
-                  </text>
-                </svg>
-                <div className="chart-legend">
-                  <span>
-                    <i className={shapeTone(0, "shape")} /> {classLabels[0]}
-                  </span>
-                  {classLabels.slice(1).map((label) => (
-                    <span key={label}>
-                      <i className={shapeTone(classLabels.indexOf(label), "shape")} /> {label}
-                    </span>
-                  ))}
-                  <span>
-                    <i className="split-badge is-test">T</i> Held-out test
-                  </span>
-                </div>
-              </div>
-            </section>
-            <section
-              className="prediction-outcomes"
-              aria-label="Per-tree predictions"
-            >
-              <VoteDistribution votes={votes} classLabels={classLabels} />
-              <p className="section-label outcome-label">
-                TREE-BY-TREE OUTPUTS{" "}
-                <span>Select a tree to inspect its route</span>
-              </p>
-              <div className="outcome-list">
-                {votes.map((vote, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    className={`outcome-row ${selectedTree === index ? "is-selected" : ""}`}
-                    aria-pressed={selectedTree === index}
-                    onClick={() => chooseTree(index)}
-                  >
-                    <span>T{String(index + 1).padStart(2, "0")}</span>
-                    <span
-                      className={
-                        classTone(classLabels.indexOf(vote))
-                      }
-                    >
-                      {classLabels.indexOf(vote) === 0 ? "●" : "◆"} {vote}
-                    </span>
-                    <span>
-                      {selectedTree === index ? "ROUTE OPEN" : "Inspect →"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-          <TreeInspector
-            forest={forest}
-            treeIndex={selectedTree}
-            flower={flower}
-            featureNames={featureNames}
-            classLabels={classLabels}
-            selectedNodePath={selectedNodePath}
-            setSelectedNodePath={setSelectedNodePath}
-            setTreeIndex={chooseTree}
-            onBack={() => setView("forest")}
-          />
-        </section>
-      )}
-
-      {(view === "quality" || view === "importance") && (
-        <section
-          id={`${view}-view`}
-          className="model-view quality-view"
-          role="tabpanel"
-          aria-label={view === "quality" ? "Model quality" : "Feature importance"}
-        >
-          <div className="view-heading">
-            <div>
-              <p className="eyebrow">{view === "quality" ? "MODEL EVALUATION" : "MODEL EXPLANATION"}</p>
-              <h2>{view === "quality" ? "How did it do on unseen rows?" : "Feature importance"}</h2>
-            </div>
-            <span className="split-badge is-test">
-              {dataset.name.toUpperCase()} · TEST {evaluation.sampleCount} /{" "}
-              {flowers.length}
-            </span>
-          </div>
-          {view === "quality" && <p className="evaluation-context">
-            These {evaluation.sampleCount} rows were excluded from training.
-            Metrics below describe this held-out test split only.
-          </p>}
-          {view === "quality" && <div className="metric-strip">
-            <div>
-              <span>TEST ACCURACY</span>
-              <strong>{Math.round(evaluation.accuracy * 100)}%</strong>
-              <small>
-                Correct predictions / {evaluation.sampleCount} test rows
-              </small>
-            </div>
-            <div>
-              <span>MACRO PRECISION</span>
-              <strong>{Math.round(evaluation.macroPrecision * 100)}%</strong>
-              <small>Average across {classLabels.length} classes</small>
-            </div>
-            <div>
-              <span>MACRO RECALL</span>
-              <strong>{Math.round(evaluation.macroRecall * 100)}%</strong>
-              <small>Average across {classLabels.length} classes</small>
-            </div>
-            <div>
-              <span>MACRO F1</span>
-              <strong>{Math.round(evaluation.macroF1 * 100)}%</strong>
-              <small>Equal weight per class</small>
-            </div>
-            <div>
-              <span>WEIGHTED F1</span>
-              <strong>{Math.round(evaluation.weightedF1 * 100)}%</strong>
-              <small>Weighted by class support</small>
-            </div>
-          </div>}
-          {view === "quality" && evaluation.sampleCount < 10 && (
-            <p className="small-test-warning" role="status">
-              The held-out test set contains only {evaluation.sampleCount} rows; performance estimates may be unstable.
-            </p>
-          )}
-          <div className={`quality-grid ${view === "importance" ? "quality-grid--importance-only" : ""}`}>
-            {view === "quality" && (
-            <section
-              className="quality-section"
-              aria-labelledby="confusion-title"
-            >
-              <p className="eyebrow">
-                TEST SET · {evaluation.sampleCount} ROWS
-              </p>
-              <h3 id="confusion-title">Confusion matrix</h3>
-              <p className="quality-subtitle">
-                Rows are the observed class. Columns are the model prediction.
-              </p>
-              <table className="confusion-table">
-                <thead>
-                  <tr>
-                    <th scope="col">OBSERVED ↓ / PREDICTED →</th>
-                    {classLabels.map((label) => (
-                      <th scope="col" key={label}>{label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {classLabels.map((label, row) => (
-                    <tr key={label}>
-                      <th scope="row">{label}</th>
-                      {classLabels.map((_, column) => (
-                        <td
-                          key={column}
-                          className={
-                            row === column ? "correct-cell" : "error-cell"
-                          }
-                        >
-                          {evaluation.confusion[row][column]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="table-note">
-                <i className="correct-key" /> Correct{" "}
-                <i className="error-key" /> Incorrect
-              </p>
-            </section>
-            )}
-            <section
-              className="quality-section importance-section"
-              aria-labelledby="importance-title"
-            >
-              <p className="eyebrow">FITTED FOREST · {treeCount} TREES</p>
-              <h3 id="importance-title">Feature importance</h3>
-              <div className="importance-method-switch" role="group" aria-label="Feature importance method">
-                <button type="button" aria-pressed={importanceMethod === "gini"} onClick={() => setImportanceMethod("gini")}>Gini Importance</button>
-                <button type="button" aria-pressed={importanceMethod === "permutation"} onClick={() => setImportanceMethod("permutation")}>Permutation Importance</button>
-              </div>
-              <p className="quality-subtitle">
-                {importanceMethod === "gini"
-                  ? "Normalized decrease in Gini across the complete fitted forest."
-                  : "Held-out accuracy decrease after shuffling a feature."}
-              </p>
-              <div className="importance-list">
-                {importance.map((feature, rank) => (
-                  <div className="importance-row" key={feature.name}>
-                    <span className="importance-rank">0{rank + 1}</span>
-                    <strong>{feature.name}</strong>
-                    <div className="importance-track">
-                      <span
-                        style={{
-                          width: `${Math.max(0, feature.value * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="importance-value">
-                      {importanceMethod === "gini"
-                        ? `${Math.round(feature.value * 100)}%`
-                        : feature.value.toFixed(3)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="importance-warning">
-                {importanceMethod === "gini"
-                  ? "This forest-wide split-importance measure does not imply causation; correlated features can distort it."
-                  : `Permutation importance uses the ${evaluation.sampleCount} held-out test rows. It measures predictive reliance, not causation.`}
-              </p>
-            </section>
-          </div>
-        </section>
-      )}
-
-      {view === "insights" && (
-        <section id="insights-view" className="model-view insights-view" role="tabpanel" aria-label="Data insights">
-          <div className="view-heading">
-            <div><p className="eyebrow">DATASET / VALIDATION</p><h2>Data Insights</h2></div>
-            <span className="split-badge is-test">{dataset.name} · {flowers.length} rows</span>
-          </div>
-          <div className="insights-grid">
-            <section className="quality-section">
-              <h3>Dataset validation</h3>
-              <p className="quality-subtitle">The original CSV is parsed separately from the cleaned model matrix.</p>
-              <div className="validation-summary">
-                <div><span>Source rows</span><strong>{dataset.dataQuality?.sourceRows ?? flowers.length}</strong></div>
-                <div><span>Missing-value rows</span><strong>{dataset.dataQuality?.missingRows ?? 0}</strong></div>
-                <div><span>Duplicate rows</span><strong>{dataset.dataQuality?.duplicateRows ?? 0}</strong></div>
-                <div><span>Rows dropped</span><strong>{dataset.dataQuality?.droppedRows ?? 0}</strong></div>
-                <div><span>Values imputed</span><strong>{dataset.dataQuality?.imputedValues ?? 0}</strong></div>
-                <div><span>Model-ready rows</span><strong>{flowers.length}</strong></div>
-              </div>
-              <p className="importance-warning">Target labels are never imputed. Imputation values and categorical encodings are learned from training rows only.</p>
-            </section>
-            <section className="quality-section">
-              <h3>Class distribution</h3>
-              <p className="quality-subtitle">{dataset.targetName} · all validated rows</p>
-              <div className="insight-class-list">
-                {classLabels.map((label, index) => {
-                  const count = evaluation.classCounts[index] ?? 0;
-                  const percentage = totalClassCount ? (count / totalClassCount) * 100 : 0;
-                  return <div key={label} className="insight-class-row">
-                    <span className={classTone(index)}>{label}</span>
-                    <div className="class-distribution-track"><i className={shapeTone(index, "bar")} style={{ width: `${percentage}%` }} /></div>
-                    <b>{count} <small>{percentage.toFixed(1)}%</small></b>
-                  </div>;
-                })}
-              </div>
-            </section>
-          </div>
-        </section>
-      )}
-
-      {view === "about" && (
-        <section id="about-view" className="model-view about-view" role="tabpanel" aria-label="About Random Forest">
-          <div className="view-heading">
-            <div>
-              <p className="eyebrow">PROJECT GUIDE / RANDOM FOREST</p>
-              <h2>About Random Forest</h2>
-            </div>
-            <button className="train-button" type="button" onClick={() => setView("forest")}>
-              Explore the model
-            </button>
-          </div>
-          <section className="about-intro-card">
-            <span className="about-mark" aria-hidden="true">♣</span>
-            <div>
-              <h3>A forest of decision trees, working together</h3>
-              <p>
-                This project is an interactive Random Forest classification explorer. It lets you prepare a CSV,
-                fit a forest, inspect how individual trees reach their decisions, and evaluate predictions on
-                examples kept out of training.
-              </p>
-            </div>
-          </section>
-
-          <div className="about-section-heading">
-            <p className="eyebrow">FROM CSV TO PREDICTION</p>
-            <h3>How a model run works</h3>
-          </div>
-          <div className="about-flow">
-            {[
-              ["01", "Choose data", "Use a bundled sample or upload a classification CSV. Select the target column and the features the model can use."],
-              ["02", "Prepare inputs", "Review missing values, then impute numeric features with mean, median, or mode, or drop incomplete rows. Categorical features are encoded for the model."],
-              ["03", "Fit the forest", "A stratified portion of rows is held out. The remaining training rows fit multiple bootstrapped decision trees using the selected settings."],
-              ["04", "Explore and evaluate", "Trees vote for a class. Follow an individual tree's actual path, inspect feature importance, and evaluate results on held-out rows."],
-            ].map(([number, title, description]) => (
-              <article className="about-flow-card" key={number}>
-                <span>{number}</span>
-                <h4>{title}</h4>
-                <p>{description}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="about-details-grid">
-            <section className="quality-section about-detail-card">
-              <p className="eyebrow">WHAT YOU CAN EXPLORE</p>
-              <h3>Inside this project</h3>
-              <ul className="about-feature-list">
-                <li><strong>Forest overview</strong><span>See class votes, predictions, data distribution, model settings, and a tree preview.</span></li>
-                <li><strong>Prediction explorer</strong><span>Inspect a dataset row or enter feature values to see the forest's class vote.</span></li>
-                <li><strong>Trees and decision paths</strong><span>Inspect fitted splits and follow the selected observation through a tree to its leaf.</span></li>
-                <li><strong>Feature importance</strong><span>Compare forest-wide Gini importance with held-out permutation importance.</span></li>
-                <li><strong>Evaluation and data insights</strong><span>Review held-out accuracy, precision, recall, F1, confusion counts, and dataset quality.</span></li>
-                <li><strong>Reproducibility and export</strong><span>Adjust tree settings and seed; export the active dataset's configuration and metrics.</span></li>
-              </ul>
-            </section>
-            <section className="quality-section about-detail-card">
-              <p className="eyebrow">SCOPE &amp; INTERPRETATION</p>
-              <h3>What to keep in mind</h3>
-              <ul className="about-note-list">
-                <li>This app supports classification. It does not train regression models.</li>
-                <li>Targets must contain 2–30 classes and datasets need at least 8 usable rows.</li>
-                <li>Missing target labels are dropped, never imputed. Missing-value statistics are learned from training rows.</li>
-                <li>Evaluation metrics are calculated from held-out rows, not the rows used to fit the forest.</li>
-                <li>Very small test sets can make scores unstable; the app shows a warning when there are fewer than 10 test examples.</li>
-                <li>Tree vote share is not a calibrated probability. Feature importance describes model behavior, not cause and effect.</li>
-              </ul>
-              <button className="about-link-button" type="button" onClick={() => setView("datasets")}>
-                Upload or manage a dataset →
-              </button>
-            </section>
-          </div>
-        </section>
-      )}
-
-      <footer className="page-footer">
-        <span>MODELMIND / RANDOM FOREST</span>
-        <span>MODEL OUTPUTS · NOT GUARANTEES</span>
-      </footer>
-      {showHelp && (
-        <div className="help-modal-backdrop" role="presentation" onClick={() => setShowHelp(false)}>
-          <section className="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="help-modal-close" onClick={() => setShowHelp(false)} aria-label="Close documentation">×</button>
-            <p className="eyebrow">QUICK GUIDE</p>
-            <h2 id="help-modal-title">How this forest works</h2>
-            <p>Each tree is fitted on a bootstrap sample of the training rows. Trees vote independently, and the most-voted class becomes the forest prediction.</p>
-            <ul>
-              <li>The split is stratified by target class; test rows are held out from fitting.</li>
-              <li>Accuracy, macro/weighted F1, and confusion counts use held-out rows only.</li>
-              <li>Gini importance summarizes split use. Permutation importance measures held-out accuracy change after shuffling.</li>
-              <li>Tree vote share is not a calibrated probability, and feature importance does not establish causation.</li>
-            </ul>
-            <button className="train-button" type="button" onClick={() => setShowHelp(false)}>Got it</button>
-          </section>
-        </div>
-      )}
-    </main>
-    </div>
-  );
+    </main>}
+    {page==="3d"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">INTERACTIVE MODEL VIEWS</span><h2>3D Visualization Studio</h2><p>Active dataset: <b>{dataset.name}</b> · {rows.length} rows · {names.length} features · {labels.length} classes. Drag any scene to orbit; use the wheel or +/− to zoom and Fit / reset to reframe.</p></div><div className="studio-controls"><label>Class<select value={selectedClass} onChange={e=>setSelectedClass(Number(e.target.value))}>{labels.map((l,i)=><option key={l} value={i}>{l}</option>)}</select></label>{[0,1,2].map(i=><label key={i}>{["X","Y","Z"][i]} axis<select value={i===2&&axes[i]>=names.length?names.length:axes[i]%Math.max(1,names.length)} onChange={e=>setAxes(old=>{const next=[...old] as [number,number,number];next[i]=Number(e.target.value);return next;})}>{names.map((n,j)=><option key={n} value={j}>{n}</option>)}{i===2&&names.length<3&&<option value={names.length}>Sample index</option>}</select></label>)}</div></div><section className="rf-3d-grid">
+      <SvgCard title="01 · Decision surface" subtitle="Actual interactive 3D model surface · drag to orbit, scroll to zoom"><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="surface" axes={axes} selectedClass={selectedClass} dark={dark}/><Legend labels={labels}/></SvgCard>
+      <SvgCard title="02 · 3D scatter plot" subtitle="Actual samples in three selected feature dimensions · orbit and zoom"><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="scatter" axes={axes} selectedId={selectedId} dark={dark}/><Legend labels={labels}/></SvgCard>
+      <SvgCard title="03 · 3D feature importance" subtitle="Forest-level impurity importance shown as real 3D bars"><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="importance" axes={axes} dark={dark}/></SvgCard>
+      <SvgCard title="04 · Vote-share surface" subtitle={`Share of trees voting for ${labels[selectedClass]} across the feature grid`}><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="vote" selectedClass={selectedClass} axes={axes} dark={dark}/><div className="gradient-key"><span>Lower vote share</span><i/><span>Higher vote share</span></div></SvgCard>
+      <SvgCard title="05 · Multiple tree boundaries" subtitle="Forest prediction surface with tree agreement encoded as height"><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="trees" selectedClass={selectedClass} axes={axes} dark={dark}/><Legend labels={labels}/></SvgCard>
+      <SvgCard title="06 · Partial dependence" subtitle={`Average ${labels[selectedClass]} vote share while varying two features`}><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="pdp" selectedClass={selectedClass} axes={axes} dark={dark}/><p className="chart-footnote">Other inputs are averaged over a small representative sample. This is a model association, not a causal effect.</p></SvgCard>
+    </section></main>}
+    {page==="tree"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">MODEL CONTROLS</span><h2>Tree &amp; forest explorer</h2><p>Adjust a parameter and the forest, scores, tree geometry, and charts refit from the active dataset.</p></div><div className="studio-controls"><button className="rf-primary" onClick={()=>setSeed(v=>v+1)}>↻ Refit with new seed</button></div></div><div className="param-layout"><section className="rf-card param-card"><h3>Forest hyperparameters</h3><Slider label="Number of trees" value={treeCount} min={5} max={150} step={5} onChange={setTreeCount} hint="More trees stabilize voting; training and inference take longer."/><Slider label="Maximum tree depth" value={maxDepth??20} min={1} max={20} step={1} onChange={setMaxDepth} hint="Unlimited grows until other stopping rules apply."/><button className="rf-link" onClick={()=>setMaxDepth(null)}>Set unlimited depth</button><Slider label="Minimum samples to split" value={minSamples} min={2} max={20} step={1} onChange={setMinSamples} hint="Larger values prevent small branches and simplify trees."/><Slider label="Features considered per tree" value={Math.min(maxFeatures,names.length)} min={1} max={Math.max(1,names.length)} step={1} onChange={setMaxFeatures} hint="Controls feature bagging for each tree; defaults to roughly √features."/><Slider label="Minimum split gain" value={gainThreshold} min={0} max={.1} step={.005} onChange={setGainThreshold} hint="Require a minimum impurity reduction before a split is accepted."/><label className="seed-input">Random seed<input type="number" min="0" value={seed} onChange={e=>setSeed(Math.max(0,Number(e.target.value)||0))}/></label><div className="param-summary"><b>Actual tree depth</b><strong>{Math.max(...forest.trees.map(t=>treeDepth(t)))}</strong><span>{forest.trees.length} fitted trees · {train.length} training rows</span></div></section><SvgCard title={`Tree ${selectedTree+1} · fitted 3D structure`} subtitle="A real 3D view of this fitted tree · drag to orbit, zoom to inspect dense branches" className="rf-card tree-detail-card"><label className="inline-select">Tree<select value={selectedTree} onChange={e=>setSelectedTree(Number(e.target.value))}>{forest.trees.map((_,i)=><option key={i} value={i}>Tree {i+1}</option>)}</select></label><ThreeVisualization rows={rows} names={names} labels={labels} forest={forest} mode="tree" treeIndex={selectedTree} dark={dark}/></SvgCard></div><div className="rf-card parameter-explain"><h3>How the controls affect the forest</h3><div><p><b>Tree count</b>Each tree is trained from a bootstrap sample. The final class comes from the majority vote across trees.</p><p><b>Maximum depth</b>Limits the number of split levels. A shallow forest is easier to explain; a deep forest can model intricate boundaries, but can fit noise.</p><p><b>Minimum split size</b>A node with fewer rows than this cannot create another branch. Increasing it regularizes the model.</p><p><b>Features per tree &amp; gain</b>Randomized feature subsets diversify the trees. The gain threshold suppresses low-value splits and can simplify trees.</p></div></div></main>}
+    {page==="data"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">DATA WORKSPACE</span><h2>Bring your own classification data</h2><p>Upload a CSV, choose the target and model inputs, review missingness, then impute numeric columns using mean or median and categorical columns using mode.</p></div></div><div className="upload-layout"><div className="rf-card upload-card"><CsvUpload onDatasetReady={activateUpload}/></div><aside className="rf-card dataset-card"><h3>Active dataset</h3><select value={datasetId} onChange={e=>selectDataset(e.target.value)}>{allDatasets.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select><div className="dataset-stats"><span>Rows <b>{rows.length}</b></span><span>Features <b>{names.length}</b></span><span>Classes <b>{labels.length}</b></span><span>Target <b>{dataset.targetName}</b></span><span>Missing rows <b>{dataset.dataQuality?.missingRows??0}</b></span><span>Imputed values <b>{dataset.dataQuality?.imputedValues??0}</b></span></div><h4>Preview · first 8 rows</h4><div className="preview-table-wrap"><table className="data-preview"><thead><tr>{names.slice(0,4).map(n=><th key={n}>{n}</th>)}<th>{dataset.targetName}</th></tr></thead><tbody>{rows.slice(0,8).map(r=><tr key={r.id}>{r.features.slice(0,4).map((v,i)=><td key={i}>{fmt(v)}</td>)}<td>{r.label}</td></tr>)}</tbody></table></div></aside></div></main>}
+    {page==="guide"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">FIELD GUIDE</span><h2>How to read this Random Forest</h2><p>Use these views as a connected story: data → many tree rules → a vote → a held-out evaluation.</p></div></div><section className="guide-grid"><GuideCard n="01" title="Forest overview" text="Start with the overview. Each colored dot is an observation; class color means the dataset’s observed label. Decision-region color means the forest’s predicted class at that feature combination. They are intentionally separate encodings."/><GuideCard n="02" title="Tree depth & complexity" text="Depth is the maximum number of decisions along a root-to-leaf path. Increasing depth lets a tree form more detailed rules. That can improve fit on training rows but can also memorize noise. Compare the held-out metrics and OOB error after each change; do not choose depth from training accuracy alone."/><GuideCard n="03" title="Why Random Forest votes" text="Every tree is trained on a bootstrap sample and considers a randomized feature subset. Each tree votes independently; the most-voted class is the forest prediction. Vote share describes agreement, but is not necessarily a calibrated probability."/><GuideCard n="04" title="2D decision boundary" text="A boundary chart evaluates the fitted forest over a grid while holding other features near their dataset averages. The background is the predicted class; the overlaid points are actual labeled rows. A point in a different-colored region is a potential classification error."/><GuideCard n="05" title="3D surfaces & scatter" text="The 3D feature-space view projects selected features into an angled coordinate system. The surface gives a compact view of changing predictions or vote share; the scatter plot shows the actual observations. Rotate with the angle control and select axes to inspect overlap."/><GuideCard n="06" title="Held-out metrics & ROC" text="Accuracy is the share of held-out predictions that are correct. Precision asks how often a predicted class is right; recall asks how many actual members were found; F1 combines the two. The confusion matrix gives exact class-by-class counts. ROC ranks classes using tree-vote share; it is not a probability calibration chart."/><GuideCard n="07" title="OOB error" text="For each training row, out-of-bag (OOB) prediction aggregates only trees whose bootstrap sample omitted that row. The plotted error after each tree uses rows with at least one eligible vote. This provides a training-side diagnostic distinct from the held-out test result."/><GuideCard n="08" title="Feature importance" text="The built-in importance summarizes how much each feature reduces split impurity across the forest. It depends on the fitted model and can favor certain feature types; it is not evidence that a feature causes the outcome."/></section></main>}
+    <footer className="rf-footer"><span>ForestLab · Interactive Random Forest classifier</span><span>{dataset.name} · {rows.length} rows · {labels.length} classes</span></footer>
+  </div>;
 }
 
-export default App;
+function treeDepth(node: TreeNode): number { return node.left||node.right?1+Math.max(node.left?treeDepth(node.left):0,node.right?treeDepth(node.right):0):0; }
+function mostComplexTreeIndex(trees:TreeNode[]):number{return trees.reduce((best,tree,index)=>treeDepth(tree)>treeDepth(trees[best]!)?index:best,0);}
+type RegressionWorkspaceProps={page:Page;setPage:(page:Page)=>void;dark:boolean;setDark:(value:boolean|((current:boolean)=>boolean))=>void;dataset:FlowerDataset;datasets:FlowerDataset[];onSelectDataset:(id:string)=>void;rows:Flower[];names:string[];forest:TrainedForest;regressionForest:TrainedRegressionForest;metrics:RegressionMetrics;treeCount:number;setTreeCount:(n:number)=>void;maxDepth:number|null;setMaxDepth:(n:number|null)=>void;minSamples:number;setMinSamples:(n:number)=>void;maxFeatures:number;setMaxFeatures:(n:number)=>void;gainThreshold:number;setGainThreshold:(n:number)=>void;selectedTree:number;setSelectedTree:(n:number)=>void;onDatasetReady:(data:CleanedDataset,filename:string)=>void;modelUpdating:boolean;applyChanges:()=>void};
+function RegressionWorkspace(p:RegressionWorkspaceProps){
+  const [axes,setAxes]=useState<[number,number,number]>([0,1,2]);
+  const nav:Array<[Page,string,string]>=[["overview","◫","Overview"],["3d","◇","3D Visualizations"],["tree","♧","Tree Explorer"],["full-tree","⌘","Full Tree"],["data","⇧","Dataset & cleaning"],["guide","ⓘ","Model guide"]];
+  const importance=p.names.map((name,i)=>({name,value:p.regressionForest.importance[i]??0})).sort((a,b)=>b.value-a.value);
+  const actual=p.metrics.actual,predicted=p.metrics.predicted;
+  const testRows=getTestFlowers(p.rows);
+  const min=Math.min(...actual,...predicted),max=Math.max(...actual,...predicted),span=max-min||1;
+  const points=actual.map((value,i)=>({x:48+(value-min)/span*400,y:270-(predicted[i]!-min)/span*240,error:value-predicted[i]!}));
+  const errors=points.map(point=>point.error),errorMax=Math.max(1e-8,...errors.map(Math.abs));
+  const bins=Array.from({length:12},(_,i)=>errors.filter(e=>Math.floor(Math.max(0,Math.min(11.99,(e+errorMax)/(2*errorMax)*12)))===i).length);
+  return <div className={`rf-app ${p.dark?"is-dark":"is-light"}`}>
+    <header className="rf-header"><a className="rf-brand" href="#overview" onClick={e=>{e.preventDefault();p.setPage("overview")}}><span className="rf-brand-icon">🌲</span><span><b>ForestLab</b><small>RANDOM FOREST EXPLORER</small></span></a><div className="rf-heading"><h1>Random Forest <em>Regression</em></h1><p>Predict a numeric outcome from the selected CSV and inspect errors, feature influence, and tree structure.</p></div><div className="rf-header-actions"><label className="rf-select-label">DATASET<select value={p.dataset.id} onChange={e=>p.onSelectDataset(e.target.value)}>{p.datasets.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><button className="rf-theme-toggle" onClick={()=>p.setDark(v=>{localStorage.setItem("rf-theme",v?"light":"dark");return !v})}>{p.dark?"☀ Light":"☾ Dark"}</button></div></header>
+    <nav className="rf-nav" aria-label="Main sections">{nav.map(([id,icon,label])=><button key={id} className={p.page===id?"active":""} onClick={()=>{if(id==="full-tree")p.setSelectedTree(mostComplexTreeIndex(p.regressionForest.trees));p.setPage(id)}}><span>{icon}</span>{label}</button>)}</nav>{p.page==="tree"&&<div className="model-update-status" role="status"><span>{p.modelUpdating?"Parameters changed — visualization shows the last applied forest":"Adjust all desired parameters, then apply them together."}</span><button type="button" disabled={!p.modelUpdating} onClick={p.applyChanges}>{p.modelUpdating?"Apply changes":"Applied ✓"}</button></div>}
+    {p.page==="guide"&&<main className="rf-main guide-more"><div className="section-intro"><div><span className="section-kicker">DETAILED REGRESSION GUIDE</span><h2>How a regression forest estimates values</h2><p>Regression predicts a continuous number rather than selecting a class.</p></div></div><section className="guide-grid"><GuideCard n="05" title="What each regression tree predicts" text="A regression tree routes a row through feature-threshold splits until it reaches a leaf. The leaf stores a numeric estimate learned from training rows in that region. The full tree view labels leaves with those predicted values; it is not a category or probability."/><GuideCard n="06" title="How the forest combines trees" text="Each randomized tree produces its own numeric estimate. The Random Forest regression prediction aggregates those estimates (typically their mean), reducing dependence on any one tree. The estimates can still be biased if the features do not explain the target or if important predictors are missing."/><GuideCard n="07" title="Read predicted-versus-actual" text="Each held-out point compares the true target with the model prediction. Points near the diagonal are closer; systematic distance above or below it indicates over- or under-prediction. Compare the plot over the full value range, not only its densest cluster."/><GuideCard n="08" title="Interpret MAE, RMSE, and R²" text="MAE is the average absolute error in the target’s units and is easy to explain. RMSE uses squared errors before averaging, so large misses count more. R² compares the model with predicting the test-set mean: 1 is perfect, 0 is mean-baseline-like, and below 0 is worse than that baseline. Scores are meaningful only with a held-out split."/><GuideCard n="09" title="Residuals, leakage, and extrapolation" text="Residual equals actual minus predicted. A centered, pattern-free residual distribution is preferable; skew or structure suggests missed patterns. Do not use future or target-derived fields as predictors. Tree forests generally do not extrapolate trends beyond the feature ranges they learned, so be cautious with new rows far outside the training data."/><GuideCard n="10" title="Tune and compare responsibly" text="Set tree count, depth, minimum split size, feature count, gain threshold, and seed, then press Apply changes to refit once. Compare RMSE/MAE against the target scale and R² against the baseline. Deeper trees may reduce training error while worsening held-out error; prefer the simpler setting when performance is similar."/></section></main>}
+    {p.page==="full-tree"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">COMPLETE MODEL STRUCTURE</span><h2>Full regression tree</h2><p>Inspect every split and predicted numeric leaf for the selected estimator.</p></div><label className="inline-select">Forest tree<select value={Math.min(p.selectedTree,p.regressionForest.trees.length-1)} onChange={e=>p.setSelectedTree(Number(e.target.value))}>{p.regressionForest.trees.map((_,i)=><option key={i} value={i}>Tree {i+1}</option>)}</select></label></div><section className="rf-card full-tree-card"><FullTreeView root={p.regressionForest.trees[Math.min(p.selectedTree,p.regressionForest.trees.length-1)]!} names={p.names} labels={[p.dataset.targetName]} regression/></section></main>}
+    {p.page==="overview"&&<main className="rf-main"><div className="rf-kpis"><div><span>Target</span><strong className="rf-kpi-text">{p.dataset.targetName}</strong><i>numeric regression</i></div><div><span>Test RMSE</span><strong>{fmt(p.metrics.rmse,2)}</strong><i>lower is better · target units</i></div><div><span>Test MAE</span><strong>{fmt(p.metrics.mae,2)}</strong><i>average absolute error</i></div><div><span>Test R²</span><strong>{fmt(p.metrics.r2,3)}</strong><i>{p.metrics.sampleCount} held-out rows</i></div><button className="rf-kpi-config" onClick={()=>p.setPage("tree")}>⚙ Tune forest <b>→</b></button></div><section className="rf-dashboard-grid regression-dashboard">
+      <SvgCard title={`Observed vs predicted · ${p.dataset.targetName}`} subtitle="Each dot is a held-out row; closer to the diagonal means a better prediction" className="span-4"><RegressionFitPlot points={points}/></SvgCard>
+      <SvgCard title="Residual distribution" subtitle="Residual = actual − predicted; centered near zero is desirable" className="span-4"><svg viewBox="0 0 500 320" className="rf-plot"><path d="M50 25V275H470" className="chart-axes"/><line x1="50" y1="150" x2="470" y2="150" stroke="#8997aa" strokeDasharray="5 4"/>{bins.map((n,i)=><rect key={i} x={58+i*34} y={150-Math.min(120,n/Math.max(1,...bins)*115)} width="27" height={Math.min(120,n/Math.max(1,...bins)*115)} rx="3" fill="#6658ee" opacity=".8"/>)}<text x="250" y="310" textAnchor="middle" className="plot-axis-label">Residual range (negative ← 0 → positive)</text></svg></SvgCard>
+      <SvgCard title="Feature importance" subtitle="Average impurity reduction in the fitted regression forest" className="span-4"><div className="horizontal-bars">{importance.slice(0,10).map((item,i)=><div key={item.name}><span>{item.name}</span><i><b style={{width:`${Math.max(2,item.value*100)}%`,background:color(i)}}/></i><strong>{fmt(item.value,2)}</strong></div>)}</div></SvgCard>
+      <SvgCard title="Prediction sample" subtitle="Held-out actual value compared with the forest prediction" className="span-12"><div className="regression-table-wrap"><table className="data-preview"><thead><tr><th>Row</th><th>Actual · {p.dataset.targetName}</th><th>Predicted</th><th>Residual</th><th>Absolute error</th></tr></thead><tbody>{testRows.slice(0,12).map((row,i)=>{const a=actual[i]??0,b=predicted[i]??0;return <tr key={row.id}><td>{row.id+1}</td><td>{fmt(a,3)}</td><td>{fmt(b,3)}</td><td>{fmt(a-b,3)}</td><td>{fmt(Math.abs(a-b),3)}</td></tr>})}</tbody></table></div></SvgCard>
+    </section></main>}
+    {p.page==="3d"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">REGRESSION FEATURE SPACE</span><h2>3D Regression Visualizations</h2><p>Active dataset: <b>{p.dataset.name}</b> · target: <b>{p.dataset.targetName}</b> · {p.rows.length} rows. Drag to orbit and scroll or use the zoom controls.</p></div><div className="studio-controls">{[0,1,2].map(i=><label key={i}>{["X","Y","Z"][i]} axis<select value={axes[i]>=p.names.length&&i===2?p.names.length:axes[i]%Math.max(1,p.names.length)} onChange={e=>setAxes(old=>{const next=[...old] as [number,number,number];next[i]=Number(e.target.value);return next})}>{p.names.map((name,j)=><option key={name} value={j}>{name}</option>)}{i===2&&p.names.length<3&&<option value={p.names.length}>Sample index</option>}</select></label>)}</div></div><section className="rf-3d-grid"><SvgCard title="Regression prediction surface" subtitle={`Model-predicted ${p.dataset.targetName} over two features`}><ThreeVisualization rows={p.rows} names={p.names} labels={[]} forest={p.forest} regressionForest={p.regressionForest} mode="regression-surface" axes={axes} dark={p.dark}/></SvgCard><SvgCard title="3D data scatter" subtitle={`Actual ${p.dataset.targetName} shown by continuous color gradient`}><ThreeVisualization rows={p.rows} names={p.names} labels={[]} forest={p.forest} regressionForest={p.regressionForest} mode="regression-scatter" axes={axes} dark={p.dark}/></SvgCard><SvgCard title="3D feature importance" subtitle="Forest impurity importance · bar height is relative importance"><ThreeVisualization rows={p.rows} names={p.names} labels={[]} forest={p.forest} regressionForest={p.regressionForest} mode="importance" dark={p.dark}/></SvgCard></section></main>}
+    {p.page==="tree"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">MODEL CONTROLS</span><h2>Regression forest controls</h2><p>Every adjustment retrains the regression forest and refreshes predictions and metrics.</p></div></div><div className="param-layout"><section className="rf-card param-card"><h3>Forest hyperparameters</h3><Slider label="Number of trees" value={p.treeCount} min={5} max={150} step={5} onChange={p.setTreeCount} hint="More trees stabilize predictions but take longer."/><Slider label="Maximum tree depth" value={p.maxDepth??20} min={1} max={20} step={1} onChange={p.setMaxDepth} hint="Deeper trees learn finer patterns and may overfit."/><button className="rf-link" onClick={()=>p.setMaxDepth(null)}>Set unlimited depth</button><Slider label="Minimum samples to split" value={p.minSamples} min={2} max={50} step={1} onChange={p.setMinSamples} hint="Higher values make trees less complex."/><Slider label="Features considered per tree" value={Math.min(p.maxFeatures,p.names.length)} min={1} max={Math.max(1,p.names.length)} step={1} onChange={p.setMaxFeatures} hint="Random feature subset used at each split."/><Slider label="Minimum split gain" value={p.gainThreshold} min={0} max={.1} step={.005} onChange={p.setGainThreshold} hint="Suppresses splits with very small impurity reduction."/></section><SvgCard title={`Regression tree ${p.selectedTree+1}`} subtitle="One actual fitted regression tree · drag/zoom to inspect its structure"><label className="inline-select">Tree<select value={p.selectedTree} onChange={e=>p.setSelectedTree(Number(e.target.value))}>{p.regressionForest.trees.map((_,i)=><option key={i} value={i}>Tree {i+1}</option>)}</select></label><ThreeVisualization rows={p.rows} names={p.names} labels={[]} forest={p.forest} regressionForest={p.regressionForest} mode="tree" treeIndex={p.selectedTree} dark={p.dark}/></SvgCard></div><div className="param-summary regression-summary"><b>Fitted regression forest</b><strong>{p.regressionForest.trees.length} trees</strong><span>Actual depth {Math.max(...p.regressionForest.trees.map(treeDepth))} · {getTrainingFlowers(p.rows).length} training rows · target {p.dataset.targetName}</span></div></main>}
+    {p.page==="data"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">DATA WORKSPACE</span><h2>Upload or change the regression dataset</h2><p>Select Regression and a numeric target column. Any remaining missing feature values can be imputed with mean, median or mode.</p></div></div><div className="upload-layout"><div className="rf-card upload-card"><CsvUpload onDatasetReady={p.onDatasetReady}/></div><aside className="rf-card dataset-card"><h3>Active regression target</h3><b>{p.dataset.targetName}</b><div className="dataset-stats"><span>Rows <b>{p.rows.length}</b></span><span>Features <b>{p.names.length}</b></span><span>Test RMSE <b>{fmt(p.metrics.rmse,2)}</b></span><span>Test R² <b>{fmt(p.metrics.r2,3)}</b></span></div></aside></div></main>}
+    {p.page==="guide"&&<main className="rf-main"><div className="section-intro"><div><span className="section-kicker">REGRESSION GUIDE</span><h2>How to read Random Forest regression</h2><p>A regression forest predicts a continuous numeric value by averaging predictions from many randomized decision trees.</p></div></div><section className="guide-grid"><GuideCard n="01" title="Choose a numeric target" text="Choose the continuous quantity you want to estimate. For this churn dataset, MonthlyCharges, TenureMonths, Age, WeeklyUsageHours, and SupportTickets are numeric candidates. Churn itself is categorical and is suited to classification."/><GuideCard n="02" title="RMSE and MAE" text="MAE is average absolute prediction error in target units. RMSE penalizes large misses more strongly. Lower values are better, but compare them against the target’s scale."/><GuideCard n="03" title="R²" text="R² compares model error with predicting the test-set mean. A value near 1 indicates a strong fit, 0 is roughly mean-baseline performance, and a negative score is worse than that baseline."/><GuideCard n="04" title="Avoid leakage" text="Keep identifiers and fields recorded after the outcome out of the predictors. CustomerID is usually an identifier rather than a useful generalizable signal. Use held-out metrics, not training fit alone."/></section></main>}
+    <footer className="rf-footer"><span>ForestLab · Random Forest regression</span><span>{p.dataset.name} · target {p.dataset.targetName} · {p.rows.length} rows</span></footer>
+  </div>;
+}
+function RegressionFitPlot({points}:{points:Array<{x:number;y:number}>}){return <svg viewBox="0 0 500 320" className="rf-plot" role="img" aria-label="Observed versus predicted values"><rect x="48" y="25" width="400" height="245" className="plot-bg"/><path d="M48 270L448 25" stroke="#8997aa" strokeDasharray="6 4"/><path d="M48 25V270H448" className="chart-axes"/>{points.map((point,i)=><circle key={i} cx={point.x} cy={point.y} r="3.4" fill="#287de0" opacity=".72"/>)}<text x="248" y="305" textAnchor="middle" className="plot-axis-label">Observed target</text><text x="15" y="150" transform="rotate(-90 15 150)" className="plot-axis-label">Predicted target</text></svg>}
+function Legend({labels}:{labels:string[]}){return <div className="rf-legend">{labels.map((l,i)=><span key={l}><i style={{background:color(i)}}/>{l}</span>)}</div>}
+function LineChart({values,color:stroke,yLabel}:{values:Array<{x:number;y:number}>;color:string;yLabel:string}){const sampled=values.filter((_,i)=>i%Math.max(1,Math.floor(values.length/55))===0);const points=sampled.map((v,i)=>`${50+i*410/Math.max(1,sampled.length-1)},${274-v.y*230}`).join(" ");return <svg viewBox="0 0 500 330" className="rf-plot" role="img" aria-label={yLabel}><path d="M50 25V275H470" className="chart-axes"/><path d={points?`M${points}`:""} fill="none" stroke={stroke} strokeWidth="3" strokeLinejoin="round"/>{sampled.map((v,i)=><circle key={i} cx={50+i*410/Math.max(1,sampled.length-1)} cy={274-v.y*230} r="2.7" fill={stroke}/>)}<text x="250" y="316" textAnchor="middle" className="plot-axis-label">Number of trees →</text><text x="16" y="160" transform="rotate(-90 16 160)" className="plot-axis-label">{yLabel}</text></svg>}
+function RocChart({curves}:{curves:Array<{label:string;color:string;pts:Array<{x:number;y:number}>}>}){return <><svg viewBox="0 0 500 300" className="rf-plot" role="img" aria-label="One versus rest ROC curves"><path d="M52 24V255H470" className="chart-axes"/><line x1="52" y1="255" x2="470" y2="24" stroke="#98a5ba" strokeDasharray="6 5"/>{curves.map(c=><polyline key={c.label} points={c.pts.map(p=>`${52+p.x*418},${255-p.y*231}`).join(" ")} fill="none" stroke={c.color} strokeWidth="2.5"/>)}<text x="260" y="290" textAnchor="middle" className="plot-axis-label">False positive rate</text><text x="15" y="145" transform="rotate(-90 15 145)" className="plot-axis-label">True positive rate</text></svg><div className="roc-key">{curves.map(c=>{const auc=c.pts.slice(1).reduce((sum,p,i)=>sum+((p.x+(c.pts[i]?.x??0))/2)*(p.y-(c.pts[i]?.y??0)),0);return <span key={c.label}><i style={{background:c.color}}/>{c.label} · AUC {fmt(Math.abs(auc),2)}</span>;})}</div></>}
+function Slider({label,value,min,max,step,onChange,hint}:{label:string;value:number;min:number;max:number;step:number;onChange:(n:number)=>void;hint:string}){return <label className="rf-slider"><span><b>{label}</b><strong>{value}</strong></span><input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/><small>{hint}</small></label>}
+function LearningCurve({forest,rows,labels,count}:{forest:TrainedForest;rows:Flower[];labels:string[];count:number}){const test=getTestFlowers(rows);const data=Array.from({length:Math.min(count,40)},(_,i)=>{const n=i+1;const correct=test.filter(r=>majority(forest.predictEach(r).slice(0,n),labels)===r.label).length;return {x:n,y:test.length?correct/test.length:0};});return <LineChart values={data} color="#287de0" yLabel="Held-out accuracy"/>}
+function GuideCard({n,title,text}:{n:string;title:string;text:string}){return <article className="rf-card guide-card"><span>{n}</span><div><h3>{title}</h3><p>{text}</p></div></article>}

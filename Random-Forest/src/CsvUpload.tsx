@@ -88,6 +88,7 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
     useState<MissingStrategy>("mean");
   const [removeDuplicates, setRemoveDuplicates] = useState(true);
   const [targetColumn, setTargetColumn] = useState("");
+  const [problemType, setProblemType] = useState<"classification"|"regression">("classification");
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [cleaned, setCleaned] = useState<CleanedDataset | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -100,12 +101,14 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
       const result = parseCsvRaw(text);
       setParseResult(result);
       setCleaned(null);
-      const suggestedTarget =
-        result.targetCandidates.find((column) =>
+      const classificationTarget =
+        result.classificationTargets.find((column) =>
           /(^|[_\s])(class|label|target|outcome|result|churn|species|category)([_\s]|$)/i.test(
             column,
           ),
-        ) ?? result.targetCandidates[0] ?? "";
+        ) ?? result.classificationTargets[0] ?? "";
+      const suggestedTarget=classificationTarget||result.regressionTargets[0]||"";
+      setProblemType(classificationTarget?"classification":"regression");
       setTargetColumn(suggestedTarget);
       setSelectedFeatures(
         result.featureCandidates.filter((column) => column !== suggestedTarget),
@@ -186,6 +189,7 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
         removeDuplicates,
         targetColumn,
         selectedFeatures,
+        problemType,
       );
       if (result.rows.length < 8) {
         setErrorMsg(
@@ -425,11 +429,9 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
               <div className="csv-clean-section">
                 <div className="csv-clean-header-row">
                   <div>
-                    <p className="csv-clean-title">
-                      DATA IMPUTATION &amp; DEDUPLICATION
-                    </p>
+                    <p className="csv-clean-title">DATA IMPUTATION &amp; DEDUPLICATION</p>
                     <p className="csv-clean-description">
-                      Select a classification target and input columns, then choose how missing feature values are handled.
+                      Choose a model type and any suitable target column, select input features, and decide how missing feature values are handled.
                     </p>
                   </div>
                   {!hasIssues && (
@@ -438,8 +440,14 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
                 </div>
 
                 <div className="csv-column-options">
+                  <div className="csv-model-choice" role="group" aria-label="Model type">
+                    <span>MODEL TYPE</span>
+                    <button type="button" className={problemType==="classification"?"is-selected":""} onClick={()=>{setProblemType("classification");const target=parseResult.classificationTargets[0]??"";setTargetColumn(target);setSelectedFeatures(parseResult.featureCandidates.filter(column=>column!==target));}}>Classification</button>
+                    <button type="button" className={problemType==="regression"?"is-selected":""} disabled={parseResult.regressionTargets.length===0} onClick={()=>{setProblemType("regression");const target=parseResult.regressionTargets[0]??"";setTargetColumn(target);setSelectedFeatures(parseResult.featureCandidates.filter(column=>column!==target));}}>Regression</button>
+                    <small>{problemType==="classification"?"Predict a category or label.":"Predict a numeric value (e.g. charge, age, or usage)."}</small>
+                  </div>
                   <label className="dashboard-select-label" htmlFor="csv-target">
-                    TARGET / CLASS COLUMN
+                    {problemType==="classification"?"TARGET / CLASS COLUMN":"NUMERIC TARGET COLUMN"}
                     <select
                       id="csv-target"
                       value={targetColumn}
@@ -451,7 +459,7 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
                         );
                       }}
                     >
-                      {(parseResult?.targetCandidates ?? []).map((column) => (
+                      {(problemType==="classification"?(parseResult?.classificationTargets??[]):(parseResult?.regressionTargets??[])).map((column) => (
                         <option key={column} value={column}>
                           {column} ·{" "}
                           {new Set(
@@ -459,7 +467,7 @@ export function CsvUpload({ onDatasetReady }: CsvUploadProps) {
                               .map((row) => row[column]?.trim())
                               .filter(Boolean),
                           ).size}{" "}
-                          classes
+                          {problemType==="classification"?"classes":"numeric target"}
                         </option>
                       ))}
                     </select>

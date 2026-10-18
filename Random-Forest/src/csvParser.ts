@@ -18,6 +18,8 @@ export type ParsedCsvResult = {
   columns: string[];
   columnKinds: Record<string, CsvColumnKind>;
   targetCandidates: string[];
+  classificationTargets: string[];
+  regressionTargets: string[];
   singleClassColumns: string[];
   featureCandidates: string[];
   missingValueCount: number;
@@ -30,6 +32,7 @@ export type CleanedDataset = {
   featureNames: string[];
   classLabels: string[];
   targetName: string;
+  problemType: "classification" | "regression";
   droppedCount: number;
   imputedCount: number;
   sourceRowCount: number;
@@ -98,8 +101,10 @@ export function parseCsvRaw(csvText: string): ParsedCsvResult {
         .map((row) => row[column]?.trim())
         .filter((value) => !isMissingCsvValue(value)),
     );
-    return values.size >= 2 && values.size <= MAX_TARGET_CLASSES;
+    return values.size >= 2;
   });
+  const classificationTargets = targetCandidates.filter(column => new Set(rawRows.map(row=>row[column]?.trim()).filter(value=>!isMissingCsvValue(value))).size <= MAX_TARGET_CLASSES);
+  const regressionTargets = targetCandidates.filter(column => columnKinds[column] === "numeric");
   const singleClassColumns = columns.filter((column) => {
     const values = new Set(
       rawRows
@@ -125,6 +130,8 @@ export function parseCsvRaw(csvText: string): ParsedCsvResult {
     };
     return score(right) - score(left);
   });
+  classificationTargets.sort((a,b)=>targetCandidates.indexOf(a)-targetCandidates.indexOf(b));
+  regressionTargets.sort((a,b)=>targetCandidates.indexOf(a)-targetCandidates.indexOf(b));
   const featureCandidates = columns.filter((column) => {
     const values = new Set(
       rawRows
@@ -212,6 +219,8 @@ export function parseCsvRaw(csvText: string): ParsedCsvResult {
     columns,
     columnKinds,
     targetCandidates,
+    classificationTargets,
+    regressionTargets,
     singleClassColumns,
     featureCandidates,
     missingValueCount,
@@ -227,9 +236,11 @@ export function cleanCsv(
   removeDuplicates: boolean,
   targetName: string,
   selectedFeatures: string[],
+  problemType: "classification" | "regression" = "classification",
 ): CleanedDataset {
-  if (!parseResult.targetCandidates.includes(targetName))
-    throw new Error("Select a valid classification target column.");
+  const validTargets=problemType==="regression"?parseResult.regressionTargets:parseResult.classificationTargets;
+  if (!validTargets.includes(targetName))
+    throw new Error(`Select a valid ${problemType} target column.`);
   if (selectedFeatures.length === 0)
     throw new Error("Select at least one feature column.");
   if (selectedFeatures.includes(targetName))
@@ -262,19 +273,13 @@ export function cleanCsv(
     droppedCount++;
     return false;
   });
+  if(problemType==="regression"&&targetRows.some(row=>!Number.isFinite(Number(row[targetName])))) throw new Error(`Regression target "${targetName}" must contain numeric values.`);
 
   const rowsByClass = new Map<string, RawCsvRow[]>();
-  for (const row of targetRows) {
-    const label = row[targetName].trim();
-    const group = rowsByClass.get(label) ?? [];
-    group.push(row);
-    rowsByClass.set(label, group);
+  if(problemType==="classification") for (const row of targetRows) {
+    const label = row[targetName].trim(); const group = rowsByClass.get(label) ?? []; group.push(row); rowsByClass.set(label, group);
   }
-  const trainingRows = [...rowsByClass.values()].flatMap((group) =>
-    group.length < 2
-      ? group
-      : group.filter((_, index) => index % 4 !== 0),
-  );
+  const trainingRows = problemType==="regression" ? targetRows.filter((_,index)=>index%4!==0) : [...rowsByClass.values()].flatMap((group) => group.length < 2 ? group : group.filter((_, index) => index % 4 !== 0));
 
   const valuesByColumn = new Map<string, string[]>();
   for (const column of selectedFeatures) {
@@ -379,8 +384,8 @@ export function cleanCsv(
     cleanedRows.push({ id, features, label: row[targetName].trim() });
   }
 
-  const classLabels = [...new Set(cleanedRows.map((row) => row.label))].sort();
-  if (classLabels.length < 2)
+  const classLabels = problemType==="classification" ? [...new Set(cleanedRows.map((row) => row.label))].sort() : [];
+  if (problemType==="classification"&&classLabels.length < 2)
     throw new Error("At least two target classes must remain after cleaning.");
   const trainingLabels = new Set(
     getTrainingFlowers(cleanedRows).map((row) => row.label),
@@ -397,6 +402,7 @@ export function cleanCsv(
     featureNames,
     classLabels,
     targetName,
+    problemType,
     droppedCount,
     imputedCount,
     sourceRowCount: parseResult.rawRows.length,
