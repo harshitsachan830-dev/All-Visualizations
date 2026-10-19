@@ -1,4 +1,5 @@
-// Smart API service for ModelMind XGBoost Backend with port fallback
+// Smart API service for ModelMind XGBoost Backend with port fallback & production support
+const ENV_API_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
 let ACTIVE_PORT = localStorage.getItem("modelmind_port") || "8000";
 
 export function getActivePort() {
@@ -11,28 +12,68 @@ export function setActivePort(port) {
 }
 
 export function getApiBase() {
-  return `http://127.0.0.1:${ACTIVE_PORT}`;
+  const custom = (localStorage.getItem("modelmind_api_base") || "").trim().replace(/\/$/, "");
+  if (custom) return custom;
+  if (ENV_API_URL) return ENV_API_URL;
+
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  if (isLocal) {
+    return `http://127.0.0.1:${ACTIVE_PORT}`;
+  }
+
+  // Production Render default (matches Render Web Service XGBoostApi)
+  return "https://xgboostapi.onrender.com";
+}
+
+export function setApiBase(url) {
+  if (url && url.trim()) {
+    localStorage.setItem("modelmind_api_base", url.trim().replace(/\/$/, ""));
+  } else {
+    localStorage.removeItem("modelmind_api_base");
+  }
 }
 
 export async function checkBackendHealth() {
-  const ports = [ACTIVE_PORT, ACTIVE_PORT === "8000" ? "8001" : "8000"];
-  for (const port of ports) {
+  const currentBase = getApiBase();
+
+  // 1. Check primary configured API base
+  try {
+    const res = await fetch(`${currentBase}/health`, {
+      signal: AbortSignal.timeout(2500),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { connected: true, url: currentBase, port: ACTIVE_PORT, ...data };
+    }
+  } catch {
+    // Current base failed
+  }
+
+  // 2. If running locally, check alternate ports
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  if (isLocal) {
+    const altPort = ACTIVE_PORT === "8000" ? "8001" : "8000";
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/health`, {
-        signal: AbortSignal.timeout(1200),
+      const res = await fetch(`http://127.0.0.1:${altPort}/health`, {
+        signal: AbortSignal.timeout(1500),
       });
       if (res.ok) {
         const data = await res.json();
-        if (port !== ACTIVE_PORT) {
-          setActivePort(port);
-        }
-        return { connected: true, port, ...data };
+        setActivePort(altPort);
+        return { connected: true, url: `http://127.0.0.1:${altPort}`, port: altPort, ...data };
       }
     } catch {
-      // Try next port
+      // Both local ports offline
     }
   }
-  return { connected: false, port: ACTIVE_PORT };
+
+  return { connected: false, url: currentBase, port: ACTIVE_PORT };
 }
 
 export async function fetchSampleDatasets() {

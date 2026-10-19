@@ -7,6 +7,8 @@ import {
   trainModelApi,
   getActivePort,
   setActivePort,
+  getApiBase,
+  setApiBase,
 } from "./services/api";
 
 import DatasetExplorer from "./features/DatasetExplorer";
@@ -101,12 +103,29 @@ export default function App() {
     }
   }
 
-  // Switch active port
-  async function togglePort() {
-    const nextPort = backendHealth.port === "8000" ? "8001" : "8000";
-    setActivePort(nextPort);
-    const health = await checkBackendHealth();
-    setBackendHealth(health);
+  // Configure or toggle active backend URL
+  async function handleApiConfigure() {
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+    if (isLocal) {
+      const nextPort = backendHealth.port === "8000" ? "8001" : "8000";
+      setActivePort(nextPort);
+      const health = await checkBackendHealth();
+      setBackendHealth(health);
+    } else {
+      const current = getApiBase();
+      const input = window.prompt(
+        "ModelMind Backend API URL:\n(Enter your Render Web Service URL, e.g. https://xgboostapi.onrender.com)",
+        current
+      );
+      if (input !== null) {
+        setApiBase(input);
+        const health = await checkBackendHealth();
+        setBackendHealth(health);
+      }
+    }
   }
 
   const navItems = [
@@ -193,10 +212,14 @@ export default function App() {
               </div>
             )}
 
-            {/* Backend Health & Port Toggle */}
-            <button className="status-pill-btn" onClick={togglePort} title="Click to switch API port">
+            {/* Backend Health & API Configure */}
+            <button
+              className="status-pill-btn"
+              onClick={handleApiConfigure}
+              title={`API: ${backendHealth.url || "http://127.0.0.1:8000"} — Click to configure/switch`}
+            >
               <i className={backendHealth.connected ? "dot-active" : "dot-inactive"} />
-              API · Port {backendHealth.port} {backendHealth.connected ? "(Connected)" : "(Offline)"}
+              API: {backendHealth.connected ? "Connected" : "Offline"}
             </button>
 
             {/* Light / Dark Mode Toggle Button */}
