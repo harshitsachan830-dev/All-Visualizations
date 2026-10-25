@@ -23,10 +23,46 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
   const isDark = theme === 'dark';
   const palette = getPaletteDef(colorPalette);
 
+  // Build dynamic filter pills from actual DBSCAN output (not hardcoded)
+  const filterOptions = useMemo(() => {
+    const opts: { id: number | 'all'; label: string; color?: string }[] = [
+      { id: 'all', label: 'All Samples' }
+    ];
+    if (dbscanResult) {
+      // Add each real cluster found (exclude noise from main list)
+      dbscanResult.clusterStats
+        .filter(s => s.id !== -1)
+        .forEach(stat => {
+          opts.push({
+            id: stat.id,
+            label: stat.name,
+            color: palette.clusterColors[stat.id] || stat.color
+          });
+        });
+      // Add noise only if there are noise points
+      const noiseCount = dbscanResult.noiseCount ?? 0;
+      if (noiseCount > 0) {
+        opts.push({
+          id: -1,
+          label: `Noise (${noiseCount})`,
+          color: palette.clusterColors[-1] || '#64748b'
+        });
+      }
+    }
+    return opts;
+  }, [dbscanResult, palette]);
+
+  // Ensure activeFilter is valid whenever clusters change
+  const validFilter = useMemo(() => {
+    if (activeFilter === 'all') return 'all';
+    const ids = filterOptions.map(o => o.id);
+    return ids.includes(activeFilter) ? activeFilter : 'all' as const;
+  }, [activeFilter, filterOptions]);
+
   const parcoordsData = useMemo(() => {
     let indices = pcaResult.transformedData.map((_, i) => i);
-    if (activeFilter !== 'all' && dbscanResult) {
-      indices = indices.filter(i => (dbscanResult.labels[i] ?? -1) === activeFilter);
+    if (validFilter !== 'all' && dbscanResult) {
+      indices = indices.filter(i => (dbscanResult.labels[i] ?? -1) === validFilter);
     }
 
     const dimensions = Array.from({ length: numPCs }, (_, k) => {
@@ -44,37 +80,63 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
       };
     });
 
-    // Map cluster IDs to distinct numeric steps: Noise=-1 -> 0, C1=0 -> 1, C2=1 -> 2, C3=2 -> 3
+    // Build dynamic colorscale from actual clusters found
+    const actualClusters = dbscanResult?.clusterStats ?? [];
+    const noiseStat = actualClusters.find(s => s.id === -1);
+    const realClusters = actualClusters.filter(s => s.id !== -1);
+
+    // Order: noise first, then clusters by id
+    const orderedIds: number[] = [];
+    if (noiseStat || (dbscanResult?.noiseCount ?? 0) > 0) orderedIds.push(-1);
+    realClusters.forEach(s => orderedIds.push(s.id));
+    if (orderedIds.length === 0) orderedIds.push(0); // fallback
+
+    const totalSteps = orderedIds.length;
+    const clusterIndexMap: Record<number, number> = {};
+    orderedIds.forEach((cid, idx) => { clusterIndexMap[cid] = idx; });
+
+    // Assign numeric step value (0..1) to each point
     const clusterSteps = indices.map(i => {
       const c = dbscanResult?.labels[i] ?? -1;
-      return c === -1 ? 0 : c + 1;
+      const idx = clusterIndexMap[c] ?? 0;
+      return (idx + 0.5) / totalSteps;
     });
 
-    const c0 = palette.clusterColors[-1] || '#64748b';
-    const c1 = palette.clusterColors[0] || '#00f5d4';
-    const c2 = palette.clusterColors[1] || '#ff007f';
-    const c3 = palette.clusterColors[2] || '#ffb703';
+    // Build colorscale
+    const colorscale: [number, string][] = [];
+    orderedIds.forEach((cid, idx) => {
+      const color = cid === -1
+        ? (palette.clusterColors[-1] || '#64748b')
+        : (palette.clusterColors[cid] || actualClusters.find(s => s.id === cid)?.color || '#00f5d4');
+      const lo = idx / totalSteps;
+      const hi = (idx + 1) / totalSteps;
+      colorscale.push([lo, color]);
+      colorscale.push([Math.min(hi, 1.0), color]);
+    });
+    if (colorscale.length === 0) {
+      colorscale.push([0, '#00f5d4'], [1, '#00f5d4']);
+    }
+    // Ensure exact [0..1] endpoints
+    colorscale[0][0] = 0;
+    colorscale[colorscale.length - 1][0] = 1.0;
+
+    // Build colorbar ticks
+    const tickvals = orderedIds.map((_, idx) => (idx + 0.5) / totalSteps);
+    const ticktext = orderedIds.map(cid =>
+      cid === -1 ? 'Noise' : (actualClusters.find(s => s.id === cid)?.name || `Cluster ${cid + 1}`)
+    );
 
     return [
       {
         type: 'parcoords',
         line: {
           color: clusterSteps,
-          colorscale: [
-            [0.0, c0],
-            [0.24, c0],
-            [0.25, c1],
-            [0.49, c1],
-            [0.50, c2],
-            [0.74, c2],
-            [0.75, c3],
-            [1.0, c3]
-          ],
+          colorscale,
           showscale: true,
           colorbar: {
             title: { text: 'Cluster', font: { size: 11, color: isDark ? '#e2e8f0' : '#334155' } },
-            tickvals: [0.125, 0.375, 0.625, 0.875],
-            ticktext: ['Noise', 'Cluster 1', 'Cluster 2', 'Cluster 3'],
+            tickvals,
+            ticktext,
             tickfont: { color: isDark ? '#94a3b8' : '#64748b', size: 10 },
             len: 0.85
           }
@@ -82,7 +144,7 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
         dimensions
       }
     ];
-  }, [pcaResult, dbscanResult, numPCs, activeFilter, isDark, palette]);
+  }, [pcaResult, dbscanResult, numPCs, validFilter, isDark, palette]);
 
   return (
     <div
@@ -102,7 +164,7 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#f8fafc' : '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-            Parallel Coordinates Stream Projection (PC1 – PC{numPCs})
+            Parallel Coordinates Stream Projection (PC1 &ndash; PC{numPCs})
             <Info size={14} color={isDark ? '#94a3b8' : '#64748b'} style={{ cursor: 'pointer' }} />
           </h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: isDark ? '#94a3b8' : '#64748b' }}>
@@ -110,19 +172,13 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
           </p>
         </div>
 
-        {/* Cluster Filter Buttons */}
+        {/* Dynamic Cluster Filter Buttons — only shows clusters that actually exist */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Filter size={13} /> Filter:
           </span>
-          {[
-            { id: 'all', label: 'All Samples' },
-            { id: 0, label: 'Cluster 1', color: palette.clusterColors[0] },
-            { id: 1, label: 'Cluster 2', color: palette.clusterColors[1] },
-            { id: 2, label: 'Cluster 3', color: palette.clusterColors[2] },
-            { id: -1, label: 'Noise Only', color: palette.clusterColors[-1] }
-          ].map(f => {
-            const isActive = activeFilter === f.id;
+          {filterOptions.map(f => {
+            const isActive = validFilter === f.id;
             return (
               <button
                 key={String(f.id)}
@@ -173,7 +229,11 @@ export const ParallelCoordinatesPlot: React.FC<ParallelCoordinatesPlotProps> = (
         gap: 8
       }}>
         <HelpCircle size={15} color={isDark ? '#38bdf8' : '#94a3b8'} />
-        <span>Report Guide (Section 4): Parallel coordinates allow visual inspection of high-dimensional subspace separability without collapsing into a single plane.</span>
+        <span>
+          {dbscanResult
+            ? `DBSCAN found ${dbscanResult.nClusters} cluster${dbscanResult.nClusters !== 1 ? 's' : ''} + ${dbscanResult.noiseCount} noise points. Adjust \u03b5 and min_samples in Clustering settings to change cluster count.`
+            : 'Run analysis to generate cluster assignments. Parallel coordinates allow visual inspection of high-dimensional subspace separability.'}
+        </span>
       </div>
     </div>
   );
