@@ -8,29 +8,40 @@ const DARK_CLASS_COLORS = [0x39d98a, 0x55a7ff, 0xff6875, 0xb49aff, 0xffc15a];
 function textSprite(text, color = "#172554", dark = false) {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  canvas.width = 512;
-  canvas.height = 128;
-  context.font = "600 30px Inter, Arial, sans-serif";
+  canvas.width = 640;
+  canvas.height = 160;
+  context.font = "700 64px Inter, Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillStyle = dark ? "rgba(25,35,55,0.97)" : "rgba(255,255,255,0.94)";
-  context.roundRect(5, 8, 502, 112, 22);
+  context.roundRect(5, 8, 630, 144, 22);
   context.fill();
   context.strokeStyle = dark ? "rgba(150,170,205,0.48)" : "rgba(99,102,241,0.35)";
   context.lineWidth = 3;
   context.stroke();
   context.fillStyle = dark ? "#f0f5ff" : color;
-  const labelText = String(text).slice(0, 40);
-  const lines = labelText.length > 22
-    ? [labelText.slice(0, 22), labelText.slice(22)]
-    : [labelText];
-  lines.forEach((line, index) => context.fillText(line, 256, lines.length === 1 ? 64 : 43 + index * 42));
+  const labelText = String(text).slice(0, 48);
+  const lines = [];
+  let line = "";
+  for (const word of labelText.split(/\s+/)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && context.measureText(candidate).width > 590) {
+      lines.push(line);
+      line = word;
+    } else line = candidate;
+  }
+  if (line) lines.push(line);
+  const visibleLines = lines.slice(0, 2);
+  visibleLines.forEach((lineText, index) => {
+    const y = 80 + (index - (visibleLines.length - 1) / 2) * 50;
+    context.fillText(lineText, 320, y, 590);
+  });
 
   const texture = new THREE.CanvasTexture(canvas);
   const sprite = new THREE.Sprite(
     new THREE.SpriteMaterial({ map: texture, transparent: true }),
   );
-  sprite.scale.set(2, 0.84, 1);
+  sprite.scale.set(2.2, 1.05, 1);
   return sprite;
 }
 
@@ -89,6 +100,7 @@ export default function Visualization3D({
 }) {
   const hostRef = useRef(null);
   const resetViewRef = useRef(null);
+  const panViewRef = useRef(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -125,6 +137,8 @@ export default function Visualization3D({
 
     const clickable = [];
     const disposables = [];
+    const treeLabels = [];
+    const leafCount = Math.max(1, nodes.filter((node) => node.is_leaf).length);
     const classColor = (name) => {
       const index = Math.max(0, classNames.indexOf(name));
       const colors = dark ? DARK_CLASS_COLORS : LIGHT_CLASS_COLORS;
@@ -189,6 +203,7 @@ export default function Visualization3D({
         );
         label.position.set(point.x, point.y + 0.85, point.z);
         scene.add(label);
+        treeLabels.push(label);
         disposables.push(label.material.map, label.material);
       }
 
@@ -200,8 +215,8 @@ export default function Visualization3D({
       grid.scale.x = Math.max(1, treeWidth / 14);
       const aspect = host.clientWidth / Math.max(host.clientHeight, 1);
       const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const horizontalFit = (treeWidth / 2 + 1.8) / (halfFov * Math.max(aspect, 0.35));
-      const verticalFit = (treeHeight / 2 + 1.25) / halfFov;
+      const horizontalFit = (treeWidth / 2 + 2.2) / (halfFov * Math.max(aspect, 0.35));
+      const verticalFit = (treeHeight / 2 + 1.8) / halfFov;
       const distance = Math.max(horizontalFit, verticalFit, 14) * 1.08;
       controls.target.set(0, treeHeight / 2, 0);
       camera.position.set(0, treeHeight / 2 + distance * 0.18, distance);
@@ -369,9 +384,43 @@ export default function Visualization3D({
     controls.update();
     controls.saveState();
     resetViewRef.current = () => controls.reset();
+    panViewRef.current = (deltaX, deltaY = 0) => {
+      const viewDirection = new THREE.Vector3();
+      camera.getWorldDirection(viewDirection);
+      const right = new THREE.Vector3().crossVectors(viewDirection, camera.up).normalize();
+      const screenUp = new THREE.Vector3().crossVectors(right, viewDirection).normalize();
+      const distance = camera.position.distanceTo(controls.target);
+      const unitsPerPixel = distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2 / Math.max(host.clientHeight, 1);
+      const offset = right.multiplyScalar(deltaX * unitsPerPixel).addScaledVector(screenUp, -deltaY * unitsPerPixel);
+      camera.position.add(offset);
+      controls.target.add(offset);
+      controls.update();
+    };
+
+    function handleTrackpadPan(event) {
+      // Pixel-based wheel events come from trackpad swipes. Let pinch gestures
+      // (ctrl+wheel on macOS) and conventional wheel events keep zooming.
+      if (event.deltaMode !== 0 || event.ctrlKey) return;
+      if (!event.deltaX && !event.deltaY) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      panViewRef.current?.(event.deltaX, event.deltaY);
+    }
+    renderer.domElement.addEventListener("wheel", handleTrackpadPan, { passive: false, capture: true });
 
     function render() {
       controls.update();
+      if (treeLabels.length) {
+        const tanHalfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const maxLabelWidth = Math.max(52, Math.min(110, (host.clientWidth / leafCount) * 0.84));
+        for (const label of treeLabels) {
+          const distance = camera.position.distanceTo(label.position);
+          const pixelsPerWorldUnit = host.clientHeight / Math.max(2 * distance * tanHalfFov, 1);
+          const currentWidth = 2.2 * pixelsPerWorldUnit;
+          const scaleFactor = Math.max(1, maxLabelWidth / Math.max(currentWidth, 1));
+          label.scale.set(2.2 * scaleFactor, 1.05 * scaleFactor, 1);
+        }
+      }
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     }
@@ -382,6 +431,8 @@ export default function Visualization3D({
       observer.disconnect();
       controls.dispose();
       resetViewRef.current = null;
+      panViewRef.current = null;
+      renderer.domElement.removeEventListener("wheel", handleTrackpadPan, true);
       renderer.domElement.removeEventListener("dblclick", handleClick);
       for (const item of disposables) item?.dispose?.();
       renderer.dispose();
@@ -398,7 +449,7 @@ export default function Visualization3D({
         aria-label={mode === "tree" ? "Interactive 3D decision tree. Double-click a node to inspect it." : mode === "surface" ? "Interactive 3D decision regions with colored samples." : "Interactive 3D scatter plot with class-colored sample points."}
       />
       <div className="visualization-toolbar">
-        <span>Drag to rotate <i>·</i> scroll to zoom</span>
+        <span>Drag to rotate <i>·</i> two-finger swipe to pan <i>·</i> pinch to zoom</span>
         <button type="button" onClick={() => resetViewRef.current?.()}>Reset view</button>
       </div>
     </div>

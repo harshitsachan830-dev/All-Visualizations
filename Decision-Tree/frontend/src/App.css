@@ -185,6 +185,24 @@ button:disabled {
   cursor: pointer;
 }
 
+.dataset-upload-button {
+  display: flex;
+  min-height: 27px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #34425c;
+  border-radius: 6px;
+  background: #24324b;
+  color: #dbe5f5;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.dataset-upload-button:hover {
+  background: #2d3d59;
+}
+
 .dataset-picker span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2201,8 +2219,11 @@ button:disabled {
    the diagram and let larger trees pan in both directions at readable zoom. */
 .focused-panel.structure-view-panel {
   display: flex;
-  min-height: calc(100vh - 92px);
+  height: calc(100vh - 100px);
+  height: calc(100dvh - 100px);
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .structure-view-panel > .section-heading { flex: 0 0 auto; }
@@ -2219,8 +2240,8 @@ button:disabled {
 }
 
 .structure-view-panel .tree-diagram-scroll {
-  min-height: 480px;
-  height: calc(100vh - 270px);
+  min-height: 0;
+  height: auto;
   max-height: none;
   flex: 1 1 auto;
   overflow: auto;
@@ -2238,8 +2259,7 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
-  .focused-panel.structure-view-panel { min-height: calc(100vh - 85px); }
-  .structure-view-panel .tree-diagram-scroll { height: 65vh; min-height: 420px; }
+  .focused-panel.structure-view-panel { height: calc(100vh - 95px); height: calc(100dvh - 95px); }
 }
 
 .structure-view-grid {

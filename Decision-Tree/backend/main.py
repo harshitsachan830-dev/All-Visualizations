@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
@@ -73,14 +73,21 @@ def health():
 
 
 @app.get("/sample-dataset")
-def sample_dataset():
-    """Serve the bundled Iris CSV so the visualizer has a ready-to-explore demo."""
+def sample_dataset(name: str = Query("iris")):
+    """Serve a built-in classification or regression dataset for exploration."""
     from fastapi.responses import FileResponse
 
-    dataset_path = Path(__file__).resolve().parents[1] / "iris.csv"
+    dataset_files = {
+        "iris": "iris.csv",
+        "house-prices": "house_prices.csv",
+    }
+    filename = dataset_files.get(name)
+    if not filename:
+        raise HTTPException(status_code=404, detail="Unknown sample dataset.")
+    dataset_path = Path(__file__).resolve().parents[1] / filename
     if not dataset_path.exists():
         raise HTTPException(status_code=404, detail="Bundled sample dataset is unavailable.")
-    return FileResponse(dataset_path, media_type="text/csv", filename="iris.csv")
+    return FileResponse(dataset_path, media_type="text/csv", filename=filename)
 
 
 class PredictionRequest(BaseModel):
@@ -377,7 +384,7 @@ def train_regression_payload(file, target, df, X, y, feature_names, imputation_s
 @app.post("/train")
 async def train_model(
     file: UploadFile = File(...),
-    target: str = "target",
+    target: str = Query("target"),
     max_depth: int = 4,
     criterion: str = "gini",
     splitter: str = "best",
@@ -1215,8 +1222,8 @@ def p3_metrics(y_true, predictions):
 @app.post("/p3/analyze")
 async def p3_analyze(
     file: UploadFile = File(...),
-    target: str = "target",
-    model_name: str = "logistic",
+    target: str = Query("target"),
+    model_name: str = Query("logistic"),
 ):
     try:
         contents = await file.read()

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Visualization3D from "./Visualization3D.jsx";
 import { API_BASE_URL } from "./api.js";
 
@@ -84,6 +84,7 @@ function SectionHeading({ eyebrow, title, detail, action }) {
 
 function TreeDiagram({ nodes, maxDepth = Infinity, onSelect, selectedNode }) {
   const viewportRef = useRef(null);
+  const zoomAnchorRef = useRef(null);
   const [viewportWidth, setViewportWidth] = useState(900);
   const [viewportHeight, setViewportHeight] = useState(700);
   const [zoom, setZoom] = useState(0);
@@ -125,17 +126,66 @@ function TreeDiagram({ nodes, maxDepth = Infinity, onSelect, selectedNode }) {
   const displayScale = Math.min(3, Math.max(fitScale, zoom));
   const stageWidth = Math.max(viewportWidth, diagramWidth * displayScale);
   const stageHeight = Math.max(viewportHeight, height * displayScale);
+
+  const zoomTo = (requestedScale, clientX, clientY) => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const nextScale = Math.min(3, Math.max(fitScale, requestedScale));
+    if (Math.abs(nextScale - displayScale) < 0.001) return;
+    const bounds = viewport.getBoundingClientRect();
+    const pointerX = Math.min(viewport.clientWidth, Math.max(0, clientX - bounds.left));
+    const pointerY = Math.min(viewport.clientHeight, Math.max(0, clientY - bounds.top));
+    zoomAnchorRef.current = {
+      scale: displayScale,
+      pointerX,
+      pointerY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+      topOffset: Math.max(0, (stageHeight - height * displayScale) / 2),
+    };
+    setZoom(nextScale);
+  };
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const anchor = zoomAnchorRef.current;
+    if (!viewport || !anchor) return;
+    const nextTopOffset = Math.max(0, (stageHeight - height * displayScale) / 2);
+    const contentX = (anchor.scrollLeft + anchor.pointerX) / anchor.scale;
+    const contentY = (anchor.scrollTop + anchor.pointerY - anchor.topOffset) / anchor.scale;
+    viewport.scrollLeft = contentX * displayScale - anchor.pointerX;
+    viewport.scrollTop = contentY * displayScale + nextTopOffset - anchor.pointerY;
+    zoomAnchorRef.current = null;
+  }, [displayScale, height, stageHeight]);
+
   useEffect(() => {
     const viewport = viewportRef.current;
     if (viewport) viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-  }, [diagramWidth, displayScale]);
+  }, [diagramWidth]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+    const handleTrackpadZoom = (event) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const currentScale = Math.min(3, Math.max(fitScale, zoom));
+      const nextScale = currentScale * Math.exp(-event.deltaY * 0.002);
+      zoomTo(nextScale, event.clientX, event.clientY);
+    };
+    viewport.addEventListener("wheel", handleTrackpadZoom, { passive: false, capture: true });
+    return () => viewport.removeEventListener("wheel", handleTrackpadZoom, true);
+  }, [fitScale, zoom, displayScale, stageHeight, height]);
+
   return (
     <div className="tree-diagram-container">
       <div className="tree-zoom-toolbar" aria-label="Tree diagram zoom controls">
+        <span className="tree-zoom-hint">Pinch to zoom · two-finger swipe to pan</span>
         <span>Zoom <strong>{Math.round(displayScale * 100)}%</strong></span>
-        <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => setZoom((value) => Math.max(fitScale, Math.round((value - 0.25) * 100) / 100))} disabled={displayScale <= fitScale}>−</button>
-        <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => setZoom((value) => Math.min(3, Math.round((value + 0.25) * 100) / 100))} disabled={displayScale >= 3}>+</button>
-        <button type="button" onClick={() => setZoom(fitScale)}>Fit</button>
+        <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoomTo(displayScale - 0.2, viewportRef.current?.getBoundingClientRect().left + viewportWidth / 2, viewportRef.current?.getBoundingClientRect().top + viewportHeight / 2)} disabled={displayScale <= fitScale}>−</button>
+        <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoomTo(displayScale + 0.2, viewportRef.current?.getBoundingClientRect().left + viewportWidth / 2, viewportRef.current?.getBoundingClientRect().top + viewportHeight / 2)} disabled={displayScale >= 3}>+</button>
+        <button type="button" onClick={() => { setZoom(fitScale); if (viewportRef.current) { viewportRef.current.scrollLeft = 0; viewportRef.current.scrollTop = 0; } }}>Fit</button>
       </div>
       <div className="tree-diagram-scroll" ref={viewportRef}>
         <div className="tree-diagram-stage" style={{ width: `${stageWidth}px`, height: `${stageHeight}px` }}>
@@ -418,6 +468,7 @@ function App() {
   const [section, setSection] = useState("overview");
   const [theme, setTheme] = useState(() => window.localStorage.getItem("modelmind-theme") || "light");
   const [file, setFile] = useState(null);
+  const [selectedDataset, setSelectedDataset] = useState("iris");
   const [csvPreview, setCsvPreview] = useState({ headers: [], rows: [] });
   const [imputationStrategy, setImputationStrategy] = useState("mean");
   const [target, setTarget] = useState("target");
@@ -465,6 +516,7 @@ function App() {
     const selected = event.target.files?.[0];
     if (!selected) return;
     setFile(selected);
+    setSelectedDataset("custom");
     setResult(null);
     setPrediction(null);
     setSection("preparation");
@@ -480,7 +532,30 @@ function App() {
     }
   };
 
-  const train = async (datasetFile = file, datasetTarget = target) => {
+  const loadSampleDataset = async (name) => {
+    setSelectedDataset(name);
+    setError("");
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/sample-dataset?name=${encodeURIComponent(name)}`);
+      if (!response.ok) throw new Error("Could not load the selected sample dataset.");
+      const blob = await response.blob();
+      const filename = name === "house-prices" ? "house_prices.csv" : "iris.csv";
+      const sampleFile = new File([blob], filename, { type: "text/csv" });
+      const parsed = parseCsvRecords(await sampleFile.text());
+      const sampleTarget = name === "house-prices" ? "price_lakhs" : "target";
+      setFile(sampleFile);
+      setCsvPreview({ headers: parsed.headers, rows: parsed.rows });
+      setTarget(sampleTarget);
+      setModelType("auto");
+      await train(sampleFile, sampleTarget, "auto");
+    } catch (loadError) {
+      setError(loadError.message);
+      setLoading(false);
+    }
+  };
+
+  const train = async (datasetFile = file, datasetTarget = target, datasetModelType = modelType) => {
     setError("");
     if (!datasetFile) {
       setError("Choose a CSV dataset first.");
@@ -496,7 +571,7 @@ function App() {
       body.append("file", datasetFile);
       const query = new URLSearchParams({
         target: datasetTarget,
-        model_type: modelType,
+        model_type: datasetModelType,
         max_depth: String(maxDepth),
         criterion,
         splitter,
@@ -540,11 +615,12 @@ function App() {
     let cancelled = false;
     async function loadDemo() {
       try {
-        const response = await fetch(`${API_BASE_URL}/sample-dataset`);
+        const response = await fetch(`${API_BASE_URL}/sample-dataset?name=iris`);
         if (!response.ok) return;
         const blob = await response.blob();
         const demoFile = new File([blob], "iris.csv", { type: "text/csv" });
         if (cancelled) return;
+        setSelectedDataset("iris");
         setFile(demoFile);
         const parsed = parseCsvRecords(await demoFile.text());
         setCsvPreview({ headers: parsed.headers, rows: parsed.rows });
@@ -631,11 +707,13 @@ function App() {
 
         <section className="sidebar-settings" aria-label="Dataset and training settings">
           <div className="sidebar-settings-title">Dataset</div>
+          <select className="sidebar-input" aria-label="Choose a built-in dataset" value={selectedDataset === "custom" ? "custom" : selectedDataset} onChange={(event) => { if (event.target.value !== "custom") loadSampleDataset(event.target.value); }}>
+            <option value="iris">Iris · classification</option>
+            <option value="house-prices">House prices · regression</option>
+            {selectedDataset === "custom" && <option value="custom">{file?.name || "Uploaded CSV"}</option>}
+          </select>
           <input id="dataset-upload" className="visually-hidden" type="file" accept=".csv,text/csv" onChange={handleFile} />
-          <label className="dataset-picker" htmlFor="dataset-upload">
-            <span>{file?.name || "Choose CSV dataset"}</span>
-            <span aria-hidden="true">⌄</span>
-          </label>
+          <label className="dataset-upload-button" htmlFor="dataset-upload">Upload your CSV</label>
           <label className="control-label" htmlFor="target-column">Target column</label>
           <input id="target-column" className="sidebar-input" value={target} onChange={(event) => setTarget(event.target.value)} placeholder="e.g. Result" />
           <label className="control-label" htmlFor="model-type">Tree task</label>
