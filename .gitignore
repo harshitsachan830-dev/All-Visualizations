@@ -1,4 +1,6 @@
 node_modules/
 dist/
+!Decision-Tree/frontend/dist/
+!Decision-Tree/frontend/dist/**
 .vite/
 .DS_Store
