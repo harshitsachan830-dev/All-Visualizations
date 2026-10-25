@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/react-plotly.js": "^2.6.4",
     "lucide-react": "^1.16.0",
     "papaparse": "^5.5.2",
+    "plotly.js-dist-min": "^4.1.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-plotly.js": "^4.1.0",
     "three": "^0.174.0"
   },
   "devDependencies": {

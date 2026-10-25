@@ -403,14 +403,152 @@ export function generate3DSwarmDataset(): DatasetInfo {
   };
 }
 
+// 5. 1,000 Records, 20 Input Features Genomic Expression Dataset (Matching UI Image 2)
+function generateGenomicExpressionDataset(): DatasetInfo {
+  const rows: any[] = [];
+  const geneNames = [
+    'Gene_A', 'Gene_B', 'Gene_C', 'Gene_D', 'Gene_E', 'Gene_F', 'Gene_G', 'Gene_H', 'Gene_I', 'Gene_J',
+    'Gene_K', 'Gene_L', 'Gene_M', 'Gene_N', 'Gene_O', 'Gene_P', 'Gene_Q', 'Gene_R', 'Gene_S', 'Gene_T'
+  ];
+
+  // Pseudo-random Gaussian
+  const randn = () => {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  };
+
+  // Seeded reproducible synthesis
+  // Cluster 1: 312 samples (Top right quadrant: PC1 positive, PC2 positive)
+  for (let i = 0; i < 312; i++) {
+    const row: any = { Sample_ID: `SMP_${1000 + i}`, Subtype: 'Cluster 1' };
+    const latent1 = 2.4 + randn() * 0.45;
+    const latent2 = 2.2 + randn() * 0.45;
+    const latent3 = 1.2 + randn() * 0.4;
+
+    geneNames.forEach((g, idx) => {
+      let val = 0;
+      if (idx < 7) val = latent1 * 1.5 + latent2 * 0.3 + randn() * 0.3;
+      else if (idx < 14) val = -latent2 * 1.2 + latent3 * 0.4 + randn() * 0.3;
+      else val = latent3 * 0.8 + randn() * 0.4;
+      row[g] = Number((val + 5.0).toFixed(3));
+    });
+    rows.push(row);
+  }
+
+  // Cluster 2: 298 samples (Top left quadrant: PC1 negative, PC2 positive)
+  for (let i = 0; i < 298; i++) {
+    const row: any = { Sample_ID: `SMP_${2000 + i}`, Subtype: 'Cluster 2' };
+    const latent1 = -2.6 + randn() * 0.45;
+    const latent2 = 1.9 + randn() * 0.45;
+    const latent3 = -1.1 + randn() * 0.4;
+
+    geneNames.forEach((g, idx) => {
+      let val = 0;
+      if (idx < 7) val = latent1 * 1.4 + latent2 * 0.4 + randn() * 0.3;
+      else if (idx < 14) val = latent2 * 1.5 - latent3 * 0.4 + randn() * 0.3;
+      else val = -latent3 * 0.9 + randn() * 0.4;
+      row[g] = Number((val + 5.0).toFixed(3));
+    });
+    rows.push(row);
+  }
+
+  // Cluster 3: 276 samples (Bottom quadrant: PC1 neutral/positive, PC2 strongly negative)
+  for (let i = 0; i < 276; i++) {
+    const row: any = { Sample_ID: `SMP_${3000 + i}`, Subtype: 'Cluster 3' };
+    const latent1 = 0.6 + randn() * 0.45;
+    const latent2 = -2.7 + randn() * 0.45;
+    const latent3 = 2.1 + randn() * 0.4;
+
+    geneNames.forEach((g, idx) => {
+      let val = 0;
+      if (idx < 7) val = latent1 * 0.6 - latent2 * 0.5 + randn() * 0.3;
+      else if (idx < 14) val = latent2 * 1.6 + latent3 * 0.5 + randn() * 0.3;
+      else val = latent3 * 1.4 + randn() * 0.4;
+      row[g] = Number((val + 5.0).toFixed(3));
+    });
+    rows.push(row);
+  }
+
+  // Noise: 114 samples (Uniform scattered noise throughout space)
+  for (let i = 0; i < 114; i++) {
+    const row: any = { Sample_ID: `SMP_${4000 + i}`, Subtype: 'Noise' };
+    geneNames.forEach(g => {
+      row[g] = Number(((Math.random() - 0.5) * 8.5 + 5.0).toFixed(3));
+    });
+    rows.push(row);
+  }
+
+  const headers = ['Sample_ID', 'Subtype', ...geneNames];
+
+  return {
+    id: 'genomics_20',
+    name: 'Demo Dataset (1,000 Records, 20 Genes)',
+    category: 'High-Dimensional',
+    description: '1,000 expression profiles across 20 input genes with 3 distinct cellular phenotypes (Cluster 1, 2, 3) and 11.4% noise points. Exactly matches Report UI specification.',
+    rows,
+    headers,
+    numericColumns: geneNames,
+    categoricalColumns: ['Subtype'],
+    defaultLabelCol: 'Subtype',
+    defaultFeatures: geneNames
+  };
+}
+
+// 6. Student Placement Dataset (From Section 1 of the Report)
+function generateStudentPlacementDataset(): DatasetInfo {
+  const rows: any[] = [];
+  const features = ['Study_Hours_Week', 'Attendance_Pct', 'Assignment_Avg', 'Exam_Score', 'Sleep_Hours', 'Mock_Test_Score'];
+  
+  for (let i = 0; i < 400; i++) {
+    const study = Math.min(45, Math.max(5, 22 + (Math.random() - 0.5) * 20));
+    const attendance = Math.min(100, Math.max(50, 75 + (study * 0.6) + (Math.random() - 0.5) * 15));
+    const assignments = Math.min(100, Math.max(40, 65 + (study * 0.8) + (attendance * 0.2) + (Math.random() - 0.5) * 12));
+    const exam = Math.min(100, Math.max(35, 55 + (study * 0.9) + (assignments * 0.3) + (Math.random() - 0.5) * 15));
+    const sleep = Math.min(10, Math.max(4, 7.5 - (study * 0.05) + (Math.random() - 0.5) * 2));
+    const mock = Math.min(100, Math.max(30, exam * 0.85 + (Math.random() - 0.5) * 10));
+
+    const isPlaced = exam > 68 && attendance > 72 && assignments > 65;
+
+    rows.push({
+      Student_ID: `STU_${1000 + i}`,
+      Status: isPlaced ? 'Placed' : 'Not Placed',
+      Study_Hours_Week: Number(study.toFixed(1)),
+      Attendance_Pct: Number(attendance.toFixed(1)),
+      Assignment_Avg: Number(assignments.toFixed(1)),
+      Exam_Score: Number(exam.toFixed(1)),
+      Sleep_Hours: Number(sleep.toFixed(1)),
+      Mock_Test_Score: Number(mock.toFixed(1))
+    });
+  }
+
+  const headers = ['Student_ID', 'Status', ...features];
+
+  return {
+    id: 'student_placement',
+    name: 'Student Placement Analytics (Report Section 1)',
+    category: 'Educational',
+    description: '400 student records with academic and behavioral indicators. Demonstrates how PCA extracts principal performance axes without data leakage.',
+    rows,
+    headers,
+    numericColumns: features,
+    categoricalColumns: ['Status'],
+    defaultLabelCol: 'Status',
+    defaultFeatures: features
+  };
+}
+
 // Built-in presets map
 export function getPresetDatasets(): DatasetInfo[] {
+  const genomics20 = generateGenomicExpressionDataset();
+
   const irisParsed = parseCsvText(IRIS_DATA_RAW);
   const iris: DatasetInfo = {
     id: 'iris',
     name: 'Iris Flower Benchmark (Clean)',
     category: 'Benchmark',
-    description: '150 samples with 4 morphological features across 3 flower species. The canonical standard for dimensionality reduction.',
+    description: '150 samples with 4 morphological features across 3 flower species. Canonical PCA reference dataset.',
     rawCsv: IRIS_DATA_RAW,
     rows: irisParsed.rows,
     headers: irisParsed.headers,
@@ -420,12 +558,14 @@ export function getPresetDatasets(): DatasetInfo[] {
     defaultFeatures: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
   };
 
+  const studentPlacement = generateStudentPlacementDataset();
+
   const messyParsed = parseCsvText(MESSY_CUSTOMER_DATA_RAW);
   const messyCustomer: DatasetInfo = {
     id: 'messy_customer',
     name: 'Customer Analytics (Messy CSV with Missing Values)',
     category: 'Real World Messy',
-    description: '100 customer records with missing cells across Age, Income, and Spending Score. Perfect for testing Mean, Median, and Mode imputation.',
+    description: '100 customer records with missing cells across Age, Income, and Spending Score. Perfect for testing Mean, Median, Mode, and Drop imputation.',
     rawCsv: MESSY_CUSTOMER_DATA_RAW,
     rows: messyParsed.rows,
     headers: messyParsed.headers,
@@ -460,5 +600,6 @@ export function getPresetDatasets(): DatasetInfo[] {
 
   const swarm3D = generate3DSwarmDataset();
 
-  return [iris, messyCustomer, wine, swarm3D];
+  return [genomics20, iris, studentPlacement, wine, messyCustomer, swarm3D];
 }
+
