@@ -1,0 +1,1001 @@
+employee_id,age,gender,marital_status,education_level,department,job_role,business_travel,distance_from_home_km,monthly_income,salary_hike_pct,performance_rating,environment_satisfaction,job_satisfaction,work_life_balance,overtime,years_at_company,years_in_role,years_with_manager,num_companies_worked,training_hours_last_year,stock_option_level,promotions_last_5_years,attrition
+1,23,Male,Single,Master's,Operations,Operations Manager,No Travel,9,6071,6.9,2,1,2,4,Yes,2,0,0,7,4,0,1,Yes
+2,39,Male,Married,Bachelor's,Marketing,Content Strategist,No Travel,18,6226,12.2,3,3,1,4,Yes,2,1,0,6,0,2,1,No
+3,58,Male,Single,Bachelor's,Support,Technical Support,Frequently,9,8966,12.6,3,3,2,3,No,7,4,0,3,5,0,1,Yes
+4,32,Female,Married,PhD,Operations,Operations Manager,Frequently,3,3333,18.7,4,1,2,1,No,11,8,3,6,2,1,2,Yes
+5,35,Female,Divorced,PhD,Operations,Logistics Coordinator,Rarely,3,6554,10.3,3,4,3,2,Yes,2,1,0,8,3,0,1,Yes
+6,49,Female,Married,High School,Sales,Sales Lead,Frequently,14,9067,24.4,4,1,1,3,No,14,8,4,1,2,1,0,No
+7,54,Male,Divorced,Bachelor's,Operations,Logistics Coordinator,Rarely,29,5607,20.3,3,1,3,4,Yes,26,20,16,1,2,2,0,Yes
+8,27,Male,Divorced,PhD,Finance,Financial Analyst,No Travel,21,5771,10.3,4,4,2,2,No,1,1,0,6,5,2,0,Yes
+9,36,Female,Single,High School,Engineering,Data Scientist,Frequently,18,9048,9.6,4,3,1,2,No,7,3,0,7,1,1,1,No
+10,37,Female,Single,PhD,Finance,Accountant,No Travel,28,7718,13.5,3,1,1,1,No,3,3,2,5,6,0,0,Yes
+11,49,Female,Married,Bachelor's,Marketing,Marketing Analyst,No Travel,16,7903,7.0,3,1,1,2,Yes,27,2,1,6,3,1,1,No
+12,22,Female,Married,PhD,Sales,Account Manager,Rarely,16,2821,8.8,2,1,1,3,Yes,1,1,0,0,4,1,0,Yes
+13,26,Male,Married,High School,Support,Customer Support,No Travel,5,4974,16.7,3,3,2,3,Yes,4,1,0,4,3,2,0,No
+14,51,Male,Divorced,High School,Engineering,Software Engineer,No Travel,18,5078,23.7,4,2,3,3,Yes,16,8,2,7,6,2,1,No
+15,22,Male,Single,Master's,Operations,Supply Chain Analyst,Rarely,14,6118,19.4,2,3,4,3,Yes,0,0,0,1,5,2,0,Yes
+16,38,Female,Divorced,Bachelor's,Sales,Sales Lead,Frequently,2,9198,7.2,4,2,1,3,Yes,13,8,0,6,1,2,0,No
+17,44,Male,Divorced,Bachelor's,Support,Customer Support,No Travel,11,9782,23.5,2,2,2,4,Yes,11,8,6,2,5,3,1,No
+18,39,Male,Married,Bachelor's,Support,Customer Support,No Travel,11,5955,21.3,3,3,2,2,Yes,15,7,3,3,3,2,1,No
+19,54,Female,Single,PhD,HR,Recruiter,No Travel,7,2000,5.8,3,3,3,4,Yes,28,8,2,6,4,2,0,Yes
+20,34,Female,Single,Master's,Finance,Controller,Frequently,10,3719,18.3,2,3,3,4,No,5,4,2,6,5,1,0,No
+21,33,Female,Divorced,Master's,Marketing,SEO Specialist,No Travel,17,4117,18.1,3,4,2,4,Yes,4,2,0,1,2,2,0,No
+22,41,Male,Single,Bachelor's,Sales,Sales Lead,No Travel,8,7623,17.2,3,4,4,2,No,1,0,0,7,3,1,1,Yes
+23,49,Male,Divorced,Bachelor's,Support,Customer Support,Frequently,28,7383,7.7,3,3,4,4,No,14,0,0,2,5,3,0,No
+24,39,Male,Married,PhD,Support,Support Lead,Rarely,5,5995,9.7,3,1,2,2,Yes,2,2,1,6,5,1,0,Yes
+25,48,Male,Married,High School,Finance,Accountant,Rarely,24,8617,12.6,1,3,3,4,No,24,18,0,8,5,1,0,Yes
+26,46,Female,Divorced,Master's,Marketing,Marketing Analyst,No Travel,15,3831,24.6,3,4,1,1,No,14,14,2,2,6,1,0,Yes
+27,42,Female,Married,Master's,Sales,Account Manager,Rarely,1,8971,25.0,3,1,1,1,Yes,8,1,1,3,6,1,0,Yes
+28,51,Female,Single,Master's,Engineering,Data Scientist,Frequently,19,6802,24.3,2,1,3,4,No,19,3,1,3,0,1,0,No
+29,60,Male,Married,High School,Support,Support Lead,Frequently,5,9121,5.3,3,4,1,4,No,13,10,5,7,5,3,0,Yes
+30,56,Female,Married,PhD,Operations,Logistics Coordinator,Frequently,20,7712,22.0,4,1,3,4,Yes,18,8,5,7,4,3,0,Yes
+31,53,Female,Married,Bachelor's,HR,HR Specialist,Rarely,1,11354,6.7,3,4,2,4,No,8,4,4,7,6,0,0,Yes
+32,59,Female,Divorced,Master's,Sales,Account Manager,Frequently,24,6810,16.0,3,4,3,3,No,11,6,5,3,0,1,0,No
+33,33,Male,Divorced,Bachelor's,Support,Support Lead,Rarely,9,2000,21.7,3,3,2,3,Yes,4,4,4,8,1,0,2,Yes
+34,53,Male,Divorced,High School,Operations,Operations Manager,Rarely,3,3293,11.8,4,3,4,1,Yes,15,15,14,6,3,0,0,Yes
+35,37,Female,Divorced,High School,HR,HR Specialist,Frequently,3,7910,16.8,3,1,1,2,Yes,7,6,3,4,5,1,0,Yes
+36,48,Female,Married,PhD,Sales,Sales Rep,No Travel,8,5586,19.1,3,2,3,2,No,7,4,2,1,4,1,2,No
+37,32,Female,Married,Master's,Engineering,Software Engineer,No Travel,8,8705,14.9,2,1,4,3,No,7,4,3,0,0,0,2,No
+38,24,Female,Divorced,Bachelor's,HR,HR Manager,Frequently,11,5669,24.9,3,4,1,4,No,3,2,0,6,2,0,1,Yes
+39,40,Male,Married,PhD,Operations,Logistics Coordinator,No Travel,12,9068,22.3,4,1,4,4,Yes,10,4,2,3,4,3,1,No
+40,57,Female,Married,Bachelor's,Sales,Account Manager,Frequently,3,8791,24.5,3,2,2,3,Yes,15,3,0,8,3,1,2,No
+41,31,Female,Divorced,PhD,Marketing,Marketing Analyst,Frequently,17,7983,16.0,3,2,1,3,No,4,3,3,5,6,2,1,Yes
+42,59,Male,Married,PhD,HR,HR Manager,Frequently,8,6314,16.0,3,4,3,2,Yes,15,11,5,9,3,3,0,Yes
+43,46,Female,Single,Bachelor's,Operations,Logistics Coordinator,No Travel,9,8015,15.5,3,2,4,2,Yes,16,10,1,7,6,2,1,Yes
+44,56,Female,Divorced,PhD,Engineering,DevOps Engineer,Frequently,4,4968,22.4,1,1,2,3,Yes,28,24,15,1,3,0,0,Yes
+45,42,Female,Married,High School,Engineering,Software Engineer,Rarely,8,3965,20.9,2,1,4,2,No,13,2,0,9,1,3,1,No
+46,51,Male,Single,Master's,Operations,Operations Manager,Rarely,16,5997,11.0,4,3,4,3,Yes,30,11,9,6,6,0,0,No
+47,40,Female,Married,High School,Finance,Accountant,No Travel,4,8648,20.5,2,3,2,2,No,18,1,1,2,5,0,0,Yes
+48,30,Female,Married,High School,Finance,Accountant,Frequently,10,2752,7.6,3,3,3,2,No,6,1,0,7,6,2,1,Yes
+49,36,Female,Single,PhD,Engineering,Data Scientist,Rarely,29,3630,18.4,3,3,1,2,No,0,0,0,0,4,2,2,Yes
+50,41,Male,Single,PhD,Engineering,QA Engineer,No Travel,19,7337,7.3,2,2,4,4,No,1,1,1,8,3,1,1,No
+51,48,Male,Divorced,Master's,Support,Technical Support,Rarely,28,10245,7.0,3,3,1,4,No,6,3,3,3,0,3,0,Yes
+52,23,Female,Single,High School,Operations,Supply Chain Analyst,No Travel,9,5297,21.6,3,2,2,3,Yes,2,0,0,9,0,1,2,Yes
+53,29,Male,Single,High School,Support,Customer Support,Rarely,4,6800,19.8,3,1,4,4,No,3,2,0,8,4,3,0,No
+54,51,Male,Married,High School,Engineering,DevOps Engineer,Rarely,9,7083,14.8,4,1,1,3,Yes,13,10,1,1,1,2,0,Yes
+55,54,Male,Divorced,PhD,HR,Recruiter,No Travel,24,8320,22.3,3,2,4,3,No,27,20,20,6,3,0,0,Yes
+56,31,Male,Single,PhD,HR,Recruiter,No Travel,28,4740,19.9,3,2,1,3,Yes,1,1,0,6,2,3,1,Yes
+57,41,Male,Divorced,Master's,HR,HR Manager,Frequently,27,6654,21.9,3,3,2,4,Yes,6,1,1,9,5,2,0,Yes
+58,43,Male,Single,Master's,Support,Technical Support,No Travel,11,7444,7.8,3,1,1,2,No,18,12,1,6,3,1,0,Yes
+59,60,Male,Single,High School,Support,Support Lead,No Travel,12,5767,18.2,3,4,4,3,Yes,24,19,1,8,0,3,0,No
+60,55,Male,Single,Master's,Finance,Accountant,Rarely,16,5084,9.1,4,2,3,3,No,19,1,0,1,0,3,0,No
+61,54,Male,Married,Master's,Operations,Operations Manager,Frequently,11,5720,11.3,3,4,4,3,Yes,1,1,0,6,0,1,1,Yes
+62,45,Female,Single,High School,Support,Support Lead,No Travel,17,6701,15.5,3,3,3,2,No,13,9,6,2,0,0,0,Yes
+63,44,Male,Single,Bachelor's,Support,Technical Support,No Travel,15,3795,18.1,2,4,4,4,No,8,3,1,5,1,0,0,No
+64,59,Female,Divorced,High School,Support,Technical Support,No Travel,18,4472,5.8,3,3,1,1,No,9,7,7,7,4,0,0,No
+65,42,Male,Single,PhD,Operations,Operations Manager,Rarely,14,8987,5.8,3,4,2,3,No,3,2,2,4,3,2,1,Yes
+66,43,Female,Single,High School,Operations,Supply Chain Analyst,Frequently,21,7956,10.0,4,2,3,1,Yes,21,12,4,5,2,3,0,Yes
+67,57,Female,Single,PhD,Engineering,DevOps Engineer,Frequently,8,8980,15.2,1,3,2,2,No,22,21,16,7,1,1,0,Yes
+68,54,Female,Divorced,High School,Support,Customer Support,No Travel,24,8150,8.2,4,2,4,1,No,19,12,2,5,5,1,2,No
+69,50,Male,Married,Bachelor's,Support,Support Lead,Rarely,20,3228,24.7,3,3,4,4,Yes,28,26,6,3,6,1,1,Yes
+70,57,Male,Married,High School,Marketing,Content Strategist,No Travel,14,10079,14.0,3,4,1,2,No,24,5,2,5,0,0,0,Yes
+71,45,Male,Married,Bachelor's,Marketing,Marketing Analyst,No Travel,9,6779,10.7,4,2,4,4,Yes,22,20,10,1,0,1,1,No
+72,55,Male,Married,PhD,Operations,Supply Chain Analyst,No Travel,1,5448,9.8,3,4,1,1,No,9,1,0,9,4,1,1,Yes
+73,37,Male,Divorced,PhD,Engineering,DevOps Engineer,Frequently,9,8726,15.1,4,1,4,4,Yes,2,2,1,6,2,0,0,Yes
+74,28,Male,Single,Master's,Sales,Sales Lead,Rarely,10,7508,21.6,3,4,2,2,Yes,5,5,1,7,0,1,0,Yes
+75,41,Female,Married,PhD,Engineering,DevOps Engineer,No Travel,11,4330,22.3,3,1,3,4,No,20,6,2,7,3,1,0,No
+76,39,Female,Single,High School,Support,Support Lead,Rarely,15,9226,11.4,2,3,3,4,No,5,4,2,2,5,2,0,No
+77,49,Male,Single,Master's,HR,HR Manager,Frequently,21,3181,8.2,1,4,1,2,Yes,20,12,5,3,6,2,0,Yes
+78,50,Female,Married,Master's,Engineering,Data Scientist,No Travel,17,6226,12.3,3,3,2,1,Yes,18,4,4,2,3,3,2,Yes
+79,50,Female,Divorced,Bachelor's,Support,Technical Support,Rarely,10,7820,23.0,3,1,3,3,Yes,6,0,0,8,4,2,1,No
+80,33,Male,Single,Master's,Operations,Supply Chain Analyst,No Travel,13,4748,20.8,1,3,4,2,Yes,12,2,0,1,2,3,0,No
+81,26,Female,Divorced,Bachelor's,Support,Support Lead,No Travel,10,9101,16.0,3,2,4,1,Yes,3,3,2,8,1,1,0,No
+82,55,Male,Married,Master's,Sales,Account Manager,No Travel,29,9213,7.5,3,1,2,2,Yes,20,17,8,9,5,2,1,Yes
+83,27,Female,Divorced,High School,Support,Customer Support,No Travel,3,6134,22.8,3,3,4,2,No,6,4,3,4,3,0,0,No
+84,43,Female,Divorced,Bachelor's,Marketing,Marketing Analyst,Rarely,15,6164,20.2,3,1,3,2,No,11,6,1,1,2,1,0,Yes
+85,48,Male,Married,Bachelor's,Marketing,SEO Specialist,Frequently,15,6693,15.3,3,3,4,1,Yes,23,10,3,6,4,1,0,Yes
+86,53,Female,Divorced,PhD,Engineering,DevOps Engineer,No Travel,19,4159,7.7,3,3,4,3,Yes,27,3,3,6,0,1,0,Yes
+87,50,Male,Single,Master's,Marketing,SEO Specialist,No Travel,11,4716,7.9,3,4,1,1,Yes,12,5,2,2,5,3,0,Yes
+88,42,Male,Married,Master's,Finance,Financial Analyst,Frequently,22,5821,15.1,3,4,3,4,Yes,9,9,5,5,2,0,2,No
+89,23,Female,Divorced,PhD,Support,Support Lead,Frequently,4,5441,17.6,3,4,2,2,Yes,2,0,0,9,5,1,0,Yes
+90,35,Female,Divorced,PhD,Sales,Account Manager,Frequently,11,5887,16.2,4,4,4,3,Yes,0,0,0,7,4,2,1,No
+91,38,Male,Single,PhD,Operations,Supply Chain Analyst,Rarely,24,11799,20.4,3,4,3,4,No,17,9,3,8,6,2,0,No
+92,47,Male,Married,Master's,Finance,Accountant,No Travel,9,4458,23.5,3,4,2,2,No,9,1,1,8,5,1,0,No
+93,25,Male,Single,Bachelor's,Sales,Sales Rep,No Travel,10,3521,7.7,4,2,4,4,No,3,2,2,3,6,2,0,Yes
+94,58,Male,Single,Bachelor's,Support,Customer Support,Rarely,10,7021,23.7,1,4,4,2,No,28,26,5,0,0,0,2,No
+95,56,Male,Divorced,PhD,Marketing,SEO Specialist,Rarely,28,4926,18.0,3,1,3,3,Yes,8,3,0,2,4,3,1,No
+96,28,Male,Married,Bachelor's,Engineering,QA Engineer,Rarely,12,9333,12.7,3,3,3,3,Yes,3,0,0,4,5,1,0,Yes
+97,47,Male,Divorced,Master's,HR,HR Specialist,Rarely,25,6706,8.1,3,3,4,4,Yes,11,9,3,3,5,0,0,Yes
+98,58,Male,Divorced,High School,HR,HR Specialist,Frequently,15,7550,8.0,3,4,1,2,No,6,4,4,1,4,0,0,Yes
+99,25,Female,Divorced,PhD,Marketing,SEO Specialist,No Travel,14,6430,5.9,3,1,1,1,No,3,2,0,0,2,1,1,No
+100,48,Female,Married,Master's,Operations,Supply Chain Analyst,Rarely,1,3872,18.1,3,2,4,2,Yes,12,1,0,0,6,2,0,No
+101,46,Male,Married,Bachelor's,Marketing,SEO Specialist,Rarely,20,9468,7.3,4,4,1,2,Yes,4,2,0,1,0,0,0,No
+102,37,Female,Married,High School,Support,Customer Support,No Travel,29,5268,20.5,2,3,2,3,No,6,6,6,3,2,1,2,No
+103,39,Male,Divorced,High School,Marketing,Content Strategist,Frequently,6,8258,17.9,3,3,4,4,Yes,13,8,7,4,3,3,0,Yes
+104,31,Male,Divorced,PhD,Support,Support Lead,Rarely,18,7033,7.7,2,2,3,1,No,6,4,4,5,0,1,0,Yes
+105,24,Male,Divorced,High School,Finance,Controller,Frequently,7,7727,24.1,1,2,1,4,Yes,1,1,0,9,5,3,2,Yes
+106,46,Female,Married,PhD,Support,Technical Support,Rarely,2,5183,14.3,4,4,3,2,No,11,8,7,5,3,1,1,Yes
+107,59,Female,Single,PhD,Finance,Controller,No Travel,24,5140,16.0,4,3,3,4,No,10,3,3,7,1,2,0,No
+108,56,Male,Single,High School,Marketing,Marketing Analyst,Frequently,12,5862,7.7,3,1,2,1,Yes,1,0,0,8,3,0,1,Yes
+109,53,Male,Divorced,High School,Finance,Accountant,Frequently,8,4924,24.5,1,4,2,1,Yes,13,0,0,8,1,1,1,Yes
+110,47,Female,Married,High School,HR,Recruiter,Rarely,18,6205,11.0,4,1,1,1,No,18,7,3,6,3,3,0,Yes
+111,53,Female,Divorced,PhD,Sales,Sales Rep,No Travel,22,7045,18.8,3,3,1,1,No,28,16,1,8,4,0,0,No
+112,59,Female,Single,Bachelor's,Engineering,Data Scientist,Rarely,12,10769,16.3,4,3,4,2,Yes,5,4,1,8,5,0,0,Yes
+113,60,Female,Single,PhD,Engineering,DevOps Engineer,Frequently,9,6847,12.5,2,4,1,3,Yes,8,7,7,1,0,1,0,Yes
+114,46,Female,Single,Master's,Sales,Sales Lead,No Travel,18,9014,12.2,3,2,1,2,No,0,0,0,7,4,3,0,Yes
+115,60,Female,Single,Master's,Finance,Financial Analyst,Rarely,9,10207,23.1,4,2,4,2,Yes,13,6,6,4,2,3,0,Yes
+116,41,Male,Married,PhD,HR,Recruiter,Rarely,11,8683,14.2,2,1,4,3,No,7,7,3,5,3,3,1,No
+117,41,Male,Married,Master's,Finance,Financial Analyst,Rarely,4,5706,14.8,3,2,3,4,No,5,3,2,6,2,1,1,No
+118,23,Male,Married,PhD,Operations,Supply Chain Analyst,Rarely,13,9478,18.5,2,3,2,3,Yes,2,0,0,6,6,0,0,Yes
+119,56,Male,Married,PhD,Finance,Accountant,Frequently,14,2813,7.2,2,3,2,1,No,28,25,17,5,6,0,0,Yes
+120,55,Female,Married,Bachelor's,Finance,Controller,Rarely,3,4034,16.8,3,3,1,4,Yes,14,12,10,4,3,0,1,No
+121,43,Male,Divorced,PhD,HR,Recruiter,Rarely,8,3640,11.4,3,1,1,3,Yes,11,7,1,2,5,1,1,Yes
+122,36,Male,Single,PhD,Marketing,Content Strategist,Frequently,9,7670,19.7,4,4,4,4,Yes,13,6,0,3,1,0,1,No
+123,45,Male,Married,Master's,Finance,Financial Analyst,No Travel,4,4245,16.7,3,4,2,3,Yes,8,7,5,2,2,1,0,Yes
+124,54,Female,Divorced,PhD,Operations,Operations Manager,No Travel,11,4926,8.7,3,2,2,4,No,18,12,6,2,1,3,1,No
+125,30,Female,Divorced,Bachelor's,Engineering,QA Engineer,Frequently,18,3356,13.9,2,1,2,3,Yes,7,6,5,4,1,2,0,Yes
+126,57,Male,Married,High School,Operations,Logistics Coordinator,Frequently,28,6663,21.5,1,4,2,4,Yes,26,11,8,3,2,0,0,Yes
+127,50,Male,Single,High School,Support,Customer Support,Frequently,6,4872,17.3,3,2,1,3,No,18,11,11,9,4,2,2,Yes
+128,54,Male,Married,High School,Finance,Accountant,No Travel,21,5149,22.3,2,3,2,4,No,8,2,2,2,4,2,1,No
+129,47,Female,Married,Master's,Engineering,Software Engineer,Rarely,7,9134,6.9,4,3,1,4,Yes,10,9,0,6,6,3,0,No
+130,58,Female,Married,Bachelor's,HR,HR Manager,Frequently,1,3656,7.0,3,4,1,1,Yes,24,1,0,7,3,3,0,Yes
+131,41,Female,Single,Bachelor's,Sales,Sales Lead,Frequently,7,3501,8.3,3,3,2,4,Yes,11,4,0,1,0,3,0,Yes
+132,50,Male,Divorced,High School,Finance,Controller,Rarely,12,9620,18.9,3,2,4,1,Yes,26,3,3,1,2,2,0,No
+133,31,Male,Divorced,High School,Support,Customer Support,Frequently,4,6015,8.0,3,4,2,1,Yes,2,1,1,2,6,3,0,Yes
+134,37,Male,Single,Master's,Support,Customer Support,Frequently,13,3729,9.1,3,2,4,3,Yes,9,0,0,3,3,0,0,Yes
+135,45,Male,Married,Master's,Engineering,Software Engineer,Frequently,2,5112,24.1,3,1,1,1,No,13,5,4,3,0,3,0,Yes
+136,49,Male,Divorced,PhD,Finance,Accountant,Frequently,25,3404,6.7,2,2,2,3,No,17,4,2,9,5,0,0,Yes
+137,25,Male,Married,Bachelor's,Support,Customer Support,No Travel,17,5025,8.5,1,2,1,2,No,3,0,0,5,4,2,0,Yes
+138,29,Female,Married,High School,Support,Technical Support,Rarely,28,3967,19.2,3,1,4,4,No,8,1,1,0,3,1,0,Yes
+139,36,Male,Single,High School,Engineering,Software Engineer,No Travel,11,5654,23.6,4,4,2,3,Yes,1,1,1,6,5,2,1,Yes
+140,33,Male,Married,Bachelor's,Engineering,Software Engineer,No Travel,10,7265,11.5,3,1,3,2,No,7,4,2,9,6,1,0,No
+141,56,Male,Single,Bachelor's,Marketing,Marketing Analyst,Rarely,14,4479,5.2,3,4,3,1,Yes,0,0,0,8,1,3,2,No
+142,39,Male,Single,High School,Sales,Sales Lead,Frequently,2,4180,14.2,3,1,2,4,Yes,13,11,5,9,4,3,1,Yes
+143,42,Female,Married,PhD,HR,Recruiter,Rarely,4,7514,20.4,2,1,2,4,No,8,3,0,5,3,2,2,Yes
+144,38,Male,Single,High School,HR,Recruiter,Frequently,2,6124,9.3,4,2,1,2,No,9,9,0,6,4,2,0,No
+145,50,Male,Married,Bachelor's,Engineering,QA Engineer,No Travel,9,7015,20.6,2,2,4,3,Yes,25,25,4,9,4,0,0,Yes
+146,30,Female,Single,High School,Operations,Logistics Coordinator,No Travel,12,6993,23.5,3,4,4,1,No,7,0,0,6,1,1,2,Yes
+147,24,Female,Married,Bachelor's,Marketing,Marketing Analyst,Rarely,26,6297,9.0,4,2,1,4,No,3,0,0,7,4,3,0,No
+148,39,Male,Married,Bachelor's,HR,Recruiter,Frequently,8,7567,6.2,4,3,2,2,Yes,7,0,0,3,5,2,0,Yes
+149,36,Female,Single,PhD,Operations,Operations Manager,No Travel,2,5068,5.6,3,2,2,4,No,7,5,5,2,3,0,0,No
+150,22,Male,Single,Master's,Engineering,QA Engineer,Rarely,22,2307,5.4,3,2,1,3,Yes,0,0,0,5,5,3,1,Yes
+151,32,Female,Divorced,PhD,HR,HR Specialist,Rarely,24,4903,20.7,2,2,4,3,No,2,2,2,2,1,0,2,No
+152,24,Female,Divorced,Bachelor's,Marketing,SEO Specialist,No Travel,1,2187,11.6,2,3,3,2,Yes,0,0,0,5,3,2,0,Yes
+153,28,Male,Married,High School,HR,Recruiter,Rarely,28,4550,15.9,2,4,2,2,No,6,1,1,1,6,0,0,Yes
+154,43,Female,Single,Bachelor's,Engineering,Software Engineer,Frequently,6,6584,11.8,4,4,1,4,Yes,2,2,0,9,3,0,0,Yes
+155,57,Female,Married,Master's,Sales,Account Manager,No Travel,1,3054,8.1,3,4,1,3,No,3,0,0,3,0,1,0,Yes
+156,29,Female,Married,Master's,Engineering,QA Engineer,Rarely,15,4831,8.7,4,3,2,4,Yes,4,0,0,4,3,2,0,Yes
+157,28,Female,Divorced,High School,Engineering,Data Scientist,Rarely,29,7367,15.7,4,4,2,4,No,3,0,0,1,3,0,0,No
+158,31,Female,Single,High School,Support,Support Lead,No Travel,26,4606,5.9,2,4,2,2,No,3,1,0,5,5,0,0,Yes
+159,39,Male,Divorced,PhD,Finance,Accountant,Frequently,29,7365,16.3,3,1,1,1,No,18,16,13,8,2,3,0,Yes
+160,52,Male,Married,High School,Finance,Controller,Rarely,29,7239,18.6,3,4,3,2,Yes,4,4,4,7,2,2,0,No
+161,39,Male,Single,PhD,HR,Recruiter,No Travel,26,6247,17.9,2,2,4,4,No,9,7,5,0,4,1,0,No
+162,55,Male,Single,High School,Marketing,Marketing Analyst,No Travel,13,8561,5.7,2,3,2,3,No,26,1,0,7,4,0,1,Yes
+163,50,Female,Divorced,Bachelor's,Marketing,SEO Specialist,Frequently,7,7309,21.6,2,1,4,1,Yes,11,5,1,9,6,1,1,Yes
+164,48,Male,Married,High School,HR,HR Manager,No Travel,9,5181,21.0,2,3,3,4,No,20,5,4,5,3,1,0,No
+165,47,Male,Divorced,High School,Support,Support Lead,Frequently,9,4013,10.7,3,4,1,3,No,26,26,11,5,6,2,1,No
+166,34,Male,Single,Bachelor's,Operations,Logistics Coordinator,Frequently,24,5488,18.6,3,4,3,3,No,6,5,2,6,3,0,1,No
+167,43,Female,Divorced,Bachelor's,Support,Customer Support,Rarely,12,8705,8.6,2,2,3,2,No,16,9,2,1,1,1,1,No
+168,45,Female,Married,Master's,Support,Technical Support,No Travel,28,3055,14.4,2,1,4,3,No,15,1,0,0,6,1,0,Yes
+169,51,Female,Divorced,Bachelor's,Marketing,SEO Specialist,No Travel,6,3584,11.3,2,4,3,2,Yes,24,2,1,9,6,3,1,No
+170,49,Female,Married,PhD,Sales,Sales Lead,Rarely,24,11601,15.7,3,1,3,2,Yes,12,0,0,0,5,1,0,No
+171,28,Female,Single,PhD,HR,HR Specialist,No Travel,26,4168,15.5,3,2,3,4,No,0,0,0,3,1,3,0,Yes
+172,23,Male,Married,Bachelor's,Sales,Sales Rep,Frequently,4,7162,22.5,3,1,1,1,Yes,2,0,0,0,5,3,0,Yes
+173,31,Male,Married,Bachelor's,HR,Recruiter,Rarely,20,4273,13.4,4,1,3,1,Yes,10,1,1,7,1,1,1,No
+174,48,Male,Single,Master's,Sales,Account Manager,Frequently,16,4333,23.7,3,1,1,1,Yes,15,6,5,9,5,1,2,Yes
+175,38,Female,Married,Bachelor's,Engineering,Software Engineer,Rarely,28,8074,22.0,3,3,4,1,Yes,14,0,0,0,0,1,1,Yes
+176,39,Female,Married,High School,HR,Recruiter,No Travel,23,2744,24.2,3,4,4,4,Yes,3,3,3,1,1,0,2,No
+177,59,Female,Single,PhD,Engineering,QA Engineer,Frequently,2,3451,22.6,3,2,4,4,Yes,12,12,5,6,3,0,0,Yes
+178,55,Female,Divorced,Bachelor's,Operations,Supply Chain Analyst,Frequently,27,3933,6.9,3,2,4,3,No,22,22,19,2,6,0,0,No
+179,53,Male,Married,Bachelor's,Finance,Accountant,Rarely,3,7849,17.9,3,2,1,4,No,7,5,2,9,3,3,0,Yes
+180,23,Female,Married,High School,Marketing,SEO Specialist,No Travel,2,6941,21.5,3,3,2,4,No,2,2,0,5,6,1,1,No
+181,60,Female,Divorced,PhD,Support,Support Lead,Rarely,27,8373,17.7,3,3,1,1,Yes,3,0,0,7,1,3,0,Yes
+182,47,Female,Single,Bachelor's,Sales,Sales Rep,Frequently,17,6525,5.9,3,1,4,4,Yes,10,1,1,7,0,0,1,Yes
+183,54,Male,Divorced,Bachelor's,Finance,Accountant,No Travel,26,4529,24.6,4,2,3,4,No,3,3,2,4,3,1,0,No
+184,41,Male,Single,Master's,Operations,Supply Chain Analyst,No Travel,19,6449,23.4,2,2,3,1,No,19,9,5,8,3,3,1,No
+185,49,Male,Single,High School,Finance,Accountant,Rarely,18,7531,8.2,3,3,2,1,No,4,0,0,3,6,0,0,No
+186,57,Female,Single,Bachelor's,Finance,Controller,Frequently,2,9667,18.9,3,1,4,4,No,25,25,25,5,4,0,1,Yes
+187,36,Male,Divorced,Master's,Support,Technical Support,No Travel,9,7282,24.2,3,1,4,1,No,9,7,2,4,4,1,0,No
+188,51,Male,Single,Bachelor's,Engineering,DevOps Engineer,Rarely,3,6418,14.8,3,3,1,3,Yes,19,1,1,2,4,1,0,Yes
+189,36,Female,Married,Bachelor's,Engineering,DevOps Engineer,Rarely,29,10225,24.6,1,3,4,2,Yes,9,3,3,0,5,2,0,No
+190,38,Male,Divorced,Master's,Engineering,QA Engineer,Rarely,18,6421,14.7,3,2,3,1,Yes,16,16,14,2,6,0,1,Yes
+191,49,Male,Divorced,High School,Operations,Operations Manager,Frequently,6,3631,19.9,2,4,3,1,Yes,28,23,13,1,0,2,1,No
+192,48,Female,Divorced,PhD,Sales,Account Manager,Rarely,4,2725,12.8,2,1,1,1,Yes,13,5,0,5,4,2,1,Yes
+193,50,Female,Divorced,PhD,Engineering,DevOps Engineer,No Travel,28,7123,20.9,4,3,2,3,No,15,5,4,0,4,1,0,Yes
+194,56,Female,Single,High School,Finance,Accountant,Frequently,9,9755,9.2,4,2,2,2,Yes,23,23,11,9,6,1,0,Yes
+195,57,Male,Married,PhD,Finance,Financial Analyst,Frequently,16,7355,24.0,3,2,1,3,Yes,2,1,0,3,2,3,0,Yes
+196,31,Female,Married,Master's,Operations,Supply Chain Analyst,No Travel,15,8993,20.7,3,4,3,3,Yes,0,0,0,5,3,3,0,Yes
+197,33,Female,Single,High School,Finance,Financial Analyst,Frequently,18,7102,6.5,1,1,4,2,Yes,3,2,2,8,2,3,1,Yes
+198,59,Male,Married,Master's,Marketing,Marketing Analyst,Frequently,19,5977,12.3,1,2,2,2,No,16,2,1,2,1,1,1,Yes
+199,36,Male,Single,PhD,HR,HR Specialist,Rarely,17,5317,20.8,3,4,1,1,No,11,3,0,1,5,2,1,Yes
+200,33,Female,Married,PhD,Finance,Controller,Frequently,1,4393,12.5,4,4,3,3,No,10,1,1,7,4,1,0,Yes
+201,39,Male,Single,Bachelor's,Finance,Controller,No Travel,8,5403,11.6,2,4,4,2,Yes,11,9,1,6,0,0,0,Yes
+202,54,Male,Single,High School,Sales,Sales Lead,No Travel,16,4744,24.2,3,1,3,1,Yes,8,2,2,7,4,3,0,No
+203,59,Female,Single,Bachelor's,Finance,Financial Analyst,Frequently,6,5879,12.6,2,1,2,4,Yes,21,10,7,9,0,3,2,Yes
+204,54,Male,Married,High School,Support,Support Lead,Frequently,8,6069,21.6,4,4,4,3,Yes,4,4,4,8,3,3,1,No
+205,58,Female,Single,High School,Finance,Controller,Rarely,26,5650,13.2,2,1,1,1,No,15,7,1,3,5,2,0,Yes
+206,59,Female,Divorced,Master's,Marketing,SEO Specialist,Rarely,18,10503,10.5,3,2,4,4,Yes,18,11,9,5,4,3,0,Yes
+207,47,Male,Divorced,Bachelor's,HR,HR Manager,No Travel,5,7373,15.2,3,1,2,4,Yes,14,12,11,1,6,3,2,Yes
+208,36,Male,Divorced,Master's,Engineering,DevOps Engineer,No Travel,28,6211,18.1,3,1,2,4,No,12,6,4,0,1,2,0,No
+209,36,Male,Married,Bachelor's,Finance,Controller,No Travel,24,9977,12.1,3,2,1,1,Yes,0,0,0,8,2,2,0,Yes
+210,34,Female,Divorced,PhD,Sales,Sales Lead,No Travel,26,6430,15.1,3,3,3,1,No,4,1,1,8,6,2,1,No
+211,37,Female,Divorced,Master's,Finance,Accountant,Rarely,1,6403,20.8,2,2,3,4,No,0,0,0,8,4,2,0,Yes
+212,43,Male,Married,High School,Operations,Supply Chain Analyst,Rarely,9,8462,8.7,3,2,4,2,Yes,11,3,2,3,6,1,0,No
+213,44,Male,Single,Bachelor's,Support,Support Lead,No Travel,9,3933,15.8,1,4,3,3,No,21,21,15,9,6,3,0,No
+214,47,Male,Single,Bachelor's,Finance,Accountant,Frequently,17,4270,23.8,1,3,4,2,No,25,13,7,1,5,3,0,Yes
+215,46,Female,Married,High School,Operations,Operations Manager,Frequently,25,6372,24.2,3,2,4,4,Yes,8,2,2,6,5,2,0,Yes
+216,58,Male,Single,Bachelor's,Marketing,Marketing Analyst,Frequently,5,8079,22.1,2,2,4,1,Yes,8,3,3,6,3,2,1,Yes
+217,25,Male,Divorced,PhD,Finance,Controller,No Travel,4,3710,14.0,3,3,3,3,No,0,0,0,0,3,2,1,No
+218,58,Female,Married,Bachelor's,Sales,Sales Lead,Rarely,6,6914,20.5,3,1,4,3,No,21,16,15,2,6,2,0,No
+219,27,Female,Single,Bachelor's,Marketing,Marketing Analyst,Rarely,1,5828,12.9,4,3,4,4,Yes,2,2,1,2,6,1,1,No
+220,27,Male,Married,Bachelor's,Operations,Supply Chain Analyst,No Travel,3,3856,16.0,1,4,1,1,No,0,0,0,9,1,3,0,Yes
+221,30,Male,Single,Bachelor's,HR,Recruiter,No Travel,21,2538,23.7,3,2,2,4,No,5,2,1,8,5,2,2,Yes
+222,50,Female,Married,Master's,Sales,Sales Rep,Rarely,23,7328,5.0,4,2,3,3,No,4,2,0,8,0,3,2,No
+223,40,Male,Divorced,Bachelor's,Engineering,QA Engineer,Rarely,8,5557,19.7,3,4,2,3,Yes,6,3,3,6,5,2,0,No
+224,48,Male,Single,Bachelor's,Support,Technical Support,No Travel,18,7233,17.4,3,4,2,3,Yes,9,1,1,2,0,0,0,Yes
+225,50,Male,Single,High School,HR,HR Specialist,No Travel,9,5556,21.0,4,4,1,3,Yes,0,0,0,2,0,3,0,Yes
+226,46,Male,Divorced,High School,Sales,Account Manager,No Travel,22,7947,9.9,4,2,4,1,Yes,12,12,7,7,3,2,2,Yes
+227,57,Female,Married,High School,Operations,Operations Manager,Frequently,4,9536,9.4,2,4,3,1,Yes,9,3,2,4,4,3,1,Yes
+228,60,Female,Single,Bachelor's,Engineering,QA Engineer,No Travel,4,3907,18.7,3,1,1,3,Yes,5,3,0,8,6,1,0,Yes
+229,44,Male,Single,PhD,Finance,Controller,Frequently,11,9335,14.7,3,3,4,2,Yes,12,5,5,8,2,3,0,No
+230,32,Male,Married,High School,Support,Support Lead,Rarely,11,9705,14.1,3,4,2,1,No,4,4,2,9,1,0,1,No
+231,55,Male,Divorced,PhD,Marketing,Marketing Analyst,Rarely,7,6106,18.2,1,2,2,1,Yes,10,6,5,1,3,0,0,Yes
+232,53,Male,Married,Master's,Marketing,SEO Specialist,No Travel,24,7309,23.6,2,4,1,4,Yes,19,2,0,5,4,3,1,No
+233,55,Male,Married,High School,Engineering,DevOps Engineer,No Travel,22,9134,15.6,2,2,2,4,Yes,30,6,4,9,2,3,1,Yes
+234,33,Female,Divorced,PhD,Engineering,Data Scientist,No Travel,8,8342,23.0,3,3,3,4,No,8,7,5,5,4,1,0,No
+235,45,Female,Married,PhD,Operations,Logistics Coordinator,No Travel,27,4509,24.9,3,3,2,2,No,23,1,1,0,6,2,2,No
+236,31,Male,Married,High School,Finance,Controller,Rarely,19,5133,12.3,3,2,3,3,Yes,2,0,0,9,3,1,1,No
+237,33,Male,Divorced,PhD,Support,Technical Support,Frequently,21,7097,20.4,3,4,4,1,Yes,4,0,0,9,0,3,0,Yes
+238,58,Female,Divorced,Bachelor's,HR,HR Manager,Frequently,13,6821,18.5,4,4,1,2,No,7,2,0,4,6,1,0,Yes
+239,25,Female,Single,PhD,Finance,Controller,Rarely,14,6672,9.0,3,2,2,2,Yes,4,3,1,4,6,2,1,Yes
+240,49,Female,Single,Master's,Engineering,QA Engineer,Rarely,8,4216,20.4,2,3,4,2,No,11,9,0,0,6,1,1,Yes
+241,29,Male,Divorced,High School,Operations,Operations Manager,No Travel,20,6164,14.0,1,2,2,2,No,4,0,0,8,3,1,1,No
+242,55,Female,Single,High School,Marketing,SEO Specialist,No Travel,4,5588,6.1,3,1,1,4,No,9,3,2,5,6,0,0,No
+243,46,Female,Married,High School,Marketing,Marketing Analyst,Frequently,24,8147,16.2,3,1,2,3,No,17,2,0,7,3,1,0,Yes
+244,41,Female,Single,Bachelor's,HR,HR Manager,Frequently,5,11452,24.8,4,3,2,2,No,8,6,6,6,5,0,1,Yes
+245,36,Male,Divorced,PhD,Operations,Supply Chain Analyst,No Travel,5,5305,9.1,2,2,2,3,Yes,13,4,4,6,6,1,0,Yes
+246,33,Male,Divorced,Master's,Operations,Operations Manager,No Travel,1,8696,24.2,3,3,2,2,Yes,12,5,3,2,1,2,1,No
+247,36,Female,Single,High School,Finance,Financial Analyst,Frequently,8,7777,18.0,2,4,4,4,Yes,15,4,4,2,1,0,0,No
+248,36,Male,Single,Bachelor's,HR,Recruiter,No Travel,24,4648,14.8,3,4,2,4,No,14,13,9,0,4,3,1,No
+249,60,Male,Married,High School,Operations,Supply Chain Analyst,Rarely,25,4506,19.7,3,1,2,3,No,26,1,0,6,2,2,0,Yes
+250,55,Female,Divorced,Bachelor's,Finance,Financial Analyst,Rarely,6,6264,7.3,3,2,4,4,No,2,2,2,7,0,3,1,No
+251,27,Female,Divorced,Master's,Sales,Account Manager,Frequently,6,9130,17.7,2,4,2,4,No,5,1,0,0,6,2,1,No
+252,31,Male,Married,Bachelor's,Sales,Sales Rep,Rarely,16,8197,17.5,2,2,2,1,No,4,3,2,0,3,3,0,Yes
+253,35,Female,Married,PhD,Marketing,Marketing Analyst,Rarely,12,7691,17.6,4,2,1,2,Yes,1,0,0,0,5,0,0,Yes
+254,41,Male,Single,Master's,Finance,Controller,No Travel,10,5410,18.4,3,2,4,3,Yes,13,2,0,1,6,2,0,Yes
+255,57,Female,Married,High School,Engineering,QA Engineer,No Travel,28,4095,18.9,3,1,1,4,No,3,2,1,6,4,2,0,No
+256,30,Female,Married,PhD,Finance,Accountant,No Travel,14,6087,24.6,1,1,4,1,Yes,9,3,2,9,3,0,0,Yes
+257,22,Female,Married,Bachelor's,Operations,Operations Manager,No Travel,16,6605,11.7,3,1,2,2,No,1,1,1,5,5,3,1,No
+258,51,Female,Married,Master's,Marketing,Marketing Analyst,Frequently,1,5522,16.1,1,3,3,1,Yes,1,1,1,4,6,2,2,Yes
+259,58,Male,Divorced,PhD,Support,Customer Support,No Travel,10,5085,19.2,3,1,4,2,No,27,25,24,7,6,1,0,Yes
+260,34,Female,Divorced,High School,HR,HR Specialist,No Travel,5,10188,8.8,4,3,3,2,Yes,12,7,2,8,5,1,1,Yes
+261,29,Female,Single,High School,Operations,Supply Chain Analyst,Frequently,10,7215,20.3,3,1,3,2,No,1,1,1,3,1,2,0,No
+262,39,Male,Married,Bachelor's,Operations,Operations Manager,No Travel,10,5901,15.9,3,3,2,3,Yes,0,0,0,2,0,2,0,Yes
+263,25,Female,Single,High School,Engineering,QA Engineer,No Travel,25,5316,17.6,3,4,3,3,No,3,3,1,3,5,0,2,No
+264,30,Female,Single,High School,Marketing,SEO Specialist,Rarely,28,2456,9.6,2,3,3,4,Yes,4,3,3,5,6,2,0,Yes
+265,44,Female,Single,PhD,Marketing,Marketing Analyst,Rarely,14,7149,21.4,3,3,1,3,No,11,9,9,6,4,1,1,No
+266,26,Male,Divorced,Master's,Marketing,Content Strategist,Frequently,4,7169,15.9,2,1,4,1,No,3,3,2,5,4,3,0,No
+267,60,Female,Married,PhD,Engineering,Software Engineer,Frequently,13,6721,16.6,3,1,2,2,No,21,1,0,8,2,3,0,Yes
+268,58,Female,Divorced,Master's,HR,Recruiter,Rarely,1,7571,17.2,3,2,3,1,No,2,2,0,8,0,2,0,No
+269,49,Female,Divorced,PhD,Engineering,Data Scientist,Rarely,22,3669,14.5,2,4,3,4,Yes,12,6,3,4,6,1,0,Yes
+270,53,Male,Single,PhD,Engineering,Data Scientist,No Travel,15,5675,14.1,3,4,2,4,No,20,13,13,8,6,3,0,Yes
+271,58,Male,Divorced,PhD,Finance,Financial Analyst,Frequently,24,6037,5.8,3,3,1,4,Yes,8,6,4,2,5,2,0,Yes
+272,37,Male,Divorced,PhD,Finance,Financial Analyst,Frequently,11,6259,23.1,3,1,4,4,No,9,9,0,9,5,3,0,No
+273,32,Female,Divorced,High School,HR,Recruiter,Frequently,3,4199,18.1,3,1,3,4,Yes,4,0,0,2,4,2,0,No
+274,22,Male,Divorced,High School,HR,Recruiter,Frequently,5,5270,21.2,3,2,4,2,Yes,0,0,0,5,0,1,1,Yes
+275,37,Male,Single,PhD,Marketing,Content Strategist,Frequently,9,6534,8.4,3,3,4,2,No,11,0,0,6,3,1,0,Yes
+276,46,Male,Single,Master's,HR,Recruiter,Frequently,21,5507,17.2,3,3,3,3,No,20,11,6,1,2,3,0,No
+277,59,Female,Divorced,Bachelor's,Sales,Sales Lead,Frequently,7,6760,6.4,3,1,4,3,Yes,5,2,2,4,2,0,0,Yes
+278,35,Male,Single,High School,Finance,Controller,Frequently,25,6517,22.9,3,3,3,4,Yes,2,1,0,7,2,3,1,No
+279,38,Male,Married,Bachelor's,Support,Technical Support,No Travel,16,8045,21.3,2,1,4,2,No,12,6,2,2,5,0,0,No
+280,28,Female,Single,PhD,Sales,Sales Lead,No Travel,5,6460,20.5,1,4,2,1,Yes,1,0,0,6,2,2,2,Yes
+281,53,Female,Married,PhD,Finance,Controller,Frequently,21,6797,18.8,3,1,3,3,No,24,2,2,6,0,0,0,No
+282,51,Male,Single,Master's,HR,HR Specialist,Frequently,7,8447,11.0,3,1,3,4,Yes,1,1,0,7,5,1,0,Yes
+283,53,Male,Divorced,PhD,Finance,Financial Analyst,Frequently,22,6855,11.8,3,1,4,1,Yes,9,7,7,8,3,1,1,Yes
+284,31,Male,Married,PhD,Engineering,Software Engineer,Frequently,27,6424,5.3,3,3,1,4,Yes,0,0,0,9,0,0,0,Yes
+285,26,Female,Married,Bachelor's,Finance,Financial Analyst,Frequently,9,8702,15.9,3,2,1,2,No,5,3,2,1,0,1,1,Yes
+286,32,Male,Divorced,PhD,HR,HR Manager,No Travel,23,8589,20.6,1,4,1,1,Yes,2,0,0,2,0,2,0,No
+287,30,Male,Divorced,Bachelor's,Support,Technical Support,Rarely,18,6583,18.8,3,4,1,3,No,8,7,6,6,0,1,0,No
+288,56,Female,Divorced,Bachelor's,Engineering,DevOps Engineer,Frequently,21,7735,8.9,3,4,4,2,Yes,6,2,0,0,0,2,0,Yes
+289,51,Male,Divorced,High School,HR,HR Manager,No Travel,22,6765,15.3,2,2,4,3,No,29,17,5,3,5,2,0,Yes
+290,37,Male,Married,PhD,Sales,Sales Rep,No Travel,15,6906,6.1,3,2,4,2,No,2,1,1,5,1,1,1,No
+291,30,Male,Married,High School,Sales,Account Manager,No Travel,17,3555,9.4,3,2,2,2,Yes,1,1,1,6,6,3,1,Yes
+292,39,Female,Divorced,High School,Marketing,Content Strategist,No Travel,24,8161,16.6,4,2,1,4,Yes,7,5,3,0,3,0,0,Yes
+293,28,Female,Single,PhD,Support,Support Lead,No Travel,19,7625,18.0,2,4,3,2,No,0,0,0,9,5,0,2,Yes
+294,47,Female,Divorced,Bachelor's,Sales,Sales Lead,Rarely,20,7740,22.2,2,3,1,3,No,22,20,0,4,5,1,1,Yes
+295,25,Male,Single,Master's,HR,HR Manager,Rarely,21,5675,16.2,2,2,2,3,Yes,2,1,0,8,0,3,1,Yes
+296,35,Female,Married,Bachelor's,Support,Support Lead,Rarely,27,7428,6.1,3,4,4,1,No,8,6,2,8,5,2,0,Yes
+297,26,Female,Single,Bachelor's,Operations,Supply Chain Analyst,No Travel,1,7272,8.3,2,2,4,2,Yes,3,1,1,8,5,2,0,No
+298,44,Female,Divorced,PhD,Sales,Account Manager,Frequently,19,6292,6.3,4,2,3,4,No,0,0,0,5,3,3,0,No
+299,32,Male,Married,Master's,Support,Technical Support,Rarely,4,5168,8.3,4,3,2,2,Yes,4,0,0,2,1,0,2,Yes
+300,45,Male,Divorced,Bachelor's,Marketing,Content Strategist,Frequently,25,8259,8.0,3,2,3,1,Yes,1,1,1,6,3,1,2,Yes
+301,56,Female,Married,Master's,Sales,Sales Rep,Rarely,18,4711,19.6,4,3,1,4,Yes,30,24,18,2,5,0,0,Yes
+302,50,Male,Married,Master's,Support,Customer Support,No Travel,15,3392,15.5,3,3,2,1,Yes,19,6,4,8,6,0,2,Yes
+303,60,Female,Married,High School,Marketing,Content Strategist,No Travel,15,6263,11.9,3,4,1,2,No,22,13,5,6,6,2,0,No
+304,48,Male,Single,Bachelor's,Marketing,SEO Specialist,No Travel,6,6705,6.3,4,4,1,1,No,9,7,5,4,3,3,1,No
+305,33,Female,Divorced,PhD,Sales,Sales Rep,Rarely,22,3220,9.5,3,2,3,3,No,0,0,0,1,5,2,0,Yes
+306,37,Male,Married,High School,Operations,Supply Chain Analyst,Rarely,24,6621,12.2,3,4,3,4,Yes,2,2,2,5,4,0,1,Yes
+307,42,Male,Married,PhD,Engineering,Data Scientist,No Travel,6,2641,12.1,3,1,2,2,Yes,1,1,1,9,6,2,1,Yes
+308,39,Male,Divorced,Master's,Operations,Logistics Coordinator,Frequently,5,8636,7.7,3,4,4,3,Yes,11,2,0,1,1,1,1,No
+309,55,Female,Married,High School,Finance,Controller,No Travel,5,4786,12.3,4,3,2,3,Yes,3,1,0,1,1,1,1,Yes
+310,27,Male,Single,PhD,Sales,Sales Rep,No Travel,10,6721,5.9,2,1,4,1,No,6,3,3,0,0,0,1,No
+311,59,Male,Divorced,Bachelor's,Finance,Financial Analyst,Rarely,1,9202,24.0,3,2,2,1,Yes,0,0,0,9,6,1,1,No
+312,22,Male,Divorced,High School,Sales,Sales Lead,Frequently,8,2569,13.8,4,2,3,4,No,1,1,0,3,4,3,0,No
+313,29,Female,Married,Bachelor's,Engineering,QA Engineer,Frequently,14,8528,12.7,3,3,4,2,No,4,4,0,4,6,1,1,No
+314,45,Male,Divorced,Bachelor's,Support,Technical Support,Rarely,19,7652,13.8,3,1,1,2,No,21,3,3,6,5,0,1,No
+315,45,Female,Single,Bachelor's,Sales,Sales Rep,Frequently,16,8190,10.6,3,3,4,3,No,12,1,0,9,3,2,0,No
+316,53,Male,Divorced,PhD,Engineering,DevOps Engineer,No Travel,20,3765,21.6,3,1,2,4,No,0,0,0,2,2,0,1,No
+317,51,Female,Divorced,Bachelor's,Finance,Accountant,Rarely,28,4300,15.9,4,1,4,1,No,15,8,8,7,2,3,0,Yes
+318,41,Female,Married,Bachelor's,Sales,Sales Lead,No Travel,13,9797,20.3,3,4,4,4,Yes,9,6,3,8,0,2,0,No
+319,44,Female,Single,Master's,Finance,Controller,No Travel,14,7462,19.8,1,3,4,1,No,18,1,0,5,2,2,0,Yes
+320,41,Male,Married,High School,Sales,Sales Lead,No Travel,1,4916,15.8,1,4,4,3,Yes,10,2,0,7,4,2,0,Yes
+321,53,Male,Married,High School,Finance,Financial Analyst,Rarely,19,5073,13.7,3,1,2,3,No,16,10,2,0,2,3,1,No
+322,59,Female,Single,Master's,Engineering,Software Engineer,Frequently,7,5244,13.5,3,1,3,3,No,25,16,15,8,2,3,0,No
+323,57,Male,Divorced,Bachelor's,Marketing,SEO Specialist,Frequently,5,3559,21.5,4,3,4,1,Yes,16,5,4,5,3,1,0,Yes
+324,48,Male,Divorced,Master's,HR,Recruiter,No Travel,7,6514,21.5,3,3,2,4,Yes,27,13,4,1,1,0,0,No
+325,57,Female,Divorced,PhD,Marketing,Content Strategist,No Travel,29,7512,21.1,3,2,1,4,Yes,6,1,1,0,6,0,0,Yes
+326,45,Female,Divorced,High School,Engineering,QA Engineer,No Travel,25,7669,15.4,4,3,4,1,Yes,7,1,0,9,0,2,0,Yes
+327,37,Male,Single,PhD,Marketing,SEO Specialist,No Travel,8,5077,16.8,3,3,1,3,No,5,1,1,7,5,2,1,No
+328,45,Male,Divorced,Master's,HR,Recruiter,Frequently,13,7068,10.1,3,3,1,2,No,1,0,0,6,0,2,0,No
+329,41,Male,Married,Bachelor's,Support,Customer Support,Frequently,4,6891,6.6,3,4,4,4,No,10,10,6,6,6,1,1,No
+330,60,Female,Divorced,Master's,HR,Recruiter,No Travel,19,4947,17.6,3,2,1,4,Yes,24,1,0,4,2,0,0,Yes
+331,30,Female,Married,PhD,Operations,Supply Chain Analyst,Rarely,29,5066,21.0,2,4,3,2,No,2,1,0,6,6,1,0,Yes
+332,36,Female,Single,High School,Finance,Controller,Rarely,1,3040,17.4,3,2,1,3,Yes,5,0,0,9,0,3,1,No
+333,53,Male,Divorced,High School,Support,Support Lead,No Travel,14,6830,14.9,2,2,2,3,Yes,6,6,6,6,1,1,0,No
+334,50,Female,Divorced,Bachelor's,Sales,Sales Lead,Frequently,20,4885,5.2,2,3,4,2,No,20,14,1,6,5,2,0,No
+335,37,Female,Divorced,PhD,Engineering,DevOps Engineer,Frequently,16,4542,24.6,3,2,1,2,No,1,0,0,2,4,2,1,Yes
+336,55,Male,Married,PhD,HR,HR Manager,No Travel,27,6444,15.0,4,3,3,4,No,10,0,0,4,4,2,0,No
+337,53,Female,Single,Bachelor's,Sales,Account Manager,No Travel,18,7419,8.3,3,1,4,1,No,4,0,0,5,5,3,0,Yes
+338,29,Male,Single,Master's,Operations,Operations Manager,Rarely,25,8558,16.3,3,2,1,2,No,2,0,0,1,1,3,1,No
+339,29,Female,Divorced,PhD,Engineering,DevOps Engineer,No Travel,11,9790,18.2,3,3,1,3,Yes,5,1,0,9,3,1,0,Yes
+340,42,Male,Divorced,High School,Operations,Logistics Coordinator,Frequently,25,8337,10.1,2,4,1,1,Yes,12,1,1,2,3,3,0,Yes
+341,29,Female,Married,Master's,Operations,Operations Manager,Frequently,14,5931,12.3,2,4,4,4,No,4,4,1,9,4,0,1,No
+342,49,Male,Single,PhD,Finance,Financial Analyst,Frequently,26,7196,18.0,3,4,1,3,No,10,7,3,6,0,3,0,No
+343,37,Female,Divorced,PhD,Operations,Logistics Coordinator,No Travel,4,4440,14.3,3,3,3,3,Yes,2,0,0,8,0,3,0,Yes
+344,27,Female,Married,PhD,Marketing,Marketing Analyst,Frequently,28,6361,17.5,3,2,2,2,Yes,5,3,3,9,2,0,0,Yes
+345,22,Female,Married,Bachelor's,Marketing,Marketing Analyst,Frequently,7,2527,12.2,3,4,3,1,Yes,1,1,1,2,0,0,1,Yes
+346,35,Male,Divorced,PhD,Sales,Sales Rep,No Travel,1,2839,22.2,3,1,3,4,Yes,6,6,5,7,3,0,0,Yes
+347,53,Male,Married,PhD,Operations,Logistics Coordinator,Frequently,13,3065,6.0,1,4,4,4,No,7,3,2,0,3,3,0,No
+348,36,Male,Married,High School,Operations,Logistics Coordinator,Frequently,14,4898,10.4,3,4,1,4,No,10,8,1,7,5,0,0,No
+349,50,Male,Divorced,Bachelor's,Marketing,Content Strategist,Frequently,24,7632,19.2,4,3,4,2,Yes,10,9,7,4,5,0,1,Yes
+350,60,Male,Married,PhD,Sales,Sales Rep,Rarely,28,7723,16.1,4,3,3,3,Yes,9,3,1,2,6,0,1,No
+351,29,Female,Married,Bachelor's,Engineering,Data Scientist,Rarely,26,9616,22.5,3,1,1,4,No,5,0,0,1,0,0,1,Yes
+352,29,Female,Single,Bachelor's,Engineering,Data Scientist,Frequently,14,4123,19.7,2,3,3,2,Yes,4,3,3,3,3,0,0,No
+353,54,Male,Married,Bachelor's,HR,Recruiter,Rarely,28,5468,20.1,3,2,2,4,No,22,13,5,6,3,2,2,No
+354,55,Male,Married,High School,Support,Customer Support,Rarely,29,5409,13.7,3,1,2,1,No,12,12,2,6,3,2,1,Yes
+355,39,Female,Married,Bachelor's,HR,HR Specialist,Frequently,11,7193,18.9,4,4,2,3,Yes,6,4,4,0,4,3,1,No
+356,56,Male,Single,Master's,Sales,Sales Lead,Frequently,14,3677,11.8,3,1,1,3,Yes,17,9,8,4,5,0,1,No
+357,54,Male,Single,Master's,HR,HR Manager,Frequently,5,5529,14.1,4,2,3,3,No,30,3,3,9,5,3,0,Yes
+358,59,Female,Married,Bachelor's,HR,HR Manager,No Travel,22,9620,6.6,2,2,4,2,No,4,3,3,1,2,3,1,No
+359,59,Female,Married,PhD,Marketing,Content Strategist,Frequently,24,6999,7.5,3,2,1,2,No,29,15,13,7,0,1,2,Yes
+360,29,Female,Divorced,High School,Engineering,QA Engineer,Rarely,26,5501,12.4,4,3,3,4,Yes,0,0,0,2,1,3,0,No
+361,33,Male,Single,PhD,HR,HR Specialist,Frequently,15,4232,16.3,4,4,4,2,Yes,5,0,0,8,5,3,1,Yes
+362,27,Female,Single,PhD,Operations,Logistics Coordinator,Rarely,26,7791,24.2,4,3,1,2,Yes,2,2,0,9,5,2,1,Yes
+363,34,Male,Married,High School,Finance,Financial Analyst,Frequently,16,8059,9.1,4,4,1,3,No,0,0,0,9,0,0,0,Yes
+364,46,Male,Single,Master's,Engineering,DevOps Engineer,No Travel,20,6124,7.9,3,1,2,3,No,17,5,2,2,0,2,0,No
+365,28,Male,Married,Master's,HR,Recruiter,Rarely,18,7902,16.9,2,4,1,3,Yes,4,3,0,5,3,3,0,Yes
+366,23,Male,Single,Master's,Operations,Operations Manager,Frequently,14,6974,16.4,3,2,2,3,Yes,2,0,0,3,4,3,0,No
+367,40,Male,Single,Bachelor's,Support,Support Lead,Rarely,13,10344,9.3,4,3,1,2,Yes,8,4,3,4,0,0,1,No
+368,35,Female,Divorced,Master's,HR,Recruiter,Rarely,1,6481,10.5,3,3,3,2,No,12,11,7,9,2,1,1,Yes
+369,22,Female,Divorced,Bachelor's,Marketing,Marketing Analyst,Frequently,13,7172,6.6,1,4,1,3,No,1,1,0,9,2,1,1,No
+370,51,Male,Married,Master's,Engineering,Software Engineer,No Travel,12,3684,18.6,3,2,1,3,Yes,7,0,0,3,3,0,0,No
+371,35,Male,Divorced,High School,Operations,Supply Chain Analyst,Rarely,19,7128,19.8,3,2,1,2,Yes,1,1,1,2,2,1,1,Yes
+372,23,Female,Single,Master's,HR,HR Specialist,Rarely,16,7652,6.0,4,4,4,3,Yes,2,2,2,8,3,2,0,Yes
+373,25,Female,Divorced,Master's,Operations,Operations Manager,Rarely,11,6781,16.4,1,2,4,1,Yes,2,0,0,3,1,2,0,No
+374,49,Female,Married,High School,Engineering,QA Engineer,No Travel,15,7276,24.2,4,3,2,1,No,3,3,1,1,5,0,0,Yes
+375,42,Male,Single,High School,Engineering,QA Engineer,Rarely,20,9255,16.2,3,4,4,1,No,1,1,1,3,6,0,0,No
+376,28,Male,Married,Master's,Marketing,SEO Specialist,Frequently,16,7708,7.2,1,1,2,2,No,5,4,1,5,3,3,0,Yes
+377,30,Female,Divorced,Master's,Engineering,Software Engineer,Frequently,22,9096,7.9,3,3,3,3,Yes,5,2,2,8,4,1,0,Yes
+378,25,Female,Single,PhD,Support,Support Lead,No Travel,6,4217,8.8,3,4,3,3,No,1,0,0,6,2,0,0,No
+379,36,Male,Divorced,High School,Engineering,QA Engineer,No Travel,1,6724,24.1,3,4,2,4,Yes,14,9,3,0,2,0,0,Yes
+380,50,Female,Single,Bachelor's,Sales,Account Manager,No Travel,6,9749,8.5,4,2,3,2,Yes,6,1,1,3,0,2,2,Yes
+381,46,Female,Single,High School,Operations,Operations Manager,Rarely,7,7573,23.8,4,4,1,1,Yes,14,3,2,2,6,1,0,Yes
+382,49,Male,Divorced,Bachelor's,HR,HR Manager,Frequently,29,3761,10.9,2,2,1,3,Yes,6,6,4,8,4,3,0,Yes
+383,26,Female,Divorced,Bachelor's,Marketing,SEO Specialist,Frequently,2,7862,15.5,3,4,4,3,No,2,1,1,9,5,1,0,Yes
+384,47,Female,Married,Bachelor's,Support,Customer Support,Rarely,2,9348,10.1,2,1,3,4,No,18,5,2,3,4,3,0,No
+385,49,Female,Married,PhD,Marketing,Content Strategist,Rarely,4,7125,17.9,3,1,3,1,No,8,6,0,3,0,0,0,No
+386,43,Female,Divorced,Master's,HR,HR Specialist,Frequently,13,7818,25.0,3,3,1,3,No,8,3,1,5,6,3,1,No
+387,54,Female,Single,Bachelor's,Engineering,QA Engineer,No Travel,25,4122,20.7,3,4,3,1,No,23,23,6,3,3,3,0,No
+388,45,Male,Married,Bachelor's,Finance,Financial Analyst,Frequently,2,6885,11.8,3,4,3,3,Yes,0,0,0,9,6,1,0,No
+389,60,Female,Single,PhD,HR,HR Manager,Rarely,2,6862,16.4,3,3,1,2,Yes,2,2,1,8,1,3,0,Yes
+390,35,Female,Divorced,Bachelor's,Marketing,Content Strategist,Frequently,18,7388,12.4,1,3,4,4,Yes,1,1,0,1,1,3,0,Yes
+391,30,Female,Married,Bachelor's,Support,Customer Support,Frequently,3,4964,9.1,3,4,3,2,Yes,7,2,2,2,3,3,1,Yes
+392,53,Female,Divorced,PhD,HR,HR Manager,No Travel,6,5716,17.9,4,3,3,4,Yes,23,2,1,6,1,3,0,No
+393,58,Female,Divorced,High School,Sales,Sales Lead,No Travel,25,8338,18.3,2,2,4,4,Yes,7,2,1,5,0,0,0,No
+394,32,Male,Divorced,Master's,Marketing,Content Strategist,No Travel,2,4828,17.8,3,4,4,3,No,7,0,0,3,3,0,0,No
+395,51,Female,Single,PhD,Sales,Account Manager,No Travel,24,8857,21.8,2,1,1,2,No,17,7,7,1,4,3,0,Yes
+396,31,Female,Single,PhD,Engineering,DevOps Engineer,No Travel,1,9359,18.9,4,1,4,3,No,0,0,0,0,4,0,1,No
+397,37,Male,Single,Bachelor's,Sales,Account Manager,Rarely,4,7794,6.3,4,1,2,2,Yes,0,0,0,6,4,2,0,Yes
+398,56,Female,Single,PhD,Finance,Financial Analyst,No Travel,3,3772,11.5,1,3,1,4,Yes,6,0,0,7,1,2,1,Yes
+399,48,Female,Single,Master's,Engineering,Data Scientist,Frequently,11,9117,24.6,3,2,3,2,No,17,5,2,7,0,0,1,Yes
+400,36,Male,Single,High School,Marketing,SEO Specialist,Frequently,7,5810,19.8,3,1,1,2,No,3,2,0,7,2,1,0,Yes
+401,60,Female,Single,PhD,Sales,Sales Lead,Rarely,18,2000,18.0,3,1,2,3,No,10,10,0,3,1,0,2,No
+402,36,Female,Single,PhD,Sales,Sales Lead,Rarely,18,5779,6.4,2,2,2,2,Yes,0,0,0,2,4,1,0,Yes
+403,41,Male,Single,Bachelor's,Operations,Logistics Coordinator,Rarely,16,5641,24.4,2,4,1,3,No,5,4,1,6,1,3,0,No
+404,52,Female,Married,High School,Marketing,Marketing Analyst,No Travel,10,8976,15.7,3,2,3,4,No,24,9,9,4,3,3,1,No
+405,52,Male,Single,Bachelor's,HR,HR Specialist,No Travel,4,4788,12.9,3,4,4,3,Yes,0,0,0,6,0,3,2,Yes
+406,38,Female,Divorced,Master's,Support,Technical Support,Frequently,23,7670,18.0,4,2,2,4,Yes,11,11,0,5,5,0,1,Yes
+407,51,Female,Single,Bachelor's,HR,HR Manager,Frequently,23,7153,19.2,3,1,2,4,Yes,18,5,0,6,2,2,0,Yes
+408,41,Male,Single,PhD,Marketing,SEO Specialist,Frequently,4,7089,10.4,2,4,3,1,Yes,18,11,2,7,0,0,1,Yes
+409,40,Male,Single,PhD,Marketing,SEO Specialist,Rarely,25,6906,24.0,3,2,2,2,Yes,5,5,1,2,6,1,0,Yes
+410,28,Male,Married,Bachelor's,Marketing,Content Strategist,No Travel,9,7700,6.3,1,2,4,4,Yes,6,0,0,0,0,0,1,No
+411,35,Female,Divorced,High School,Engineering,Software Engineer,Frequently,20,4712,13.6,3,3,3,2,No,12,4,3,6,3,0,2,No
+412,22,Female,Divorced,PhD,Support,Customer Support,No Travel,22,6803,24.0,3,2,3,4,No,0,0,0,8,3,1,0,No
+413,23,Male,Divorced,Master's,Support,Technical Support,Rarely,7,4916,17.3,2,4,4,1,No,2,1,0,4,4,1,1,No
+414,54,Male,Married,High School,Support,Support Lead,No Travel,25,5243,8.4,3,1,4,2,Yes,9,8,7,3,1,0,0,No
+415,42,Female,Single,PhD,Engineering,Data Scientist,Frequently,24,4207,17.7,3,3,2,1,No,8,7,1,6,5,3,1,No
+416,36,Female,Single,Bachelor's,Support,Technical Support,Rarely,19,2597,11.8,3,2,1,3,Yes,2,0,0,5,3,0,0,Yes
+417,49,Female,Divorced,Master's,Sales,Account Manager,No Travel,10,4532,14.2,2,3,2,4,No,16,7,1,2,4,1,1,No
+418,24,Female,Divorced,Master's,Support,Support Lead,Frequently,23,8020,17.6,2,3,4,1,No,0,0,0,2,6,1,1,No
+419,25,Female,Divorced,Bachelor's,Sales,Sales Lead,Rarely,10,9016,11.7,3,3,4,4,Yes,2,2,0,8,5,2,1,Yes
+420,47,Male,Married,High School,Support,Support Lead,Frequently,7,6358,14.2,2,2,4,4,No,25,1,1,2,1,1,1,Yes
+421,28,Female,Married,Bachelor's,Operations,Supply Chain Analyst,Frequently,4,5104,23.9,2,3,4,2,No,2,0,0,3,0,1,0,Yes
+422,46,Female,Divorced,High School,Finance,Financial Analyst,Rarely,19,8285,5.2,2,1,4,2,Yes,8,7,5,9,4,3,0,No
+423,33,Female,Divorced,PhD,Support,Support Lead,Frequently,18,7752,19.3,4,2,4,1,No,6,2,2,8,6,3,0,No
+424,29,Male,Single,Bachelor's,Finance,Controller,Frequently,28,7756,21.0,2,2,2,2,Yes,2,0,0,8,2,0,0,Yes
+425,56,Female,Divorced,Bachelor's,HR,Recruiter,No Travel,20,8784,20.7,3,4,2,4,No,7,4,0,8,2,1,1,No
+426,24,Male,Married,Bachelor's,Engineering,Data Scientist,No Travel,29,5697,10.5,3,4,1,3,No,1,0,0,6,5,1,0,Yes
+427,49,Male,Single,Bachelor's,HR,HR Manager,Frequently,1,5929,18.0,3,2,4,2,No,23,8,3,6,3,1,0,Yes
+428,26,Male,Married,Master's,Engineering,QA Engineer,Rarely,24,3988,10.5,2,2,4,1,Yes,2,0,0,2,4,2,1,No
+429,58,Female,Divorced,Master's,Engineering,DevOps Engineer,No Travel,17,5116,8.6,4,4,4,2,No,28,1,0,0,5,1,1,Yes
+430,39,Female,Divorced,High School,Finance,Controller,No Travel,29,9539,8.7,4,4,3,3,No,13,11,7,8,5,1,0,No
+431,42,Male,Single,High School,HR,Recruiter,Frequently,22,5751,10.7,4,1,4,2,No,7,1,0,7,4,0,0,Yes
+432,22,Female,Single,PhD,Support,Support Lead,Frequently,12,6116,18.5,4,2,2,1,No,0,0,0,2,4,0,0,Yes
+433,43,Male,Married,Bachelor's,HR,HR Specialist,Rarely,1,7252,16.4,2,3,1,4,No,15,9,4,0,2,3,0,No
+434,33,Female,Single,PhD,Engineering,DevOps Engineer,No Travel,25,9685,6.7,3,2,4,1,No,6,3,1,0,1,2,0,Yes
+435,49,Female,Single,Bachelor's,HR,Recruiter,Rarely,13,8615,5.1,4,2,1,2,No,21,14,2,0,1,3,1,No
+436,34,Female,Single,PhD,Sales,Sales Lead,Rarely,1,9053,11.5,3,4,4,2,Yes,7,7,2,1,6,1,0,Yes
+437,37,Female,Married,High School,Support,Support Lead,Frequently,9,5933,20.2,2,2,2,2,No,0,0,0,1,6,1,1,Yes
+438,28,Male,Divorced,Bachelor's,Marketing,SEO Specialist,Frequently,3,8736,7.6,1,2,2,4,Yes,2,0,0,9,1,0,0,Yes
+439,36,Female,Married,Bachelor's,Operations,Supply Chain Analyst,Rarely,1,5970,10.6,3,4,2,3,Yes,1,1,0,2,0,0,1,Yes
+440,39,Female,Single,High School,HR,Recruiter,Rarely,25,7992,11.1,2,1,2,3,No,15,11,5,5,5,2,0,Yes
+441,27,Male,Divorced,High School,Finance,Accountant,Frequently,16,2725,18.1,2,4,1,1,No,4,0,0,4,5,1,0,Yes
+442,48,Female,Married,Master's,Sales,Sales Rep,Rarely,19,4217,6.4,3,1,2,3,Yes,20,3,3,4,0,0,1,No
+443,53,Male,Married,High School,Operations,Logistics Coordinator,Frequently,8,5207,8.7,2,2,1,4,No,12,8,6,4,6,2,1,No
+444,24,Female,Single,Bachelor's,Sales,Sales Rep,Frequently,20,7428,10.4,3,2,2,1,Yes,1,1,0,5,5,2,0,No
+445,30,Female,Married,PhD,Finance,Accountant,No Travel,11,6301,10.1,1,1,4,3,Yes,0,0,0,7,1,2,0,No
+446,31,Male,Divorced,PhD,Support,Technical Support,Frequently,16,4892,23.0,2,2,4,2,Yes,6,2,0,3,4,1,1,Yes
+447,47,Male,Single,Bachelor's,Sales,Sales Rep,No Travel,27,10964,7.0,3,1,1,4,No,13,3,3,0,0,0,1,No
+448,37,Female,Single,High School,Engineering,Data Scientist,Frequently,27,3632,15.8,4,1,2,2,No,0,0,0,9,3,1,0,Yes
+449,56,Male,Single,Master's,Sales,Sales Rep,No Travel,21,2703,7.8,4,1,2,4,No,3,2,0,2,2,2,0,No
+450,29,Male,Single,PhD,Marketing,SEO Specialist,No Travel,17,6224,6.5,3,3,1,1,Yes,1,1,1,2,3,2,1,Yes
+451,41,Female,Single,Master's,Sales,Sales Lead,Rarely,24,7673,6.5,1,2,2,3,Yes,15,11,4,6,3,3,1,Yes
+452,39,Male,Married,Bachelor's,Marketing,SEO Specialist,No Travel,18,3574,11.4,3,4,3,2,Yes,5,3,2,6,3,3,0,Yes
+453,46,Female,Divorced,High School,Finance,Financial Analyst,Frequently,12,6074,5.1,4,1,3,4,Yes,24,22,7,1,0,2,1,No
+454,40,Male,Divorced,PhD,Support,Customer Support,Rarely,23,5098,6.1,2,2,4,1,No,7,3,1,5,0,0,1,Yes
+455,32,Male,Married,High School,Support,Support Lead,No Travel,11,10260,13.3,3,4,2,3,No,1,0,0,6,5,3,1,No
+456,31,Male,Divorced,High School,HR,HR Specialist,No Travel,9,6795,12.9,3,4,3,3,Yes,8,2,0,6,1,0,0,No
+457,35,Male,Single,PhD,Sales,Sales Lead,Rarely,14,5866,18.8,3,4,4,2,Yes,2,2,2,5,5,1,0,Yes
+458,43,Male,Married,High School,HR,HR Manager,No Travel,3,6008,9.2,1,3,2,2,Yes,17,3,0,3,2,0,1,No
+459,42,Female,Single,High School,Engineering,Software Engineer,Rarely,25,7633,19.5,4,1,3,4,Yes,9,6,4,8,6,1,0,No
+460,24,Male,Single,Master's,Marketing,SEO Specialist,Frequently,5,9640,24.1,2,2,2,2,No,3,0,0,7,6,2,0,Yes
+461,46,Male,Divorced,Bachelor's,Marketing,Marketing Analyst,Frequently,10,6784,20.3,3,1,4,1,No,2,0,0,5,1,1,0,No
+462,26,Female,Married,Bachelor's,HR,HR Specialist,Rarely,28,6699,23.8,4,4,1,3,No,2,1,0,6,3,1,0,No
+463,45,Female,Divorced,High School,Finance,Accountant,Rarely,28,6415,21.4,1,1,3,4,Yes,8,0,0,9,3,0,0,No
+464,44,Female,Divorced,PhD,Operations,Operations Manager,Frequently,11,5003,8.6,2,4,4,2,No,14,1,0,5,0,2,2,No
+465,52,Female,Married,High School,Operations,Supply Chain Analyst,No Travel,2,7345,16.4,4,4,1,3,No,17,4,3,7,1,1,1,No
+466,39,Male,Single,Master's,Operations,Logistics Coordinator,No Travel,2,7597,6.6,4,4,4,2,No,2,1,1,2,6,0,1,No
+467,32,Female,Married,Bachelor's,Support,Technical Support,Rarely,5,2428,16.4,4,2,1,2,No,7,2,2,5,0,3,2,Yes
+468,48,Male,Married,Master's,HR,HR Specialist,No Travel,7,8208,24.4,2,2,2,4,Yes,20,14,10,9,3,2,0,Yes
+469,22,Female,Single,Master's,Operations,Supply Chain Analyst,Rarely,12,5190,13.2,3,4,3,1,Yes,1,0,0,7,3,1,1,Yes
+470,40,Female,Divorced,PhD,Marketing,Content Strategist,Frequently,19,4723,6.8,1,4,1,4,Yes,3,0,0,7,4,0,1,No
+471,51,Male,Single,PhD,Sales,Sales Rep,Rarely,9,10839,13.3,4,4,1,3,Yes,30,3,2,8,2,2,0,No
+472,37,Female,Single,High School,Marketing,SEO Specialist,No Travel,13,5604,21.8,3,3,3,2,No,0,0,0,3,4,1,1,Yes
+473,30,Male,Married,PhD,Engineering,QA Engineer,Rarely,3,6875,7.5,2,4,3,2,No,8,2,1,3,0,0,0,No
+474,23,Female,Single,High School,Finance,Financial Analyst,Frequently,27,9624,17.7,3,2,2,2,No,2,0,0,3,4,1,1,Yes
+475,25,Male,Single,Master's,Marketing,Content Strategist,Frequently,7,3895,7.1,3,2,1,1,No,0,0,0,5,6,3,0,Yes
+476,53,Male,Divorced,High School,Marketing,Marketing Analyst,Rarely,20,7183,23.2,4,2,3,1,Yes,12,5,5,9,5,0,0,Yes
+477,60,Male,Divorced,High School,HR,Recruiter,Frequently,5,4552,15.4,3,2,3,1,Yes,8,1,0,0,2,1,0,Yes
+478,39,Male,Single,PhD,Sales,Account Manager,Rarely,28,4967,19.9,3,4,2,3,Yes,17,9,7,3,5,2,2,Yes
+479,41,Male,Divorced,Bachelor's,Support,Support Lead,Rarely,27,5190,11.4,2,4,4,2,No,13,7,6,5,5,0,0,No
+480,59,Female,Divorced,PhD,Finance,Accountant,Frequently,3,5593,12.0,1,2,3,4,Yes,30,30,16,5,1,1,1,Yes
+481,29,Female,Divorced,High School,Support,Technical Support,No Travel,23,4894,9.7,2,3,2,2,Yes,5,1,1,8,2,0,1,Yes
+482,42,Male,Single,Master's,Operations,Logistics Coordinator,No Travel,8,5775,24.8,3,1,4,2,No,15,15,1,9,3,0,0,No
+483,22,Female,Single,PhD,Support,Support Lead,Rarely,18,6034,6.9,4,3,3,3,No,0,0,0,6,0,2,0,Yes
+484,51,Male,Married,PhD,HR,HR Manager,Frequently,7,5901,6.0,1,1,3,4,Yes,3,0,0,2,0,2,1,No
+485,38,Male,Single,High School,Engineering,Software Engineer,Rarely,5,5153,12.6,3,2,4,1,Yes,2,1,1,5,6,3,1,No
+486,37,Female,Married,PhD,Finance,Controller,Rarely,16,3223,10.3,3,1,3,2,Yes,15,7,1,1,0,0,0,Yes
+487,34,Male,Married,PhD,Marketing,Content Strategist,No Travel,15,4772,23.9,3,2,1,2,Yes,13,9,8,5,3,1,1,Yes
+488,32,Male,Single,Master's,HR,Recruiter,Rarely,4,6348,5.3,3,3,1,4,No,1,0,0,5,2,0,0,Yes
+489,49,Male,Married,Master's,Marketing,SEO Specialist,Rarely,4,4569,13.5,3,4,2,3,No,11,1,0,8,3,0,1,No
+490,25,Female,Single,High School,Sales,Sales Rep,No Travel,27,3890,9.5,3,4,4,4,Yes,4,0,0,3,5,2,0,Yes
+491,40,Male,Single,Master's,Sales,Account Manager,No Travel,22,8333,8.4,3,2,2,3,No,16,15,9,2,0,3,0,Yes
+492,32,Female,Married,High School,HR,HR Specialist,Frequently,4,4059,14.5,1,1,3,2,Yes,0,0,0,2,6,0,0,Yes
+493,44,Female,Married,Master's,Marketing,Content Strategist,Rarely,28,5930,15.4,3,4,1,3,Yes,14,0,0,2,3,1,1,Yes
+494,37,Female,Single,PhD,Marketing,Marketing Analyst,Frequently,19,8210,17.8,4,4,2,3,No,2,0,0,5,3,3,2,No
+495,59,Male,Married,Master's,Sales,Sales Rep,Rarely,3,6699,23.5,2,2,3,2,No,18,11,4,7,2,2,0,Yes
+496,29,Female,Married,High School,HR,HR Manager,No Travel,9,6665,21.7,1,2,3,3,Yes,6,2,2,1,5,1,2,Yes
+497,40,Male,Married,Bachelor's,Finance,Financial Analyst,Rarely,22,3010,22.9,4,3,2,4,No,7,6,3,9,1,1,0,Yes
+498,41,Female,Divorced,High School,Sales,Account Manager,Frequently,22,9065,12.5,4,4,1,2,No,14,8,2,5,4,2,0,Yes
+499,51,Male,Married,High School,Marketing,Content Strategist,No Travel,1,9430,16.6,3,3,1,4,Yes,24,4,4,6,5,3,1,No
+500,27,Female,Divorced,High School,Marketing,Marketing Analyst,No Travel,5,4557,21.4,3,3,1,1,Yes,2,2,0,3,4,3,0,No
+501,41,Male,Married,Master's,Operations,Operations Manager,Frequently,13,9221,7.4,2,2,1,4,Yes,6,0,0,8,3,0,2,Yes
+502,37,Female,Divorced,Master's,Marketing,Marketing Analyst,Frequently,10,6500,17.7,2,2,2,2,No,3,3,1,7,2,0,2,Yes
+503,47,Male,Married,PhD,Operations,Logistics Coordinator,Rarely,15,8676,16.3,1,3,1,4,Yes,26,13,2,5,1,3,0,No
+504,54,Female,Divorced,Bachelor's,HR,HR Manager,Frequently,3,6886,8.5,2,3,4,2,No,12,8,1,4,3,3,0,No
+505,58,Male,Divorced,Master's,Operations,Operations Manager,Rarely,16,3253,6.4,1,2,2,1,Yes,18,18,11,7,5,2,1,No
+506,37,Male,Divorced,High School,Support,Support Lead,Rarely,4,4594,17.2,2,1,4,3,Yes,13,1,0,2,2,3,0,No
+507,34,Female,Married,Bachelor's,Finance,Controller,Rarely,26,6859,21.3,4,2,1,1,Yes,10,4,1,3,0,1,1,Yes
+508,56,Female,Single,High School,Marketing,SEO Specialist,Frequently,28,7633,15.6,2,2,4,3,No,23,23,20,9,4,1,1,Yes
+509,26,Male,Divorced,High School,Operations,Logistics Coordinator,Rarely,28,6830,11.6,2,3,3,4,No,0,0,0,1,6,1,2,Yes
+510,55,Female,Divorced,Master's,Finance,Financial Analyst,No Travel,11,9192,23.7,4,1,1,3,No,17,3,3,4,1,0,0,No
+511,25,Female,Single,Bachelor's,Operations,Logistics Coordinator,Frequently,2,11359,17.0,3,1,4,2,No,4,0,0,0,0,3,0,No
+512,41,Male,Single,Bachelor's,Marketing,Content Strategist,No Travel,5,5918,22.2,3,1,4,1,No,6,4,4,6,5,3,1,No
+513,29,Female,Single,Master's,Engineering,QA Engineer,Rarely,5,6800,9.5,3,1,1,2,Yes,6,0,0,1,0,3,0,Yes
+514,37,Male,Divorced,Master's,HR,HR Manager,Rarely,10,9148,6.5,4,2,4,3,Yes,15,3,0,7,5,2,1,Yes
+515,55,Female,Divorced,Master's,Operations,Operations Manager,Frequently,18,5326,24.0,3,1,2,2,Yes,16,3,0,4,5,1,0,Yes
+516,24,Female,Divorced,Bachelor's,Support,Customer Support,Rarely,20,8189,21.7,3,4,3,1,Yes,0,0,0,4,6,3,0,No
+517,24,Male,Married,Bachelor's,Marketing,Content Strategist,No Travel,27,9828,23.7,4,3,3,2,Yes,3,0,0,5,5,3,1,No
+518,28,Female,Divorced,PhD,Operations,Operations Manager,Rarely,26,7163,20.4,3,4,4,2,Yes,6,4,4,0,2,2,0,Yes
+519,43,Male,Divorced,PhD,Finance,Accountant,Rarely,15,7237,17.2,2,3,3,2,No,11,4,2,7,0,0,0,No
+520,57,Female,Single,Bachelor's,Marketing,SEO Specialist,Frequently,28,2928,22.9,3,1,4,2,No,30,2,1,4,2,3,0,Yes
+521,25,Male,Divorced,Bachelor's,Sales,Sales Lead,No Travel,2,9569,6.2,3,3,3,1,No,1,1,1,8,5,1,0,Yes
+522,54,Male,Single,High School,Marketing,Marketing Analyst,Rarely,12,7328,13.3,3,3,2,1,No,18,11,10,9,6,2,2,No
+523,40,Male,Married,High School,HR,Recruiter,No Travel,25,9205,21.2,3,3,2,4,Yes,9,2,2,2,3,0,2,No
+524,54,Male,Divorced,PhD,Sales,Sales Lead,No Travel,15,6937,11.3,2,3,2,3,Yes,19,15,14,5,1,2,1,Yes
+525,48,Male,Married,Master's,Sales,Account Manager,Frequently,26,4943,14.0,3,2,2,4,Yes,16,2,1,9,2,2,0,Yes
+526,54,Female,Divorced,Bachelor's,Marketing,Content Strategist,No Travel,14,4260,5.3,2,3,4,1,Yes,28,5,3,0,6,0,1,No
+527,55,Female,Married,PhD,Sales,Sales Lead,No Travel,14,6589,11.7,4,3,1,1,Yes,12,11,8,5,3,3,1,Yes
+528,30,Male,Single,Bachelor's,Support,Technical Support,No Travel,10,8164,18.5,3,3,4,2,No,9,9,5,1,1,3,0,No
+529,54,Female,Married,PhD,Finance,Controller,Rarely,6,11151,22.6,3,4,3,3,Yes,10,2,0,5,2,0,0,No
+530,40,Male,Single,Master's,Sales,Sales Rep,Frequently,27,7754,9.1,4,2,1,1,Yes,8,2,0,0,3,0,0,Yes
+531,50,Female,Married,Bachelor's,Finance,Accountant,No Travel,3,4500,10.3,4,3,1,3,Yes,22,22,3,3,5,2,0,Yes
+532,54,Female,Single,High School,Marketing,SEO Specialist,Rarely,28,7228,21.8,3,1,1,2,Yes,3,2,0,9,3,1,1,Yes
+533,33,Female,Single,PhD,Sales,Account Manager,No Travel,21,7246,16.2,2,2,1,4,No,10,1,0,9,3,1,1,Yes
+534,41,Female,Divorced,Bachelor's,Operations,Operations Manager,Rarely,11,6514,12.1,3,1,2,1,No,15,12,9,6,3,1,1,Yes
+535,29,Female,Divorced,Master's,Marketing,Content Strategist,No Travel,13,6313,10.4,2,4,1,3,No,7,7,6,5,3,3,0,Yes
+536,53,Female,Divorced,Bachelor's,Engineering,DevOps Engineer,No Travel,1,6052,9.4,4,2,1,3,Yes,9,7,6,9,4,0,1,Yes
+537,44,Male,Divorced,High School,Operations,Logistics Coordinator,No Travel,18,10300,12.9,3,3,2,3,No,11,8,3,6,1,1,2,Yes
+538,54,Female,Single,PhD,Engineering,Software Engineer,No Travel,13,6145,9.6,3,2,1,3,Yes,9,4,0,6,5,1,1,No
+539,26,Female,Single,High School,Support,Customer Support,No Travel,15,7282,16.8,3,3,3,4,Yes,5,4,4,4,2,1,0,No
+540,46,Female,Single,Master's,Finance,Accountant,No Travel,25,6063,14.7,4,2,4,1,No,13,8,4,6,2,0,0,Yes
+541,36,Female,Married,PhD,Engineering,QA Engineer,Frequently,20,8245,6.7,3,2,4,2,Yes,3,2,1,2,3,3,0,No
+542,25,Female,Married,PhD,Support,Customer Support,Rarely,16,8714,11.4,3,4,1,3,Yes,2,0,0,8,6,3,0,No
+543,52,Male,Married,High School,HR,Recruiter,Frequently,21,6551,20.0,2,4,1,1,No,2,1,0,7,1,3,0,No
+544,22,Male,Married,Master's,Marketing,Content Strategist,Rarely,7,5311,16.3,2,3,2,3,No,1,1,1,7,3,2,2,No
+545,32,Male,Married,PhD,Support,Customer Support,Rarely,15,11512,11.2,2,1,4,3,Yes,2,0,0,0,4,1,0,No
+546,22,Female,Married,Bachelor's,Sales,Account Manager,Rarely,6,8746,23.7,3,2,1,2,Yes,1,1,1,3,2,2,1,Yes
+547,46,Female,Divorced,Master's,Finance,Controller,Frequently,3,8221,24.8,2,2,2,2,No,21,15,6,0,2,0,0,Yes
+548,52,Female,Divorced,Master's,Marketing,SEO Specialist,No Travel,7,9545,20.5,3,3,3,3,Yes,7,6,3,9,6,1,2,No
+549,49,Female,Divorced,PhD,Operations,Operations Manager,Rarely,6,5777,22.3,4,3,4,2,Yes,21,3,3,6,2,0,0,Yes
+550,59,Female,Single,Master's,Sales,Sales Rep,Rarely,23,5477,23.4,3,1,3,4,No,29,8,8,0,5,2,0,Yes
+551,52,Female,Single,PhD,Finance,Financial Analyst,Rarely,28,6697,5.6,4,2,2,2,Yes,23,20,17,6,6,0,0,Yes
+552,28,Male,Divorced,Master's,Engineering,DevOps Engineer,Frequently,7,5977,23.0,2,3,1,4,No,0,0,0,0,0,1,1,Yes
+553,39,Female,Single,Bachelor's,Marketing,Marketing Analyst,Frequently,24,5570,14.3,4,1,4,1,Yes,0,0,0,1,1,0,0,Yes
+554,22,Female,Married,Bachelor's,Engineering,Data Scientist,No Travel,5,6128,19.9,3,3,1,4,No,0,0,0,2,2,2,0,No
+555,33,Female,Divorced,Master's,HR,HR Specialist,Rarely,7,5333,20.4,3,2,1,4,Yes,4,0,0,8,4,3,0,No
+556,35,Female,Single,Master's,Support,Technical Support,Frequently,11,8001,9.4,3,1,2,4,Yes,12,3,2,7,4,2,1,Yes
+557,28,Male,Single,Master's,Engineering,DevOps Engineer,Rarely,19,5949,23.3,3,4,2,1,No,7,5,2,9,3,3,1,No
+558,45,Female,Divorced,Master's,Sales,Account Manager,Rarely,19,5763,20.3,4,1,4,4,No,9,0,0,9,3,0,0,Yes
+559,55,Male,Single,Bachelor's,HR,HR Manager,Frequently,10,5259,21.0,3,2,4,1,Yes,10,0,0,3,1,2,0,Yes
+560,27,Male,Divorced,Bachelor's,Sales,Account Manager,Frequently,13,9674,5.1,2,1,4,4,Yes,6,6,2,7,5,3,1,No
+561,30,Male,Married,Master's,Engineering,QA Engineer,Rarely,11,4696,18.4,4,1,2,2,Yes,4,3,3,5,2,0,1,No
+562,30,Male,Single,PhD,Engineering,Data Scientist,No Travel,27,6107,11.8,3,4,2,3,No,4,3,0,6,5,3,0,No
+563,32,Male,Married,PhD,Marketing,Marketing Analyst,No Travel,21,9702,21.1,1,3,2,4,No,5,5,5,0,3,3,0,Yes
+564,29,Female,Married,PhD,Marketing,Content Strategist,Frequently,23,8870,7.2,2,4,4,1,Yes,5,4,2,0,2,2,0,No
+565,49,Female,Married,High School,Operations,Logistics Coordinator,No Travel,12,3684,18.7,3,3,3,1,No,3,3,3,2,2,3,0,No
+566,60,Female,Divorced,High School,Operations,Operations Manager,No Travel,15,9609,8.5,3,2,2,4,No,17,12,3,4,2,1,2,No
+567,58,Male,Single,PhD,Operations,Supply Chain Analyst,Rarely,6,4019,21.2,2,1,3,3,No,11,0,0,6,0,2,1,No
+568,29,Female,Married,Bachelor's,Engineering,QA Engineer,Frequently,17,4464,18.9,1,4,2,4,No,8,8,3,2,2,0,1,No
+569,39,Female,Single,High School,Operations,Logistics Coordinator,No Travel,3,6154,20.8,3,1,2,2,Yes,13,10,2,5,1,2,1,Yes
+570,48,Female,Married,Master's,Marketing,SEO Specialist,Frequently,6,8701,11.4,4,2,4,4,Yes,0,0,0,8,5,3,0,Yes
+571,27,Female,Single,PhD,Support,Support Lead,No Travel,1,5389,14.0,3,2,2,3,No,5,4,2,6,6,2,1,No
+572,56,Female,Divorced,Bachelor's,Sales,Account Manager,No Travel,12,9644,9.2,2,3,2,2,No,3,3,1,8,3,1,0,No
+573,28,Female,Single,Master's,HR,Recruiter,Rarely,4,7505,23.5,2,3,1,3,No,7,7,4,2,5,3,1,No
+574,34,Male,Single,High School,Marketing,Content Strategist,Frequently,16,4560,17.0,3,1,3,2,Yes,9,8,1,9,5,0,2,Yes
+575,46,Male,Married,Bachelor's,Finance,Controller,Rarely,22,3389,9.0,2,1,1,2,No,23,7,2,7,1,3,2,No
+576,29,Male,Single,Master's,Marketing,SEO Specialist,Rarely,18,7049,18.6,3,4,4,1,No,1,0,0,4,5,0,1,No
+577,23,Female,Divorced,PhD,Finance,Controller,No Travel,27,4424,15.2,3,4,1,1,Yes,1,1,0,4,6,0,1,Yes
+578,31,Female,Single,Bachelor's,Operations,Logistics Coordinator,Rarely,26,8903,14.2,3,2,3,3,No,1,1,0,7,2,3,1,No
+579,30,Female,Single,Bachelor's,Finance,Financial Analyst,No Travel,26,6114,19.3,3,3,4,4,No,5,4,2,2,5,1,0,Yes
+580,36,Male,Divorced,High School,Marketing,Content Strategist,Rarely,28,4832,10.2,3,4,4,2,No,4,4,0,2,4,2,0,No
+581,32,Male,Married,PhD,Marketing,SEO Specialist,Rarely,21,6714,8.0,3,1,2,3,No,0,0,0,7,4,0,1,No
+582,36,Female,Divorced,Bachelor's,Support,Support Lead,No Travel,8,7843,24.0,3,3,1,1,No,12,10,1,9,4,1,0,No
+583,37,Female,Single,Bachelor's,Operations,Supply Chain Analyst,No Travel,19,7590,21.6,2,2,3,1,Yes,8,8,4,3,1,3,0,Yes
+584,42,Male,Married,High School,Support,Customer Support,No Travel,28,7205,8.9,3,2,4,3,Yes,14,1,1,9,3,0,1,Yes
+585,59,Male,Married,PhD,Operations,Operations Manager,Rarely,18,5287,14.7,3,3,3,2,No,19,8,7,4,5,2,1,Yes
+586,53,Female,Divorced,High School,Support,Customer Support,Rarely,6,5189,6.3,3,3,1,4,No,15,5,1,8,6,1,1,No
+587,54,Female,Divorced,Master's,Sales,Account Manager,Rarely,16,7237,11.5,2,4,2,2,Yes,3,2,2,5,4,3,1,Yes
+588,41,Male,Married,Master's,HR,Recruiter,Rarely,12,9393,14.0,3,4,4,1,No,11,11,5,0,3,1,2,No
+589,35,Female,Married,Master's,Engineering,Data Scientist,No Travel,11,5326,9.0,2,4,3,1,Yes,5,3,3,3,1,3,2,No
+590,53,Female,Divorced,Bachelor's,Engineering,QA Engineer,Frequently,29,8778,6.1,3,3,4,3,Yes,12,0,0,7,1,0,0,Yes
+591,31,Male,Divorced,Master's,Marketing,Marketing Analyst,No Travel,12,3455,10.2,3,3,1,2,Yes,7,3,2,5,6,3,1,Yes
+592,36,Female,Married,PhD,HR,Recruiter,No Travel,2,5002,20.0,1,1,4,4,No,8,4,4,7,6,0,2,No
+593,24,Female,Married,Master's,Engineering,QA Engineer,Frequently,22,6247,24.5,3,2,1,4,Yes,2,2,0,1,6,3,1,Yes
+594,43,Male,Divorced,High School,Operations,Operations Manager,Frequently,11,3930,22.8,3,3,1,4,Yes,10,7,6,0,1,3,0,No
+595,42,Male,Divorced,PhD,Finance,Controller,Rarely,11,6695,8.6,1,1,2,3,Yes,18,4,1,5,6,1,1,Yes
+596,39,Male,Married,Bachelor's,Sales,Account Manager,No Travel,13,5155,21.7,3,4,2,4,Yes,4,3,0,7,3,1,0,Yes
+597,27,Male,Single,Bachelor's,Support,Customer Support,No Travel,1,6496,8.8,4,3,4,3,Yes,0,0,0,7,0,3,1,Yes
+598,44,Female,Single,Master's,Support,Customer Support,Rarely,5,4753,25.0,2,4,4,1,No,20,9,3,5,0,1,0,Yes
+599,30,Male,Single,PhD,Finance,Financial Analyst,Frequently,16,3746,13.4,2,2,2,3,Yes,3,2,1,2,0,1,0,Yes
+600,42,Male,Married,High School,Support,Technical Support,No Travel,29,3993,23.3,1,4,2,2,Yes,15,1,0,0,2,1,0,No
+601,51,Female,Single,PhD,Engineering,QA Engineer,Frequently,5,5652,23.1,2,3,1,4,No,25,20,0,9,1,1,0,No
+602,27,Female,Married,High School,Sales,Sales Rep,Frequently,14,8586,10.0,3,3,3,4,No,0,0,0,2,2,2,1,No
+603,46,Male,Single,High School,Support,Customer Support,No Travel,20,7428,16.4,3,3,2,4,No,4,0,0,3,3,2,0,Yes
+604,54,Female,Single,Master's,HR,HR Manager,Rarely,1,8001,18.3,3,3,3,1,No,10,7,7,6,5,1,0,No
+605,29,Male,Married,Master's,Support,Customer Support,Rarely,24,7328,22.3,3,4,2,2,Yes,7,6,4,0,1,2,0,Yes
+606,55,Female,Divorced,High School,Finance,Controller,No Travel,2,6418,12.5,2,2,2,2,No,22,16,5,3,2,3,0,No
+607,51,Male,Divorced,Master's,Marketing,Content Strategist,Rarely,27,5731,9.2,3,1,1,4,Yes,0,0,0,2,3,1,1,Yes
+608,32,Female,Divorced,PhD,Sales,Account Manager,No Travel,5,3630,9.5,4,2,4,1,Yes,3,2,0,3,3,2,1,Yes
+609,55,Female,Single,High School,Engineering,DevOps Engineer,Frequently,21,3846,8.1,4,3,3,1,No,14,4,0,4,0,3,0,Yes
+610,53,Male,Divorced,Master's,Operations,Supply Chain Analyst,No Travel,4,5796,24.2,4,2,4,4,No,2,2,2,0,5,2,1,No
+611,54,Female,Divorced,Master's,HR,HR Manager,Rarely,27,9415,9.9,3,4,3,1,No,11,1,0,8,4,3,1,No
+612,24,Male,Divorced,High School,Operations,Logistics Coordinator,No Travel,15,8649,16.6,3,4,4,1,No,0,0,0,7,6,0,2,No
+613,49,Male,Divorced,High School,Operations,Supply Chain Analyst,No Travel,15,5958,5.6,3,3,3,3,No,0,0,0,3,2,0,0,No
+614,32,Female,Divorced,Bachelor's,Operations,Logistics Coordinator,Rarely,13,8489,22.1,3,2,3,3,Yes,5,1,1,1,5,2,1,No
+615,34,Female,Married,Master's,Support,Technical Support,Rarely,3,6651,11.5,2,3,3,2,No,12,7,5,9,5,1,0,No
+616,38,Female,Divorced,Bachelor's,Operations,Logistics Coordinator,Rarely,2,2000,7.1,4,3,1,3,Yes,12,2,1,7,6,1,0,Yes
+617,53,Male,Single,Bachelor's,HR,HR Specialist,No Travel,28,7525,24.3,4,4,4,4,Yes,14,10,3,6,1,3,1,No
+618,38,Female,Married,Master's,Marketing,SEO Specialist,Rarely,17,7828,15.8,2,2,3,2,Yes,11,3,2,1,6,3,0,Yes
+619,36,Male,Married,Master's,Support,Support Lead,Rarely,22,4359,24.1,2,4,1,3,No,1,1,1,2,0,2,0,No
+620,23,Female,Divorced,PhD,Finance,Accountant,No Travel,18,6538,11.2,3,3,3,2,No,1,0,0,2,6,2,1,No
+621,59,Male,Divorced,High School,Engineering,DevOps Engineer,No Travel,3,7196,24.6,3,2,2,1,No,16,13,11,1,2,0,2,No
+622,48,Female,Single,PhD,Operations,Logistics Coordinator,Rarely,7,7616,12.1,3,3,4,1,Yes,5,0,0,4,3,1,0,Yes
+623,50,Female,Single,High School,Engineering,DevOps Engineer,Frequently,12,6597,24.7,1,3,4,3,Yes,1,0,0,9,4,0,2,Yes
+624,33,Female,Single,Bachelor's,Finance,Accountant,Frequently,18,6566,16.5,4,2,2,4,Yes,2,2,1,9,0,0,1,Yes
+625,44,Male,Single,Bachelor's,HR,HR Specialist,Rarely,12,10994,23.8,4,4,4,1,Yes,6,4,1,5,1,1,0,No
+626,24,Male,Married,Master's,Sales,Account Manager,Frequently,25,6424,23.2,3,4,2,3,No,0,0,0,2,3,1,0,Yes
+627,46,Female,Single,High School,Marketing,Content Strategist,Rarely,29,4525,15.0,3,3,1,1,Yes,3,2,2,1,2,1,1,Yes
+628,25,Female,Single,Master's,Finance,Financial Analyst,Rarely,6,6697,19.8,3,2,3,1,Yes,4,0,0,1,3,1,1,Yes
+629,35,Male,Married,High School,Sales,Account Manager,No Travel,13,6673,9.8,4,3,2,4,Yes,14,11,1,5,6,0,0,Yes
+630,38,Female,Single,PhD,Finance,Controller,Frequently,1,6410,5.2,4,4,3,2,No,8,6,5,4,4,3,0,No
+631,36,Male,Single,High School,Sales,Sales Lead,No Travel,4,5321,19.8,4,4,3,3,No,15,2,0,9,2,0,0,No
+632,57,Male,Single,PhD,Sales,Sales Rep,Frequently,20,6221,7.2,2,4,2,1,Yes,1,1,1,3,3,2,0,Yes
+633,54,Male,Divorced,Bachelor's,Finance,Financial Analyst,Rarely,17,3838,23.4,3,2,1,4,No,1,0,0,2,2,0,0,No
+634,50,Female,Single,High School,HR,HR Manager,No Travel,18,10616,16.1,2,3,1,1,Yes,19,16,9,6,4,0,1,Yes
+635,24,Male,Divorced,Bachelor's,HR,Recruiter,No Travel,21,3114,20.4,2,2,1,1,Yes,0,0,0,7,4,3,0,Yes
+636,37,Female,Married,PhD,Marketing,SEO Specialist,Frequently,29,5092,14.1,4,2,2,3,Yes,14,7,2,6,2,1,0,Yes
+637,31,Female,Married,High School,Support,Technical Support,Frequently,12,8484,9.2,3,4,4,4,No,8,3,3,6,3,2,0,No
+638,35,Male,Divorced,Bachelor's,Operations,Supply Chain Analyst,No Travel,16,8485,23.0,3,4,3,3,Yes,9,3,2,6,1,0,0,Yes
+639,48,Male,Single,High School,Support,Support Lead,Rarely,5,4695,8.6,3,2,4,2,No,17,5,5,9,6,3,1,No
+640,42,Male,Divorced,PhD,Sales,Account Manager,No Travel,28,8104,23.7,3,1,1,1,Yes,15,10,9,0,0,0,0,Yes
+641,31,Female,Single,Bachelor's,HR,HR Specialist,Rarely,4,8295,11.8,2,3,1,2,Yes,9,5,4,2,3,3,0,Yes
+642,39,Male,Divorced,Bachelor's,Marketing,SEO Specialist,No Travel,27,5271,7.7,3,4,4,2,Yes,14,1,0,9,5,2,2,No
+643,23,Female,Married,PhD,Sales,Account Manager,No Travel,26,7617,12.9,2,2,3,3,Yes,1,0,0,5,4,3,0,No
+644,45,Male,Divorced,Master's,Marketing,Marketing Analyst,Rarely,2,7766,11.4,2,2,3,3,No,16,0,0,6,2,2,1,No
+645,27,Male,Single,Master's,Marketing,SEO Specialist,Frequently,26,3327,12.6,1,3,4,3,No,0,0,0,8,6,3,0,Yes
+646,38,Female,Married,Bachelor's,HR,HR Manager,Rarely,6,9454,21.1,4,1,1,2,Yes,2,1,0,3,0,2,0,Yes
+647,26,Male,Divorced,High School,Sales,Sales Rep,Rarely,24,2000,24.4,3,3,1,1,Yes,4,0,0,2,1,0,0,Yes
+648,49,Male,Single,Bachelor's,Engineering,Software Engineer,Frequently,22,3919,17.5,2,2,4,2,No,2,1,1,4,5,0,0,Yes
+649,34,Male,Divorced,Master's,Engineering,Data Scientist,Frequently,9,7971,20.1,2,4,3,4,No,3,0,0,3,3,2,1,No
+650,38,Male,Single,Master's,Operations,Supply Chain Analyst,No Travel,19,10096,23.1,2,4,1,4,Yes,2,1,1,1,2,2,1,No
+651,42,Female,Divorced,PhD,Engineering,DevOps Engineer,Rarely,11,6646,25.0,2,2,1,3,No,11,7,4,7,3,3,0,No
+652,31,Female,Single,PhD,Marketing,Marketing Analyst,No Travel,13,4771,13.0,1,2,2,2,Yes,5,3,1,1,0,3,0,Yes
+653,47,Female,Divorced,Bachelor's,Engineering,QA Engineer,Rarely,23,4658,13.7,4,4,1,3,Yes,7,3,3,1,2,3,1,Yes
+654,35,Female,Single,PhD,Finance,Accountant,Rarely,12,5037,17.6,3,4,1,2,No,10,2,1,5,5,1,0,No
+655,50,Female,Single,Master's,Engineering,Software Engineer,No Travel,21,3627,14.5,3,3,3,2,Yes,10,3,2,5,6,1,1,Yes
+656,53,Male,Married,PhD,Support,Customer Support,Frequently,13,3287,20.0,3,1,4,4,No,28,3,3,1,3,1,1,Yes
+657,25,Male,Single,PhD,Sales,Account Manager,Frequently,20,7540,7.9,3,3,4,3,Yes,0,0,0,3,4,0,0,Yes
+658,54,Male,Married,Master's,Sales,Sales Lead,Rarely,25,4453,10.2,2,1,1,4,Yes,22,0,0,5,3,1,0,Yes
+659,50,Male,Married,Master's,Sales,Sales Lead,Rarely,27,5924,11.5,1,1,3,4,No,8,3,3,2,2,3,1,No
+660,47,Female,Divorced,Bachelor's,Operations,Logistics Coordinator,No Travel,5,9094,16.3,3,1,2,4,Yes,20,9,5,1,1,0,0,No
+661,45,Female,Single,Master's,Sales,Sales Rep,Rarely,25,5918,13.3,3,2,1,2,No,10,1,1,2,0,2,0,Yes
+662,23,Male,Married,High School,Operations,Supply Chain Analyst,No Travel,17,6919,24.0,4,2,3,3,No,0,0,0,6,0,2,0,No
+663,57,Male,Single,High School,Operations,Logistics Coordinator,Frequently,1,6292,19.0,3,3,2,4,Yes,1,0,0,2,4,2,0,Yes
+664,34,Female,Single,Master's,Marketing,Marketing Analyst,Rarely,13,6380,18.0,3,4,4,2,Yes,4,3,0,1,0,0,1,No
+665,41,Female,Married,Bachelor's,Sales,Sales Lead,Rarely,13,6590,5.2,4,3,2,4,No,1,0,0,5,3,1,2,No
+666,37,Male,Single,High School,Finance,Accountant,No Travel,21,6929,23.6,3,4,2,1,Yes,1,0,0,5,1,1,2,Yes
+667,39,Male,Married,PhD,HR,HR Specialist,No Travel,4,6131,22.7,4,2,1,1,No,3,2,0,2,0,0,1,No
+668,57,Female,Single,Master's,Finance,Controller,Frequently,14,11099,19.6,2,1,4,4,Yes,18,15,2,0,3,3,0,No
+669,26,Female,Divorced,Master's,Finance,Financial Analyst,Rarely,28,4059,8.8,3,1,1,4,No,1,1,0,3,5,0,0,Yes
+670,52,Female,Divorced,Bachelor's,HR,Recruiter,Rarely,12,2000,7.9,3,3,4,2,No,23,17,17,5,3,2,0,No
+671,56,Female,Married,PhD,Marketing,SEO Specialist,No Travel,18,5562,14.3,3,2,1,3,Yes,19,8,2,9,2,1,1,Yes
+672,47,Female,Single,High School,Support,Customer Support,Frequently,24,8135,16.5,3,2,2,3,No,17,1,0,1,2,2,0,Yes
+673,36,Female,Divorced,Master's,Operations,Logistics Coordinator,No Travel,25,8647,8.8,1,1,4,2,Yes,7,7,2,4,1,3,0,Yes
+674,34,Male,Single,High School,Operations,Operations Manager,Rarely,22,2834,21.6,3,1,3,4,Yes,1,0,0,6,2,3,0,Yes
+675,45,Female,Married,Bachelor's,HR,Recruiter,Frequently,19,4133,15.0,3,3,4,4,Yes,18,15,1,6,5,2,2,No
+676,24,Male,Married,PhD,Engineering,QA Engineer,Rarely,16,2000,19.5,3,1,4,4,No,0,0,0,3,4,0,0,No
+677,35,Male,Single,PhD,Operations,Logistics Coordinator,Frequently,4,7401,13.9,3,4,3,4,Yes,2,2,2,4,4,3,0,No
+678,24,Female,Married,Master's,Support,Customer Support,No Travel,8,2000,14.6,2,4,2,4,Yes,1,0,0,4,1,2,1,Yes
+679,50,Male,Single,High School,Marketing,Marketing Analyst,No Travel,14,8815,20.9,3,3,1,4,No,4,4,4,0,2,3,0,Yes
+680,52,Male,Single,PhD,Operations,Logistics Coordinator,No Travel,22,6847,16.4,3,4,3,3,No,0,0,0,1,6,1,1,Yes
+681,34,Female,Single,Bachelor's,Engineering,Data Scientist,Frequently,28,4844,5.2,3,3,1,3,Yes,11,6,0,5,1,3,1,Yes
+682,52,Male,Single,Bachelor's,Marketing,Content Strategist,Rarely,8,8222,7.9,2,2,1,4,Yes,17,17,2,9,1,3,1,Yes
+683,48,Female,Single,High School,Sales,Account Manager,Rarely,20,7636,12.5,3,2,2,4,No,24,12,0,2,1,2,0,Yes
+684,48,Male,Divorced,High School,Finance,Financial Analyst,No Travel,16,9513,12.4,3,4,3,3,No,24,20,1,4,6,3,0,No
+685,57,Female,Married,Bachelor's,Operations,Supply Chain Analyst,No Travel,19,3789,6.3,3,3,3,2,No,22,15,10,5,1,1,0,Yes
+686,55,Female,Married,PhD,Support,Technical Support,Frequently,11,5934,8.8,3,2,3,2,No,13,10,10,8,4,1,1,No
+687,40,Male,Divorced,Bachelor's,Sales,Sales Rep,Frequently,9,7209,12.8,3,4,3,2,No,10,2,2,9,0,0,2,No
+688,26,Female,Married,Bachelor's,Marketing,Marketing Analyst,Rarely,16,4695,15.2,3,3,1,4,No,4,4,2,9,0,3,0,Yes
+689,45,Male,Single,High School,Sales,Sales Rep,Rarely,9,7463,18.7,2,1,1,1,No,3,2,0,9,5,2,0,Yes
+690,58,Female,Single,Master's,Finance,Controller,No Travel,24,2041,8.4,4,4,2,1,Yes,0,0,0,1,4,2,1,Yes
+691,36,Female,Divorced,Bachelor's,Sales,Account Manager,No Travel,3,7653,11.2,3,4,4,2,Yes,5,1,1,1,6,3,1,No
+692,46,Female,Single,High School,Operations,Logistics Coordinator,Frequently,12,7422,22.5,3,1,4,4,No,15,13,12,9,1,1,1,No
+693,46,Female,Single,Bachelor's,Operations,Supply Chain Analyst,No Travel,26,6021,23.0,3,4,1,2,Yes,10,5,3,7,5,0,0,Yes
+694,53,Female,Married,PhD,Marketing,Marketing Analyst,No Travel,19,9632,9.6,3,3,4,2,Yes,13,4,2,3,6,1,1,No
+695,36,Male,Single,High School,HR,HR Specialist,Frequently,6,4984,8.0,2,4,3,2,Yes,1,1,0,6,2,0,0,Yes
+696,40,Female,Single,PhD,Engineering,Data Scientist,No Travel,18,6257,6.3,2,2,1,4,No,0,0,0,2,1,1,0,Yes
+697,39,Male,Married,High School,Support,Customer Support,No Travel,4,7093,22.2,4,3,4,2,No,5,0,0,2,5,1,0,No
+698,46,Male,Married,Bachelor's,Engineering,Software Engineer,Rarely,6,7384,16.0,3,4,3,4,No,16,15,12,8,3,3,0,Yes
+699,41,Female,Married,High School,Engineering,DevOps Engineer,Rarely,5,5974,5.3,3,2,4,2,No,9,5,0,6,1,0,2,No
+700,47,Female,Married,PhD,HR,Recruiter,No Travel,15,7723,24.2,2,2,1,3,No,14,2,1,0,2,3,1,No
+701,44,Male,Married,PhD,Engineering,DevOps Engineer,No Travel,1,5619,5.2,2,3,1,1,Yes,11,5,1,8,2,3,0,Yes
+702,42,Female,Single,Master's,Marketing,Content Strategist,Frequently,23,8708,20.2,3,1,1,2,No,18,3,3,5,5,3,1,Yes
+703,34,Female,Married,High School,Sales,Sales Rep,Rarely,3,4882,8.9,3,4,2,4,No,3,0,0,3,0,1,1,No
+704,36,Male,Divorced,PhD,Marketing,Marketing Analyst,Rarely,5,11184,21.2,3,3,4,3,No,3,0,0,5,4,2,1,No
+705,23,Female,Married,PhD,Sales,Sales Rep,Rarely,15,12571,6.0,3,3,1,2,Yes,2,1,1,3,1,1,2,No
+706,48,Female,Divorced,PhD,Finance,Accountant,Rarely,14,5450,8.2,3,1,3,1,No,9,1,0,6,6,1,0,No
+707,29,Male,Married,Master's,HR,Recruiter,Rarely,28,3276,10.7,3,2,3,2,No,6,4,1,9,3,0,0,Yes
+708,31,Female,Single,PhD,Operations,Operations Manager,Frequently,2,8681,5.0,2,2,3,3,No,10,2,0,9,0,1,1,Yes
+709,24,Male,Single,High School,Engineering,Software Engineer,Rarely,9,4197,15.5,4,3,2,1,No,3,0,0,9,6,1,1,No
+710,60,Female,Single,Bachelor's,Engineering,QA Engineer,Rarely,26,4969,8.3,3,4,3,3,No,27,10,10,6,3,1,1,No
+711,35,Female,Single,Bachelor's,Operations,Logistics Coordinator,Frequently,11,10304,8.0,4,2,2,1,No,2,0,0,5,5,1,1,Yes
+712,35,Male,Married,PhD,Engineering,DevOps Engineer,No Travel,13,7971,6.3,1,3,4,2,No,6,1,1,7,5,2,0,No
+713,49,Male,Single,Master's,Operations,Supply Chain Analyst,No Travel,2,2000,8.0,4,2,4,3,Yes,8,6,0,2,3,0,1,No
+714,45,Male,Single,Master's,Support,Support Lead,Rarely,24,6990,9.2,3,3,4,2,No,24,16,6,0,3,2,0,No
+715,43,Female,Divorced,High School,Engineering,DevOps Engineer,Frequently,28,10498,17.2,2,3,2,4,No,2,1,1,4,5,0,1,No
+716,47,Male,Divorced,Master's,Finance,Accountant,No Travel,28,4589,9.8,1,1,1,3,No,1,0,0,0,4,2,1,No
+717,35,Male,Single,Master's,Marketing,SEO Specialist,Rarely,24,5216,18.7,2,2,4,1,Yes,8,5,1,2,5,2,0,Yes
+718,32,Male,Divorced,PhD,HR,Recruiter,No Travel,3,6126,11.2,3,1,1,2,Yes,5,0,0,0,1,2,2,Yes
+719,29,Male,Married,PhD,Marketing,Content Strategist,Frequently,11,6952,12.8,2,3,1,1,Yes,4,0,0,2,1,1,0,Yes
+720,44,Female,Married,High School,Sales,Account Manager,Rarely,15,4688,8.4,3,4,1,2,No,3,3,1,8,6,3,0,Yes
+721,50,Male,Divorced,Bachelor's,Engineering,Software Engineer,Rarely,16,3211,24.4,4,1,2,1,Yes,0,0,0,9,1,3,1,Yes
+722,29,Female,Single,High School,Support,Technical Support,Rarely,11,8429,5.8,2,3,2,3,No,8,6,2,2,2,3,2,No
+723,53,Female,Married,Master's,HR,HR Specialist,No Travel,11,6852,7.7,3,1,3,1,Yes,0,0,0,4,6,2,1,Yes
+724,27,Male,Married,Bachelor's,Sales,Sales Lead,Rarely,2,7310,20.1,4,1,3,3,Yes,6,6,4,6,6,2,2,No
+725,39,Male,Single,High School,Operations,Logistics Coordinator,No Travel,6,6957,21.2,3,1,3,2,Yes,18,0,0,1,2,1,1,Yes
+726,23,Male,Divorced,PhD,Support,Customer Support,Frequently,7,6128,24.8,1,3,2,4,Yes,0,0,0,0,3,3,0,Yes
+727,47,Female,Married,PhD,HR,HR Specialist,No Travel,22,6414,5.0,2,2,3,2,Yes,19,3,3,9,0,1,0,Yes
+728,24,Female,Single,High School,Sales,Sales Lead,No Travel,5,9225,18.0,3,1,4,1,No,2,0,0,3,3,1,1,No
+729,42,Female,Divorced,PhD,Support,Technical Support,Frequently,2,4449,7.9,3,2,2,4,No,21,8,7,4,3,2,0,Yes
+730,51,Male,Married,Master's,Engineering,Software Engineer,No Travel,21,3124,10.7,2,1,4,1,No,28,9,2,5,2,1,0,Yes
+731,46,Male,Married,Master's,HR,Recruiter,No Travel,23,7953,14.7,2,2,1,3,No,14,14,2,8,2,0,0,Yes
+732,47,Male,Divorced,High School,Support,Technical Support,No Travel,25,6657,21.2,3,2,4,1,Yes,7,4,2,0,2,3,1,Yes
+733,28,Female,Married,Master's,Sales,Sales Rep,Frequently,29,4446,24.2,3,3,1,4,No,4,4,1,9,1,1,0,No
+734,37,Female,Single,Master's,HR,Recruiter,Rarely,24,4344,16.3,2,4,1,2,No,0,0,0,6,4,0,0,No
+735,30,Male,Single,Bachelor's,Finance,Accountant,Rarely,4,9154,7.4,3,4,2,1,No,1,0,0,3,4,0,1,No
+736,37,Female,Divorced,High School,Finance,Controller,Rarely,17,6695,19.6,4,4,2,4,No,5,5,5,1,0,1,2,No
+737,44,Female,Divorced,Master's,Marketing,SEO Specialist,Frequently,7,9085,18.3,2,2,2,1,Yes,5,0,0,3,6,1,0,Yes
+738,36,Male,Single,Bachelor's,Operations,Logistics Coordinator,Frequently,1,6185,20.1,3,4,2,1,Yes,6,2,2,7,3,1,0,Yes
+739,28,Male,Single,High School,Operations,Logistics Coordinator,No Travel,6,3655,8.3,3,3,4,2,Yes,2,1,0,7,3,3,0,Yes
+740,23,Female,Married,Bachelor's,Sales,Sales Lead,Rarely,13,7738,22.5,2,2,1,2,Yes,2,1,0,8,3,1,0,Yes
+741,37,Male,Single,High School,Sales,Sales Rep,Frequently,21,6391,7.7,2,4,4,2,Yes,2,1,0,3,5,0,0,Yes
+742,56,Female,Married,High School,Engineering,QA Engineer,No Travel,25,8293,5.6,3,1,1,1,Yes,21,8,5,5,1,0,0,Yes
+743,50,Male,Divorced,Master's,Support,Customer Support,Frequently,27,8227,18.4,3,3,3,3,Yes,19,0,0,1,4,1,1,No
+744,53,Male,Single,High School,Marketing,Content Strategist,Rarely,1,6373,12.6,1,4,4,1,Yes,16,1,1,9,0,2,1,Yes
+745,27,Female,Divorced,Master's,Operations,Logistics Coordinator,No Travel,6,6601,10.4,2,3,3,1,No,3,3,0,4,6,3,1,No
+746,25,Male,Single,PhD,Engineering,QA Engineer,Rarely,26,7632,14.2,3,1,2,2,Yes,4,4,4,0,2,0,2,Yes
+747,29,Female,Divorced,High School,HR,HR Manager,Frequently,22,2000,15.3,3,2,1,4,No,4,1,1,3,1,0,0,Yes
+748,32,Female,Married,Master's,Operations,Logistics Coordinator,No Travel,15,6545,20.1,2,4,2,1,No,0,0,0,4,0,0,1,Yes
+749,32,Female,Married,Master's,Operations,Logistics Coordinator,No Travel,14,6153,15.9,2,2,1,1,No,2,1,0,6,2,2,1,No
+750,54,Male,Divorced,High School,Support,Support Lead,No Travel,22,4612,21.6,3,2,4,1,No,11,3,1,0,2,0,2,Yes
+751,35,Male,Divorced,Master's,Sales,Sales Rep,Rarely,2,8823,21.1,4,1,1,4,No,9,5,5,1,4,1,0,Yes
+752,53,Male,Married,Bachelor's,Operations,Operations Manager,Frequently,15,8742,22.6,4,1,1,4,No,10,3,0,6,0,3,1,No
+753,22,Male,Single,Bachelor's,Finance,Financial Analyst,No Travel,24,7297,16.9,4,2,4,3,No,0,0,0,7,2,2,1,No
+754,22,Female,Married,Bachelor's,Operations,Logistics Coordinator,Frequently,13,7177,6.5,3,1,3,1,No,1,0,0,3,1,3,0,Yes
+755,34,Male,Single,Bachelor's,Sales,Account Manager,Frequently,18,8461,11.7,3,1,3,1,No,9,8,2,2,4,3,2,Yes
+756,23,Male,Married,Master's,HR,HR Manager,Rarely,2,7476,15.4,2,2,4,1,Yes,1,1,0,3,6,1,0,Yes
+757,23,Male,Divorced,PhD,Finance,Financial Analyst,Rarely,4,7505,9.4,4,3,1,4,Yes,0,0,0,6,4,3,1,Yes
+758,31,Female,Married,Bachelor's,Support,Support Lead,Frequently,28,7230,11.1,3,4,2,3,No,0,0,0,3,3,1,0,Yes
+759,29,Male,Divorced,High School,Operations,Logistics Coordinator,Rarely,19,2000,16.6,2,3,3,2,Yes,7,0,0,7,2,1,0,Yes
+760,48,Female,Divorced,PhD,Finance,Controller,Frequently,19,6206,6.8,3,2,3,4,Yes,19,19,14,2,2,0,0,No
+761,34,Male,Single,Bachelor's,HR,HR Manager,No Travel,5,7205,7.8,4,4,1,4,Yes,13,12,12,8,3,3,1,Yes
+762,50,Male,Married,Bachelor's,Marketing,Marketing Analyst,Frequently,1,4985,11.5,3,3,2,2,Yes,23,7,3,4,6,2,2,No
+763,58,Female,Single,PhD,Engineering,Data Scientist,Frequently,21,3677,15.9,2,3,1,4,No,25,25,4,5,3,0,2,Yes
+764,49,Male,Single,High School,Finance,Accountant,Frequently,8,8386,24.6,3,3,2,3,No,10,9,5,8,1,2,1,Yes
+765,32,Male,Single,PhD,Engineering,Software Engineer,No Travel,7,2977,12.8,4,1,4,2,Yes,10,8,6,1,5,2,1,No
+766,26,Male,Divorced,PhD,Engineering,Software Engineer,Frequently,21,3927,17.6,2,3,1,4,No,2,0,0,2,6,1,1,No
+767,31,Female,Single,High School,Operations,Logistics Coordinator,Frequently,5,8209,17.0,3,1,4,2,No,4,2,0,6,5,1,0,Yes
+768,52,Male,Single,PhD,Engineering,QA Engineer,Frequently,15,5186,20.4,3,4,3,1,Yes,22,19,2,3,1,1,0,Yes
+769,32,Female,Married,Bachelor's,HR,Recruiter,No Travel,8,10383,23.0,2,1,1,2,Yes,7,1,1,6,0,3,0,Yes
+770,30,Female,Divorced,PhD,Operations,Logistics Coordinator,Frequently,19,6760,8.8,3,3,3,3,Yes,5,3,0,2,6,2,0,No
+771,24,Female,Married,High School,HR,HR Manager,Rarely,6,6924,7.0,3,1,2,4,No,0,0,0,8,1,0,0,Yes
+772,59,Male,Divorced,Bachelor's,Engineering,QA Engineer,No Travel,27,7956,8.4,3,4,4,2,No,8,8,6,3,6,1,1,No
+773,42,Male,Married,PhD,Sales,Sales Lead,No Travel,2,9973,16.8,3,4,4,1,No,18,14,11,7,5,3,1,No
+774,31,Female,Single,High School,Marketing,SEO Specialist,Rarely,22,7003,18.2,2,2,3,3,Yes,8,2,0,1,3,2,0,Yes
+775,38,Male,Divorced,PhD,Marketing,Marketing Analyst,No Travel,18,7585,16.4,4,1,3,2,No,16,5,0,9,4,2,1,No
+776,24,Male,Divorced,Master's,Sales,Sales Rep,Frequently,12,6374,15.1,3,2,3,3,Yes,1,1,1,1,2,3,1,Yes
+777,50,Female,Single,High School,Support,Customer Support,No Travel,3,4343,15.8,4,2,1,4,No,28,17,12,6,6,0,1,No
+778,56,Female,Divorced,PhD,Marketing,Content Strategist,No Travel,2,7237,23.3,3,2,2,3,Yes,27,19,18,7,5,2,1,Yes
+779,37,Male,Divorced,Master's,Operations,Operations Manager,Rarely,25,4461,18.7,3,1,1,2,No,0,0,0,8,1,2,1,Yes
+780,47,Female,Single,PhD,Sales,Sales Lead,No Travel,29,8391,8.7,2,2,3,4,Yes,11,9,4,3,4,0,0,Yes
+781,33,Female,Single,Master's,Engineering,DevOps Engineer,Rarely,13,4306,22.4,2,3,1,2,Yes,6,1,0,8,5,2,0,No
+782,38,Female,Single,PhD,Marketing,SEO Specialist,Frequently,20,8018,21.5,2,2,3,1,Yes,10,7,4,1,3,3,0,Yes
+783,43,Female,Single,Bachelor's,Support,Support Lead,No Travel,20,5872,14.1,3,3,2,1,Yes,11,3,3,2,2,1,1,Yes
+784,28,Female,Married,Bachelor's,Support,Support Lead,Rarely,15,8159,24.1,2,1,3,1,Yes,0,0,0,5,1,3,1,No
+785,57,Male,Married,High School,Engineering,QA Engineer,No Travel,26,6726,16.2,3,4,2,2,No,8,5,1,8,6,3,0,No
+786,54,Female,Divorced,PhD,Support,Support Lead,Rarely,28,8892,7.8,3,3,3,3,No,8,4,1,5,6,2,1,No
+787,54,Female,Divorced,Bachelor's,HR,HR Specialist,No Travel,8,4882,7.7,4,1,1,2,No,30,2,2,5,5,1,0,Yes
+788,42,Male,Single,Master's,Operations,Operations Manager,No Travel,28,7284,5.7,2,4,2,1,No,10,5,3,4,2,3,0,Yes
+789,31,Male,Married,PhD,Operations,Logistics Coordinator,Rarely,7,5791,5.1,3,2,3,3,Yes,10,7,4,1,4,1,1,No
+790,34,Male,Single,High School,Engineering,Data Scientist,Frequently,14,5608,17.5,3,1,4,1,Yes,2,2,0,8,1,2,0,Yes
+791,44,Male,Married,High School,Finance,Accountant,Rarely,13,3116,23.0,3,3,3,3,No,16,2,2,7,1,1,1,No
+792,27,Female,Divorced,PhD,HR,HR Specialist,Frequently,22,7459,6.1,4,4,1,4,Yes,1,0,0,1,3,1,0,Yes
+793,58,Male,Married,Bachelor's,Operations,Operations Manager,No Travel,5,6266,24.1,3,3,1,3,Yes,5,1,0,8,4,1,1,Yes
+794,37,Female,Divorced,Bachelor's,HR,HR Manager,Rarely,1,2375,14.8,3,4,2,2,No,8,6,0,4,1,2,0,Yes
+795,29,Female,Divorced,Bachelor's,Support,Technical Support,Frequently,29,4556,8.2,3,4,4,1,Yes,7,0,0,7,5,2,0,No
+796,30,Male,Divorced,Bachelor's,Finance,Financial Analyst,No Travel,25,5570,19.6,3,1,2,2,Yes,2,1,1,0,2,3,1,No
+797,54,Female,Divorced,PhD,Marketing,SEO Specialist,No Travel,8,5566,9.7,3,1,1,2,Yes,22,22,11,4,2,3,1,No
+798,42,Female,Single,High School,Support,Support Lead,Rarely,16,4867,5.5,2,2,3,1,Yes,5,1,0,4,1,2,1,No
+799,34,Female,Married,High School,Sales,Sales Rep,No Travel,22,5732,13.0,3,2,1,2,Yes,3,3,0,1,6,3,0,Yes
+800,29,Male,Single,High School,Sales,Sales Rep,Rarely,15,5875,23.3,1,1,4,2,No,6,0,0,8,6,1,0,No
+801,24,Male,Married,Master's,Operations,Operations Manager,Rarely,10,5322,22.5,4,1,2,3,Yes,2,0,0,1,0,0,1,No
+802,30,Male,Divorced,Master's,Operations,Supply Chain Analyst,Frequently,26,4635,16.9,3,1,2,3,No,5,1,0,6,6,0,1,No
+803,58,Male,Divorced,Master's,Engineering,Data Scientist,Frequently,5,6791,7.8,2,3,3,3,No,15,0,0,4,6,1,1,No
+804,23,Female,Single,Bachelor's,Engineering,Data Scientist,Rarely,24,8679,14.6,3,3,1,2,Yes,0,0,0,7,5,0,0,Yes
+805,36,Male,Married,Bachelor's,Engineering,QA Engineer,Frequently,4,6222,21.6,3,1,2,3,Yes,3,2,1,3,0,0,1,No
+806,58,Female,Married,PhD,Marketing,Content Strategist,Rarely,9,10485,13.9,3,3,3,3,No,19,2,1,2,1,3,1,No
+807,51,Male,Single,PhD,Support,Technical Support,No Travel,25,7203,5.8,1,4,2,1,No,17,1,0,6,2,0,0,Yes
+808,55,Female,Married,High School,Engineering,Software Engineer,No Travel,2,4201,22.4,2,3,1,4,Yes,4,4,0,3,4,3,0,Yes
+809,36,Male,Single,Master's,Marketing,SEO Specialist,Rarely,18,5167,13.0,2,2,1,1,No,11,8,4,2,2,2,0,No
+810,53,Male,Single,High School,Finance,Accountant,Frequently,14,6566,25.0,4,2,4,2,No,0,0,0,4,6,3,0,Yes
+811,26,Male,Divorced,Bachelor's,HR,HR Manager,Rarely,19,8515,13.5,3,3,1,1,Yes,0,0,0,0,3,3,1,Yes
+812,23,Male,Divorced,Master's,HR,HR Specialist,Frequently,20,6243,11.3,3,1,3,2,Yes,0,0,0,4,4,0,1,Yes
+813,53,Female,Divorced,PhD,Support,Support Lead,No Travel,7,4406,7.4,3,3,1,4,No,20,2,0,1,1,3,0,Yes
+814,39,Male,Single,Bachelor's,Marketing,SEO Specialist,Rarely,27,6992,19.7,4,3,1,4,Yes,13,2,0,1,5,2,0,Yes
+815,23,Female,Single,Bachelor's,Operations,Operations Manager,Frequently,22,7069,8.2,3,1,3,1,Yes,1,0,0,3,2,3,2,Yes
+816,23,Male,Single,Master's,Engineering,QA Engineer,Frequently,17,6856,15.7,2,1,4,3,Yes,1,1,1,9,3,2,0,Yes
+817,23,Male,Married,Master's,Sales,Sales Rep,Rarely,29,7098,8.8,3,3,4,1,Yes,1,1,0,2,4,3,1,Yes
+818,60,Male,Married,PhD,Support,Customer Support,Frequently,8,5391,23.9,3,4,1,3,Yes,24,12,9,9,2,0,0,Yes
+819,49,Female,Married,High School,Support,Support Lead,No Travel,15,3513,21.2,3,2,3,4,No,15,7,2,1,6,3,0,No
+820,40,Female,Divorced,PhD,Finance,Accountant,No Travel,11,6734,10.3,3,2,1,4,Yes,8,6,0,2,4,0,0,Yes
+821,37,Female,Divorced,PhD,HR,HR Manager,Frequently,5,6298,18.9,2,1,4,2,No,4,0,0,6,3,3,1,Yes
+822,27,Male,Single,Master's,Engineering,Software Engineer,No Travel,16,8511,18.2,4,2,2,4,Yes,4,1,1,3,1,3,1,Yes
+823,38,Male,Married,Master's,Sales,Sales Rep,Rarely,7,7844,11.0,2,1,1,4,No,0,0,0,0,6,2,0,No
+824,26,Female,Divorced,PhD,Marketing,Content Strategist,No Travel,4,5603,16.9,3,1,1,4,No,4,1,1,8,1,2,0,Yes
+825,36,Male,Married,Master's,Finance,Financial Analyst,Frequently,23,3895,17.3,4,4,4,3,No,12,4,4,9,2,0,0,No
+826,25,Male,Divorced,High School,HR,HR Manager,No Travel,3,7885,21.9,3,3,2,4,Yes,4,1,0,5,0,3,0,No
+827,60,Male,Married,PhD,Engineering,Data Scientist,Rarely,20,5949,16.6,3,1,4,4,Yes,7,6,5,0,0,2,1,No
+828,33,Female,Married,High School,Finance,Accountant,Rarely,1,5765,17.3,3,4,1,3,No,10,4,4,4,1,2,0,No
+829,43,Female,Married,High School,Marketing,Content Strategist,Rarely,23,5171,20.6,3,4,4,2,Yes,7,3,0,6,2,2,0,Yes
+830,60,Male,Single,Master's,HR,HR Manager,No Travel,29,7175,8.2,2,2,2,3,Yes,22,21,13,7,3,3,1,Yes
+831,42,Female,Single,High School,Marketing,Marketing Analyst,No Travel,4,6266,12.5,4,3,4,1,Yes,2,0,0,8,0,3,1,No
+832,53,Male,Single,Bachelor's,Marketing,SEO Specialist,No Travel,6,5612,23.6,4,3,4,2,No,18,11,7,4,6,3,0,No
+833,35,Male,Divorced,Master's,Sales,Sales Rep,Rarely,17,4991,12.7,3,1,4,3,Yes,5,1,1,5,2,1,0,Yes
+834,36,Female,Married,Master's,Finance,Controller,Rarely,29,8698,10.1,3,3,4,3,Yes,1,0,0,3,6,0,0,No
+835,50,Female,Divorced,Master's,Sales,Sales Lead,Frequently,28,3308,20.3,2,3,2,4,Yes,23,2,1,0,1,3,1,No
+836,22,Male,Divorced,High School,Marketing,Content Strategist,Rarely,27,7801,11.6,3,1,4,2,No,0,0,0,8,4,1,0,No
+837,41,Male,Divorced,High School,HR,HR Specialist,Frequently,22,4291,15.3,2,4,3,2,No,3,0,0,4,2,2,0,No
+838,35,Male,Married,Master's,Support,Support Lead,Frequently,15,7365,19.1,3,1,3,2,Yes,9,3,3,2,4,2,1,No
+839,58,Male,Divorced,PhD,Support,Support Lead,Frequently,26,3404,21.8,2,4,2,3,No,1,1,1,3,0,0,1,No
+840,46,Male,Married,Master's,Finance,Controller,No Travel,21,6866,18.0,3,2,2,2,Yes,6,6,4,2,0,3,0,No
+841,35,Male,Divorced,Bachelor's,Sales,Sales Lead,Frequently,15,6868,7.3,2,2,1,1,Yes,8,3,1,8,3,3,0,Yes
+842,46,Male,Divorced,High School,Engineering,QA Engineer,No Travel,3,6980,12.7,2,1,2,3,No,9,3,2,3,5,0,1,Yes
+843,30,Female,Married,Bachelor's,Support,Support Lead,Rarely,27,6632,9.0,3,1,4,4,Yes,9,5,5,0,2,2,2,No
+844,50,Female,Single,High School,Finance,Accountant,Frequently,13,5983,24.4,3,4,3,1,Yes,1,1,1,0,5,2,0,Yes
+845,40,Female,Divorced,High School,Engineering,Data Scientist,Rarely,5,6816,15.5,1,2,4,4,Yes,3,3,2,4,4,3,0,No
+846,32,Female,Single,PhD,Finance,Accountant,Frequently,19,4270,14.4,4,4,1,3,Yes,3,3,0,5,6,3,0,Yes
+847,46,Male,Single,High School,Engineering,QA Engineer,No Travel,28,8994,12.2,4,2,4,1,No,2,0,0,1,4,0,1,No
+848,30,Female,Married,High School,Finance,Accountant,Rarely,6,4191,14.2,3,1,2,4,No,8,5,0,6,4,0,0,No
+849,57,Female,Single,Bachelor's,Support,Support Lead,Frequently,23,8489,8.5,2,4,3,1,No,22,18,12,0,6,2,1,Yes
+850,57,Female,Married,Master's,Sales,Sales Rep,Rarely,27,5711,11.4,3,2,1,2,Yes,26,26,1,5,3,0,1,Yes
+851,26,Male,Divorced,PhD,Operations,Operations Manager,Rarely,2,5166,7.7,4,4,2,2,No,3,2,0,4,0,0,0,No
+852,33,Female,Divorced,Bachelor's,Support,Support Lead,Rarely,12,6848,24.9,2,3,1,4,Yes,3,0,0,0,6,0,0,No
+853,51,Male,Married,High School,Engineering,Data Scientist,No Travel,3,6444,21.3,3,1,2,2,Yes,13,1,0,0,3,3,1,No
+854,38,Female,Divorced,High School,Engineering,QA Engineer,Frequently,20,5064,21.2,2,4,4,2,No,10,4,1,5,1,2,0,No
+855,27,Female,Single,Bachelor's,Engineering,QA Engineer,Rarely,20,7286,20.5,1,3,1,2,No,6,4,0,8,5,3,0,Yes
+856,35,Female,Married,Master's,Marketing,Content Strategist,Frequently,14,9840,22.4,2,1,4,3,No,12,3,2,0,5,3,0,No
+857,41,Female,Single,Bachelor's,Operations,Logistics Coordinator,Rarely,15,10911,11.0,4,1,3,3,Yes,7,6,6,7,6,2,1,No
+858,43,Male,Married,Master's,Marketing,SEO Specialist,Rarely,21,3612,19.6,1,1,3,3,Yes,5,1,0,0,3,2,1,No
+859,36,Male,Single,High School,Finance,Financial Analyst,Rarely,23,8765,19.1,3,4,1,2,Yes,12,1,0,0,3,2,2,Yes
+860,27,Male,Single,Bachelor's,HR,HR Manager,Frequently,26,9321,23.0,3,3,1,1,Yes,1,0,0,6,6,0,0,Yes
+861,33,Female,Married,Master's,Sales,Sales Lead,Frequently,2,5946,21.7,2,4,2,2,No,9,5,0,9,4,2,1,No
+862,23,Male,Single,Bachelor's,HR,HR Manager,No Travel,5,6727,24.4,3,1,2,1,Yes,1,1,0,4,2,0,1,Yes
+863,40,Male,Divorced,High School,Finance,Controller,Rarely,5,8309,17.3,4,3,3,2,No,19,3,1,9,2,0,0,Yes
+864,53,Male,Married,High School,Engineering,QA Engineer,Frequently,17,6391,6.2,3,4,4,3,Yes,13,13,8,3,3,2,1,Yes
+865,34,Female,Divorced,Master's,Sales,Sales Lead,Frequently,21,8823,12.5,4,2,3,3,Yes,5,1,0,3,1,2,1,Yes
+866,42,Male,Married,Master's,Sales,Account Manager,No Travel,11,6540,15.7,2,1,2,2,Yes,9,1,1,3,2,0,0,Yes
+867,48,Female,Single,High School,Engineering,Software Engineer,No Travel,26,8546,9.9,2,1,1,4,No,20,17,17,7,1,1,1,Yes
+868,51,Female,Married,Master's,Operations,Logistics Coordinator,Frequently,27,5264,8.4,3,4,3,2,No,27,5,0,0,1,1,0,No
+869,31,Female,Married,PhD,Sales,Sales Rep,Frequently,6,4332,5.5,3,1,4,1,Yes,2,0,0,5,6,1,1,Yes
+870,49,Male,Divorced,Bachelor's,Sales,Sales Rep,Frequently,14,7028,6.4,4,1,4,1,No,23,21,5,9,0,0,1,No
+871,45,Male,Divorced,Master's,Sales,Sales Lead,Frequently,25,5673,19.1,2,1,1,3,Yes,10,9,7,7,4,1,0,No
+872,54,Male,Divorced,PhD,Finance,Financial Analyst,Rarely,6,4401,18.1,4,2,2,4,Yes,10,4,0,0,0,1,1,Yes
+873,30,Male,Married,Bachelor's,Operations,Operations Manager,No Travel,23,9408,19.6,4,1,1,4,No,4,2,1,9,4,1,1,No
+874,22,Male,Divorced,Bachelor's,Operations,Supply Chain Analyst,No Travel,12,6269,9.4,2,4,4,3,Yes,0,0,0,1,1,1,0,No
+875,27,Female,Single,PhD,Sales,Sales Lead,Rarely,29,12266,6.1,3,2,4,4,No,2,1,0,5,3,0,1,Yes
+876,23,Male,Married,Bachelor's,Support,Customer Support,Frequently,8,6604,14.4,3,1,2,2,Yes,2,2,0,0,2,2,0,Yes
+877,58,Male,Single,High School,Sales,Sales Rep,Rarely,13,4789,12.4,4,4,4,1,No,15,0,0,3,5,1,0,No
+878,45,Female,Divorced,High School,Marketing,Content Strategist,Rarely,7,8394,11.0,1,4,4,2,No,24,24,8,9,6,1,1,No
+879,60,Male,Married,PhD,HR,HR Manager,No Travel,24,9240,7.3,3,2,3,2,No,4,1,1,2,6,2,2,No
+880,31,Male,Divorced,High School,HR,Recruiter,Frequently,18,9596,8.0,2,3,1,4,No,7,1,1,3,1,2,1,No
+881,51,Female,Divorced,Bachelor's,Operations,Logistics Coordinator,No Travel,13,6744,9.0,4,2,1,1,No,11,8,3,8,3,0,0,Yes
+882,46,Female,Married,Master's,HR,Recruiter,Rarely,19,8035,19.4,4,3,2,3,Yes,12,9,4,6,2,3,2,Yes
+883,60,Male,Married,PhD,Marketing,SEO Specialist,No Travel,25,8112,12.4,3,1,3,3,Yes,28,8,2,5,1,3,1,Yes
+884,46,Female,Married,PhD,HR,HR Manager,No Travel,13,7374,14.1,4,2,2,3,Yes,3,1,0,4,1,0,2,Yes
+885,56,Male,Single,Bachelor's,Operations,Logistics Coordinator,Rarely,22,7197,9.3,4,4,4,2,No,26,3,2,3,0,0,0,No
+886,53,Male,Single,Master's,Operations,Operations Manager,No Travel,22,2389,6.8,4,3,3,2,Yes,2,1,1,5,6,2,1,Yes
+887,38,Female,Single,Master's,Finance,Accountant,No Travel,15,10439,23.7,3,4,3,2,Yes,15,6,5,7,3,1,1,Yes
+888,34,Female,Single,Bachelor's,HR,Recruiter,No Travel,11,5616,23.5,3,3,2,4,Yes,4,0,0,0,2,0,0,No
+889,33,Male,Married,Bachelor's,Marketing,SEO Specialist,No Travel,2,6837,11.0,4,1,2,4,Yes,5,3,1,7,1,1,0,Yes
+890,31,Male,Divorced,PhD,HR,Recruiter,No Travel,27,6816,19.5,4,2,3,2,No,9,2,2,9,2,1,2,Yes
+891,50,Male,Divorced,Bachelor's,Sales,Sales Lead,Frequently,14,5590,18.8,4,2,3,2,Yes,19,5,0,3,3,0,0,No
+892,27,Female,Single,High School,Marketing,Content Strategist,Frequently,16,10308,20.8,2,2,2,4,Yes,1,1,1,1,0,0,0,Yes
+893,36,Male,Married,Bachelor's,Operations,Supply Chain Analyst,Frequently,23,4989,13.1,2,4,3,2,Yes,13,11,4,3,1,1,0,Yes
+894,23,Female,Married,High School,Operations,Supply Chain Analyst,No Travel,7,6170,8.6,4,4,1,4,Yes,1,0,0,9,2,2,1,No
+895,52,Male,Divorced,Bachelor's,Sales,Sales Lead,No Travel,25,3670,10.5,4,1,4,3,Yes,17,1,1,8,2,0,1,Yes
+896,36,Male,Married,PhD,Engineering,Software Engineer,Frequently,9,8643,9.6,4,4,3,4,Yes,1,1,1,5,5,3,0,Yes
+897,33,Female,Single,High School,Finance,Financial Analyst,Rarely,19,9514,18.5,3,3,1,1,No,11,4,0,9,1,2,0,Yes
+898,25,Male,Single,PhD,Support,Customer Support,No Travel,10,8095,24.5,3,1,4,1,Yes,2,0,0,1,1,0,2,Yes
+899,49,Female,Divorced,PhD,Support,Support Lead,Frequently,20,11349,14.5,2,4,4,4,Yes,20,14,6,1,6,1,0,No
+900,51,Female,Divorced,Master's,Operations,Operations Manager,Frequently,10,7626,21.8,4,3,2,1,Yes,13,5,1,6,2,1,0,Yes
+901,43,Male,Single,Bachelor's,Operations,Supply Chain Analyst,No Travel,1,4903,5.5,3,4,3,3,No,1,0,0,4,3,0,0,No
+902,47,Female,Divorced,Master's,Finance,Accountant,Frequently,29,5540,13.0,3,4,3,1,No,24,13,7,3,3,2,0,No
+903,24,Female,Single,High School,HR,Recruiter,Rarely,29,5955,19.8,4,4,2,4,No,2,2,0,1,0,2,0,No
+904,35,Female,Divorced,High School,Sales,Account Manager,Rarely,8,6602,12.4,2,2,4,4,Yes,11,0,0,6,2,0,1,No
+905,57,Female,Married,Master's,Finance,Controller,Rarely,29,6566,20.1,4,3,2,3,No,13,10,6,1,6,2,1,No
+906,37,Female,Married,Bachelor's,Finance,Controller,Frequently,2,11857,16.5,3,4,3,1,Yes,14,4,1,2,1,2,0,Yes
+907,35,Male,Single,Master's,Operations,Logistics Coordinator,No Travel,7,8611,7.3,3,1,4,3,No,1,0,0,8,2,2,1,No
+908,52,Male,Single,Bachelor's,HR,Recruiter,No Travel,19,8723,10.6,3,3,4,1,Yes,0,0,0,9,1,0,1,Yes
+909,28,Male,Single,Bachelor's,Operations,Logistics Coordinator,Frequently,20,8114,16.9,2,3,4,1,No,7,5,3,1,4,1,2,Yes
+910,41,Female,Divorced,Bachelor's,HR,HR Manager,Rarely,27,4652,6.7,2,3,1,2,No,12,6,1,2,1,3,0,No
+911,37,Female,Married,Bachelor's,Sales,Sales Rep,Rarely,29,6749,11.0,3,4,4,1,Yes,5,2,1,8,6,2,1,No
+912,46,Male,Divorced,High School,Finance,Accountant,No Travel,11,7421,22.8,2,3,2,1,No,20,15,14,3,6,0,0,Yes
+913,25,Male,Divorced,Bachelor's,Support,Technical Support,Frequently,20,5350,11.7,4,2,2,2,Yes,2,1,1,8,1,1,0,Yes
+914,58,Male,Single,High School,HR,Recruiter,No Travel,27,8354,8.9,3,4,1,1,No,7,0,0,7,2,0,0,Yes
+915,44,Male,Divorced,Master's,Support,Technical Support,No Travel,7,6034,23.8,2,2,3,4,Yes,5,2,2,3,0,2,1,No
+916,30,Female,Single,Master's,Sales,Sales Rep,Frequently,27,6994,19.4,4,2,3,1,No,0,0,0,0,3,3,2,Yes
+917,28,Female,Married,PhD,Finance,Accountant,Rarely,28,7072,12.2,3,4,2,4,Yes,6,0,0,5,4,0,0,Yes
+918,46,Female,Divorced,PhD,Engineering,DevOps Engineer,Rarely,3,6211,14.7,3,4,1,2,Yes,16,4,1,2,0,0,0,Yes
+919,37,Female,Divorced,Master's,Finance,Financial Analyst,Frequently,20,8945,14.7,3,2,2,3,Yes,1,0,0,9,4,2,1,Yes
+920,29,Male,Single,PhD,HR,HR Manager,No Travel,10,3350,20.0,2,4,2,2,Yes,2,1,1,5,6,1,0,Yes
+921,42,Female,Single,Master's,Marketing,SEO Specialist,No Travel,15,8151,13.9,4,1,3,4,No,0,0,0,0,2,0,1,Yes
+922,46,Male,Divorced,Master's,HR,HR Manager,Rarely,24,6250,14.0,3,2,4,4,Yes,6,6,5,2,4,2,0,Yes
+923,52,Male,Single,Master's,Marketing,Content Strategist,Rarely,10,2869,12.0,2,2,1,3,Yes,18,4,0,2,4,0,0,No
+924,35,Male,Divorced,High School,Support,Technical Support,Rarely,20,8544,16.6,2,2,4,2,No,5,5,5,2,6,2,1,No
+925,46,Female,Divorced,High School,Engineering,QA Engineer,Rarely,18,4964,6.9,2,1,2,1,Yes,19,16,0,4,4,1,1,Yes
+926,27,Male,Single,Bachelor's,Support,Support Lead,No Travel,18,4486,20.0,3,1,3,2,No,6,0,0,8,3,3,2,Yes
+927,59,Female,Married,High School,Engineering,Software Engineer,Frequently,16,5878,7.7,4,1,1,4,Yes,17,1,1,9,4,3,1,Yes
+928,55,Female,Divorced,Master's,Support,Technical Support,Rarely,20,8090,11.2,3,4,2,2,No,9,6,5,2,0,1,1,No
+929,26,Male,Single,Bachelor's,Sales,Sales Rep,Rarely,28,5911,15.6,3,1,3,4,Yes,5,0,0,1,3,3,0,No
+930,60,Male,Divorced,Master's,Finance,Controller,No Travel,23,9187,19.7,1,2,4,4,No,16,6,0,0,5,1,1,Yes
+931,32,Male,Divorced,Master's,HR,HR Specialist,Rarely,26,6231,21.2,3,2,1,3,Yes,3,0,0,6,6,1,1,Yes
+932,25,Female,Divorced,PhD,Finance,Financial Analyst,Frequently,27,7054,20.1,4,2,2,2,No,3,1,1,3,1,3,0,No
+933,29,Male,Married,PhD,Finance,Accountant,Rarely,20,2000,7.2,4,2,2,2,Yes,1,0,0,3,5,1,0,Yes
+934,36,Male,Married,Master's,Finance,Controller,Frequently,21,4832,11.5,4,1,4,4,No,2,2,1,6,0,0,0,No
+935,32,Male,Divorced,High School,HR,HR Manager,Rarely,10,4377,13.2,3,1,3,4,Yes,3,0,0,8,5,2,1,Yes
+936,31,Female,Married,PhD,Operations,Operations Manager,Frequently,10,6945,20.3,3,3,1,2,No,6,4,3,7,1,1,0,Yes
+937,49,Female,Divorced,High School,HR,HR Manager,Rarely,20,6775,10.4,3,4,4,3,Yes,28,4,4,7,4,3,0,No
+938,51,Female,Married,Master's,Finance,Controller,Frequently,15,6174,22.0,3,3,1,2,No,11,10,9,1,3,1,0,Yes
+939,35,Male,Married,PhD,Operations,Logistics Coordinator,Rarely,29,8129,5.2,3,4,1,3,Yes,12,9,8,1,6,0,0,Yes
+940,47,Female,Divorced,PhD,Marketing,Marketing Analyst,Frequently,19,6789,10.4,4,3,1,2,Yes,1,0,0,8,4,1,1,Yes
+941,41,Female,Married,Bachelor's,HR,Recruiter,Frequently,22,7962,8.0,4,3,1,1,Yes,3,2,1,3,0,2,1,Yes
+942,59,Male,Single,Master's,Marketing,Marketing Analyst,Rarely,2,6354,16.2,3,2,4,3,No,12,4,0,7,4,3,2,No
+943,55,Male,Married,PhD,Operations,Operations Manager,Frequently,9,9025,13.6,4,1,1,2,No,25,1,0,4,2,1,1,No
+944,39,Female,Divorced,Master's,Marketing,Content Strategist,Rarely,14,8671,23.8,3,2,1,3,No,11,2,1,9,4,3,0,No
+945,33,Male,Divorced,Bachelor's,Support,Customer Support,No Travel,18,9127,10.9,3,3,4,3,No,5,1,0,6,2,2,1,No
+946,60,Female,Single,PhD,Finance,Financial Analyst,No Travel,24,5301,9.6,2,1,4,1,Yes,27,26,26,4,2,2,0,Yes
+947,25,Male,Married,High School,Support,Support Lead,No Travel,9,9638,9.7,3,2,4,4,Yes,1,0,0,6,6,1,1,Yes
+948,42,Male,Single,Master's,Operations,Supply Chain Analyst,Frequently,16,5006,18.6,3,3,1,4,Yes,21,9,2,8,2,2,1,Yes
+949,25,Female,Married,High School,Engineering,DevOps Engineer,Frequently,17,4981,9.6,3,2,3,2,No,0,0,0,7,6,2,0,No
+950,44,Female,Single,Master's,Marketing,Marketing Analyst,Rarely,14,6950,5.7,2,1,2,2,Yes,9,9,3,8,1,0,1,Yes
+951,55,Female,Single,Bachelor's,Sales,Sales Rep,Frequently,3,9734,14.6,3,1,3,4,Yes,15,5,4,5,5,2,0,Yes
+952,42,Female,Divorced,Bachelor's,HR,Recruiter,No Travel,28,7980,15.2,4,3,4,4,Yes,15,1,0,4,2,3,0,No
+953,46,Female,Divorced,Bachelor's,Marketing,SEO Specialist,No Travel,19,6921,17.1,3,4,4,3,No,9,3,1,0,4,0,1,No
+954,57,Female,Single,Master's,Finance,Controller,Frequently,9,5501,8.3,3,4,3,3,Yes,0,0,0,4,3,2,1,No
+955,51,Female,Single,Master's,Support,Support Lead,Frequently,3,8380,11.6,3,3,2,1,Yes,29,28,11,2,1,3,1,Yes
+956,26,Female,Divorced,Bachelor's,Finance,Controller,Frequently,7,2743,14.2,4,3,3,3,Yes,1,1,0,4,6,3,0,No
+957,55,Male,Single,High School,Finance,Accountant,Frequently,9,7089,20.0,4,1,1,2,No,6,5,0,8,0,2,1,No
+958,28,Female,Divorced,PhD,Engineering,Data Scientist,No Travel,27,8789,16.2,3,4,2,2,No,5,2,0,1,5,2,1,No
+959,22,Male,Single,Master's,Engineering,QA Engineer,Frequently,4,7571,16.7,1,2,4,3,Yes,1,0,0,5,2,1,1,Yes
+960,56,Male,Single,High School,Engineering,DevOps Engineer,Rarely,7,7529,11.0,3,2,4,1,No,10,0,0,8,3,3,1,Yes
+961,35,Female,Divorced,Master's,Marketing,Marketing Analyst,No Travel,22,6711,5.1,3,3,4,1,No,3,2,0,4,3,1,0,No
+962,37,Male,Married,PhD,Marketing,Content Strategist,Rarely,15,5826,10.8,3,1,2,2,No,3,0,0,7,1,0,1,Yes
+963,46,Male,Married,PhD,Marketing,SEO Specialist,No Travel,15,9655,10.1,4,4,1,1,Yes,9,2,2,9,5,2,1,Yes
+964,41,Female,Single,PhD,Finance,Controller,Rarely,16,8292,18.4,3,2,4,2,Yes,3,0,0,4,1,3,0,Yes
+965,28,Female,Divorced,Master's,Support,Support Lead,Rarely,25,3521,23.5,3,1,4,4,No,7,1,0,4,5,0,1,Yes
+966,54,Female,Married,PhD,Finance,Accountant,Rarely,1,4557,15.8,4,2,4,1,No,3,1,1,4,1,3,1,No
+967,46,Male,Single,Master's,Engineering,Software Engineer,Rarely,13,6770,15.1,2,4,4,3,Yes,6,4,4,3,1,2,1,No
+968,28,Male,Divorced,Bachelor's,Support,Technical Support,No Travel,12,2205,15.3,3,4,1,2,Yes,1,1,0,6,1,2,1,No
+969,32,Male,Divorced,Bachelor's,HR,HR Specialist,No Travel,7,5479,10.4,3,1,1,4,No,11,10,5,1,4,1,0,No
+970,26,Female,Divorced,High School,Sales,Sales Lead,Frequently,28,6830,7.9,3,4,1,4,Yes,2,0,0,6,2,3,0,Yes
+971,41,Male,Married,Bachelor's,Engineering,QA Engineer,No Travel,13,5664,21.6,2,2,3,4,No,8,3,1,1,5,1,0,Yes
+972,50,Male,Single,Bachelor's,Finance,Accountant,No Travel,19,6964,12.8,4,2,1,3,Yes,1,1,0,6,4,0,0,Yes
+973,23,Male,Married,High School,Finance,Accountant,No Travel,7,8695,17.3,2,1,4,2,Yes,0,0,0,1,0,3,1,No
+974,46,Male,Single,PhD,Marketing,Marketing Analyst,No Travel,6,6861,22.4,3,3,4,1,No,0,0,0,1,4,0,0,Yes
+975,37,Male,Single,PhD,HR,Recruiter,No Travel,24,6951,18.0,1,3,2,2,No,9,4,1,1,1,0,1,Yes
+976,52,Female,Divorced,Bachelor's,Support,Technical Support,No Travel,3,7520,13.4,3,3,1,2,Yes,6,5,1,7,3,3,1,Yes
+977,30,Female,Divorced,Master's,Finance,Financial Analyst,Rarely,29,6919,7.1,3,1,3,1,Yes,9,8,5,6,4,3,2,No
+978,56,Female,Married,PhD,Operations,Supply Chain Analyst,Frequently,9,6855,18.5,2,4,4,1,Yes,13,12,8,8,4,2,0,Yes
+979,50,Male,Divorced,High School,Operations,Operations Manager,No Travel,11,7102,13.7,1,4,2,4,Yes,15,9,9,3,6,1,0,Yes
+980,50,Male,Single,High School,Marketing,Content Strategist,No Travel,24,5629,11.4,3,2,1,2,Yes,18,16,13,2,1,3,1,Yes
+981,44,Male,Single,Master's,Support,Customer Support,No Travel,1,8903,10.0,3,4,4,2,Yes,0,0,0,9,0,0,0,Yes
+982,23,Female,Divorced,High School,Support,Customer Support,Frequently,26,6775,7.8,3,4,4,1,No,2,0,0,0,4,2,0,No
+983,52,Female,Single,Master's,Engineering,QA Engineer,No Travel,11,5892,7.4,2,2,4,1,Yes,1,0,0,8,0,0,1,Yes
+984,38,Male,Divorced,Master's,HR,HR Manager,Rarely,8,5113,17.7,4,1,1,3,Yes,4,0,0,5,6,2,0,Yes
+985,58,Female,Divorced,Master's,HR,Recruiter,Frequently,5,3537,6.9,3,3,1,2,Yes,8,6,3,8,1,1,0,Yes
+986,22,Female,Single,Bachelor's,Support,Technical Support,No Travel,10,7638,10.2,3,2,4,2,No,1,0,0,3,3,1,2,Yes
+987,22,Male,Single,Master's,Marketing,Marketing Analyst,Frequently,28,7277,13.4,2,2,3,3,Yes,0,0,0,4,5,3,0,Yes
+988,33,Male,Married,Bachelor's,Marketing,SEO Specialist,Rarely,29,7119,6.7,3,2,4,1,Yes,6,0,0,1,5,1,0,No
+989,49,Female,Single,High School,Finance,Controller,No Travel,6,9752,13.7,3,3,3,4,Yes,0,0,0,4,5,1,2,Yes
+990,41,Male,Single,PhD,Sales,Sales Lead,Frequently,12,6736,5.1,3,2,3,4,Yes,2,1,0,4,1,3,0,No
+991,32,Male,Divorced,Master's,Finance,Financial Analyst,Frequently,3,2000,15.2,4,4,3,4,Yes,2,1,0,2,2,3,1,Yes
+992,54,Female,Married,Master's,Finance,Accountant,Rarely,26,10130,8.2,2,2,3,1,Yes,26,2,2,6,0,2,0,Yes
+993,30,Female,Married,Bachelor's,HR,HR Specialist,No Travel,9,5884,20.1,3,1,2,1,No,4,0,0,6,6,2,0,Yes
+994,23,Female,Married,PhD,Support,Customer Support,Frequently,28,2438,18.4,3,2,1,2,No,0,0,0,3,0,3,0,Yes
+995,40,Male,Divorced,Bachelor's,Operations,Supply Chain Analyst,Frequently,6,8516,10.2,3,3,1,1,Yes,8,6,4,2,0,2,0,Yes
+996,33,Male,Single,Bachelor's,HR,HR Specialist,Frequently,23,6796,17.2,4,4,1,2,No,6,0,0,2,0,3,0,Yes
+997,34,Female,Divorced,High School,Sales,Sales Rep,Frequently,23,9679,5.6,1,3,4,1,Yes,9,9,0,1,6,3,1,Yes
+998,57,Male,Divorced,PhD,Marketing,SEO Specialist,No Travel,10,8252,22.7,2,3,1,3,Yes,28,20,12,9,5,3,1,Yes
+999,29,Male,Married,High School,HR,HR Specialist,Rarely,25,7009,14.5,2,4,1,4,Yes,3,2,2,7,4,0,1,Yes
+1000,49,Male,Divorced,High School,Marketing,Marketing Analyst,Rarely,7,7370,22.9,3,4,3,4,No,26,4,1,1,4,3,0,No

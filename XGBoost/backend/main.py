@@ -33,8 +33,17 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+        "https://xgboostapi.onrender.com",
+        "*",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -67,13 +76,39 @@ def health():
     return {
         "status": "healthy",
         "xgboost_version": xgb.__version__,
+        "jupyter_port": 8899,
     }
+
+
+@app.get("/pretrained")
+def get_pretrained_result():
+    """Return a pre-trained model result JSON so the UI loads instantly without needing to train."""
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "pretrained_result.json"),
+        os.path.join(os.path.dirname(__file__), "..", "backend", "pretrained_result.json"),
+        os.path.join(os.getcwd(), "backend", "pretrained_result.json"),
+        "backend/pretrained_result.json",
+        "pretrained_result.json",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    raise HTTPException(404, "Pre-trained result not found. Please train a model first.")
 
 
 @app.get("/samples")
 def list_samples():
     """List available preloaded sample datasets."""
     return [
+        {
+            "id": "employee_attrition",
+            "name": "⭐ Employee Attrition (Default Demo)",
+            "task": "classification",
+            "target": "attrition",
+            "filename": "employee_attrition_demo.csv",
+            "description": "1,000 employee records across 24 features — age, salary, satisfaction, overtime, department. Perfect for XGBoost classification.",
+        },
         {
             "id": "house_prices",
             "name": "House Prices (Regression)",
@@ -113,6 +148,7 @@ def list_samples():
 def get_sample_csv(sample_id: str):
     """Retrieve the raw CSV text for a sample dataset."""
     mapping = {
+        "employee_attrition": "employee_attrition_demo.csv",
         "house_prices": "02_regression_house_prices.csv",
         "customer_churn": "xgboost_customer_churn_1000_rows_100_missing.csv",
         "nulls_benchmark": "xgboost_1000_rows_with_nulls.csv",

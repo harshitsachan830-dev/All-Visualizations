@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import "./App.css";
+import { parseCsvContent } from "./services/csvParser";
 
 import {
   checkBackendHealth,
   fetchSampleDatasets,
+  fetchSampleCsv,
+  fetchPretrainedResult,
   trainModelApi,
   getActivePort,
   setActivePort,
@@ -65,7 +68,7 @@ export default function App() {
   // Backend Health & Port State
   const [backendHealth, setBackendHealth] = useState({ connected: false, port: getActivePort() });
 
-  // Initial check on mount
+  // Initial check on mount — auto-loads default demo dataset + pre-trained model
   useEffect(() => {
     async function init() {
       const health = await checkBackendHealth();
@@ -73,6 +76,30 @@ export default function App() {
 
       const samples = await fetchSampleDatasets();
       setSampleDatasets(samples);
+
+      // Auto-load default demo dataset
+      try {
+        const csvText = await fetchSampleCsv("employee_attrition");
+        const parsed = parseCsvContent(csvText, "employee_attrition_demo.csv");
+        const blob = new Blob([csvText], { type: "text/csv" });
+        const syntheticFile = new File([blob], "employee_attrition_demo.csv", { type: "text/csv" });
+        setFile(syntheticFile);
+        setPreview(parsed);
+        setTarget("attrition");
+        setTask("classification");
+      } catch {
+        // Silently skip if backend not ready yet
+      }
+
+      // Auto-load pre-trained model result so all visualizations work immediately
+      try {
+        const pretrained = await fetchPretrainedResult();
+        setResult(pretrained);
+        if (pretrained.task) setTask(pretrained.task);
+        if (pretrained.target) setTarget(pretrained.target);
+      } catch {
+        // Silently skip — user can still train manually
+      }
     }
     init();
   }, []);

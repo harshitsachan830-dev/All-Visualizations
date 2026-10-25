@@ -197,3 +197,11 @@ export async function compareModelsApi({ file, target, task }) {
 
   return await res.json();
 }
+
+export async function fetchPretrainedResult() {
+  const res = await fetch(`${getApiBase()}/pretrained`, {
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error("Pre-trained result not available.");
+  return await res.json();
+}
