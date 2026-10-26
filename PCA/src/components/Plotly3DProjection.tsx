@@ -9,13 +9,15 @@ interface Plotly3DProjectionProps {
   dbscanResult: DBSCANResult | null;
   theme?: ThemeMode;
   colorPalette?: ColorPalette;
+  allowAxisSelection?: boolean;
 }
 
 export const Plotly3DProjection: React.FC<Plotly3DProjectionProps> = ({
   pcaResult,
   dbscanResult,
   theme = 'dark',
-  colorPalette = 'cyber'
+  colorPalette = 'cyber',
+  allowAxisSelection = true
 }) => {
   const [pcX, setPcX] = useState<number>(0); // PC1
   const [pcY, setPcY] = useState<number>(1); // PC2
@@ -405,7 +407,7 @@ export const Plotly3DProjection: React.FC<Plotly3DProjectionProps> = ({
         }}
       >
         {/* XYZ axis selects */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
+        {allowAxisSelection && <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' }}>X</span>
             <select
@@ -468,7 +470,7 @@ export const Plotly3DProjection: React.FC<Plotly3DProjectionProps> = ({
               ))}
             </select>
           </div>
-        </div>
+        </div>}
 
         {/* Action buttons: Orbit toggle, Halo, Centroids */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

@@ -9,13 +9,15 @@ interface Plotly2DProjectionProps {
   dbscanResult: DBSCANResult | null;
   theme?: ThemeMode;
   colorPalette?: ColorPalette;
+  allowAxisSelection?: boolean;
 }
 
 export const Plotly2DProjection: React.FC<Plotly2DProjectionProps> = ({
   pcaResult,
   dbscanResult,
   theme = 'dark',
-  colorPalette = 'cyber'
+  colorPalette = 'cyber',
+  allowAxisSelection = true
 }) => {
   const [pcX, setPcX] = useState<number>(0); // PC1
   const [pcY, setPcY] = useState<number>(1); // PC2
@@ -560,7 +562,7 @@ export const Plotly2DProjection: React.FC<Plotly2DProjectionProps> = ({
         }}
       >
         {/* Axes dropdowns */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, flexWrap: 'wrap' }}>
+        {allowAxisSelection && <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' }}>X axis</span>
             <select
@@ -608,7 +610,7 @@ export const Plotly2DProjection: React.FC<Plotly2DProjectionProps> = ({
               ))}
             </select>
           </div>
-        </div>
+        </div>}
 
         {/* Layer Toggles & Point Size Slider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>

@@ -1,6 +1,6 @@
 export type MissingValueStrategy = 'mean' | 'median' | 'mode' | 'drop';
 export type ScalingStrategy = 'standard' | 'minmax' | 'robust' | 'none';
-export type ReductionMethod = 'standard_pca' | 'kernel_pca' | 'sparse_pca';
+export type ReductionMethod = 'standard_pca' | 'kernel_pca' | 'sparse_pca' | 'tsne';
 export type AnalysisSpace = 'retained_pcs' | 'all_features' | 'display_2d' | 'display_3d';
 export type ThemeMode = 'dark' | 'light';
 export type ColorPalette = 'cyber' | 'scientific' | 'warm' | 'aurora';

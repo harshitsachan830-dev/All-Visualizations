@@ -7,6 +7,7 @@ import { Plotly3DProjection } from './components/Plotly3DProjection';
 import { ExplainedVariancePlot } from './components/ExplainedVariancePlot';
 import { FeatureLoadingsHeatmap } from './components/FeatureLoadingsHeatmap';
 import { DBSCANClusterPanel } from './components/DBSCANClusterPanel';
+import { DBSCANVisualizationStudio } from './components/DBSCANVisualizationStudio';
 import { ParallelCoordinatesPlot } from './components/ParallelCoordinatesPlot';
 import { ComponentPairsMatrix } from './components/ComponentPairsMatrix';
 import { FeatureCorrelationCircle } from './components/FeatureCorrelationCircle';
@@ -20,6 +21,7 @@ import { CSVUploadModal } from './components/CSVUploadModal';
 import { EnhancedPCA3DSpace } from './components/EnhancedPCA3DSpace';
 import { KMeansStudio3D } from './components/KMeansStudio3D';
 import { PCATheoryGuide } from './components/PCATheoryGuide';
+import { TSNEStudio } from './components/TSNEStudio';
 import {
   DatasetInfo,
   MissingValueStrategy,
@@ -37,7 +39,7 @@ import {
   runDBSCAN
 } from './utils/math';
 
-export type ProjectionSubTab = '2d_3d' | '3d_fullscreen' | 'enhanced_3d' | 'kmeans_3d' | 'parallel' | 'pairs' | 'radar' | 'correlation' | 'table';
+export type ProjectionSubTab = '2d_3d' | 'dbscan' | 'tsne' | '3d_fullscreen' | 'enhanced_3d' | 'kmeans_3d' | 'parallel' | 'pairs' | 'radar' | 'correlation' | 'table';
 
 export function App() {
   const [datasets, setDatasets] = useState<DatasetInfo[]>(getPresetDatasets());
@@ -115,6 +117,12 @@ export function App() {
 
     // Cluster on PC1 and PC2 coordinates
     const clusteringPoints = pcaResult.transformedData.map(p => [p.pc1, p.pc2]);
+    return runDBSCAN(clusteringPoints, dbscanEps, dbscanMinSamples);
+  }, [pcaResult, dbscanEps, dbscanMinSamples]);
+
+  const dbscan3DResult = useMemo(() => {
+    if (!pcaResult || pcaResult.nComponents < 3 || pcaResult.transformedData.length === 0) return null;
+    const clusteringPoints = pcaResult.transformedData.map(point => [point.coords[0] ?? 0, point.coords[1] ?? 0, point.coords[2] ?? 0]);
     return runDBSCAN(clusteringPoints, dbscanEps, dbscanMinSamples);
   }, [pcaResult, dbscanEps, dbscanMinSamples]);
 
@@ -260,6 +268,8 @@ export function App() {
               }}>
                 {[
                   { id: '2d_3d',        label: '2D + 3D Dual Studio' },
+                  { id: 'dbscan',       label: 'DBSCAN 2D + 3D' },
+                  { id: 'tsne',         label: 't-SNE Embedding Lab' },
                   { id: '3d_fullscreen', label: '3D Fullscreen Immersive' },
                   { id: 'enhanced_3d',  label: '3D Space & Orbits' },
                   { id: 'kmeans_3d',    label: 'PCA 3D View' },
@@ -332,6 +342,30 @@ export function App() {
                     />
                   </div>
                 </div>
+              )}
+
+              {projectionTab === 'tsne' && (
+                <TSNEStudio
+                  pcaResult={pcaResult}
+                  datasetName={activeDataset.name}
+                  scaling={scaling}
+                  theme={theme}
+                  colorPalette={colorPalette}
+                />
+              )}
+
+              {projectionTab === 'dbscan' && (
+                <DBSCANVisualizationStudio
+                  pcaResult={pcaResult}
+                  result2D={dbscanResult}
+                  result3D={dbscan3DResult}
+                  eps={dbscanEps}
+                  minSamples={dbscanMinSamples}
+                  onEpsChange={setDbscanEps}
+                  onMinSamplesChange={setDbscanMinSamples}
+                  theme={theme}
+                  colorPalette={colorPalette}
+                />
               )}
 
               {/* Tab 2: 3D Fullscreen Immersive */}

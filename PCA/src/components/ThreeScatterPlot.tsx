@@ -70,11 +70,13 @@ export interface ThreeScatterPlotProps {
   showTrajectories?: boolean;
   showDistanceRays?: boolean;
   showHulls?: boolean;
+  showCentroids?: boolean;
   showGrid?: boolean;
   pointSize?: number;
   height?: string | number;
   defaultAutoRotate?: boolean;
   autoRotateSpeed?: number;
+  clusterNames?: string[];
 }
 
 export interface ThreeScatterPlotRef {
@@ -98,6 +100,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
     showTrajectories = true,
     showDistanceRays = true,
     showHulls = false,
+    showCentroids = true,
     showGrid = true,
     showAxes = true,
     varianceRatios,
@@ -105,6 +108,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
     height = '100%',
     defaultAutoRotate = false,
     autoRotateSpeed = 2.0,
+    clusterNames = [],
   },
   ref
 ) => {
@@ -420,6 +424,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
     const centroidsGroup = centroidsGroupRef.current;
     centroidsGroup.clear();
 
+    if (!showCentroids) return;
     const centroids = currentSnapshot?.centroids || [];
 
     centroids.forEach((centroid) => {
@@ -455,7 +460,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
 
       // Floating Centroid Name Badge in 3D: "Cluster 0", "Cluster 1", etc.
       const labelSprite = createTextSprite(
-        `Cluster ${centroid.id}`,
+        clusterNames[centroid.id] || `Cluster ${centroid.id}`,
         centroid.color,
         'rgba(15, 23, 42, 0.92)',
         centroid.color
@@ -466,7 +471,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
 
       centroidsGroup.add(octMesh);
     });
-  }, [currentSnapshot, normalizationBounds, isolatedCluster, pointSize]);
+  }, [currentSnapshot, normalizationBounds, isolatedCluster, pointSize, showCentroids, clusterNames]);
 
   // Update Centroid Trajectories (3D Trails across iterations)
   useEffect(() => {
@@ -885,7 +890,7 @@ export const ThreeScatterPlot = forwardRef<ThreeScatterPlotRef, ThreeScatterPlot
               Point #{hoveredPoint.id}
             </span>
             <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: 'auto' }}>
-              Cluster {hoveredPoint.cluster >= 0 ? hoveredPoint.cluster : 'Unassigned'}
+              {clusterNames[hoveredPoint.cluster] || (hoveredPoint.cluster >= 0 ? `Cluster ${hoveredPoint.cluster}` : 'Noise')}
             </span>
           </div>
           <div style={{ color: '#cbd5e1', fontSize: '11px', lineHeight: '1.5' }}>
